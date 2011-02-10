@@ -1,0 +1,19 @@
+This file is to resolve author aliases to their real identity.
+
+sikoried
+	Korbinian Riedhammer
+	Speech Group at Informatik 5 
+	Univ. Erlangen-Nuremberg
+	GERMANY
+
+bocklet
+	Tobias Bocklet
+	Speech Group at Informatik 5 
+	Univ. Erlangen-Nuremberg
+	GERMANY
+
+hoenig
+	Florian Hoenig
+	Speech Group at Informatik 5 
+	Univ. Erlangen-Nuremberg
+	GERMANY
