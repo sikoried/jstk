@@ -1,0 +1,67 @@
+#summary A simple example of an isolated word recognizer using phonetic units.
+
+= Introduction =
+
+In this example, we will build a connected digits speech recognizer based on phonetic units (monophones). Though the commands/API functions are described here, the training data (vmdigits) is not provided.
+
+In general, the procedure for a simple speech recognizer is as follows:
+* extract the features
+* get a first estimate of the acoustic codebook(s)
+* initialize the phonetic network
+* train on forced alignments
+* decode the test set
+
+
+= Feature Extraction =
+
+For this example, we extract basic MFCC features.
+
+= Initialization of Acoustic Codebook =
+
+= Initialization of the Phonetic Network =
+First, we need a Token alphabet. This might be just words (in case of one-model-per-word), or as in this example, a monophone alphabet:
+{{{
+sikoried@lme126: ~/jstk/vm$ cat vm-mono.a 
+si	3
+ah	2
+ao	3
+ay	3
+eh	2
+ey	3
+f	2
+ih	2
+iy	3
+k	2
+n	2
+ow	4
+r	2
+s	2
+t	2
+th	2
+uw	3
+v	2
+w	3
+y	3
+z	3
+}}}
+
+The corresponding Tokenization is straight forward:
+
+{{{
+sil     si
+one     w ah n
+two     t uw
+three   th r iy
+four    f ao r
+five    f ay v
+six     s ih k s
+seven   s eh v ah n
+eight   ey t
+nine    n ay n
+zero    z ih r ow
+yes     y eh s
+no      n ow
+oh      ow
+}}}
+
+Where 'sil' is the silence "word" modeled by the "sound" 'si'. Now, let's produce a Configuration:
