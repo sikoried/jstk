@@ -115,7 +115,7 @@ public class ViterbiBeamSearch {
 		
 		double best = expanded.get(0).vs;
 		double width = 0;
-		while (active.size() < bs) {
+		while (expanded.size() > 0 && active.size() < bs) {
 			Hypothesis h = expanded.remove(0);
 			if ((width = best - h.vs) > bw)
 				break;
