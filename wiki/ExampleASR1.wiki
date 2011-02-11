@@ -100,3 +100,6 @@ You can test the models either using the IWRecognizer which tries to do forced a
 sikoried@lme126: ~/jstk/vm$ jstk app.IWRecognizer conf-mono.xml conf-mono.cb.$i sil -l lists/list.test ft out.$i -p 3 -n 1
 sikoried@lme126: ~/jstk/vm$ jstk app.Decoder conf-mono.xml conf-mono.cb.6 -l lists/list.test ft -bs 1000 -bw 15 -i 0.01 -w 0.01 -q -o outd.6
 }}}
+
+= Example Configuration and Model Files =
+You can find the trained configuration and models at http://code.google.com/p/jstk/downloads/detail?name=vm-models.zip
