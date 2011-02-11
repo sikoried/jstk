@@ -81,7 +81,7 @@ Where 'sil' is the silence "word" modeled by the "sound" 'si'. Now, let's produc
 sikoried@lme126: ~jstk/vm$ jstk arch.Configuration --compile arch/vm-mono.a arch/vm-mono.l --semi cb.em10 --write conf-mono.xml conf-mono.cb.0
 }}}
 
-= Train the TokenHierarchy =
+= Train the Token Hierarchy =
 Use a few manual alignments for a first training of the models to obtain robust forced alignments later on. Use the Trainer for this. Then iterate on 
 
 {{{
