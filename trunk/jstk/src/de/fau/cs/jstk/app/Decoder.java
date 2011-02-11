@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -89,15 +90,20 @@ public class Decoder {
 	}
 	
 	public static void main(String[] args) throws Exception {
+		BasicConfigurator.configure();
+		
 		if (args.length < 4) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
 		
 		// scan for silencer
+		boolean silencer = false;
 		for (int i = 0; i < args.length; ++i)
-			if (args[i].equals("-q"))
+			if (args[i].equals("-q")) {
+				silencer = true;
 				Logger.getLogger("de.fau.cs.jstk").setLevel(Level.FATAL);
+			}
 		
 		double wip = 0.01;
 		double lmwt = 10.;
@@ -153,8 +159,10 @@ public class Decoder {
 				bw = Double.parseDouble(args[++z]);
 			else if (args[z].equals("-n"))
 				n = Integer.parseInt(args[++z]);
-			else if (args[z].equals("-q"))
+			else if (args[z].equals("-q")) {
+				silencer = true;
 				Logger.getLogger("de.fau.cs.jstk").setLevel(Level.FATAL);
+			}
 			else if (args[z].equals("-o"))
 				outf = args[++z];
 			else if (args[z].equals("-s"))
@@ -203,7 +211,8 @@ public class Decoder {
 			while (it.hasNext()) {
 				double cbw = dec.step(it.next());
 				i++;
-				System.err.print("\rprogress=" + (int)((i / (double) obs.size()) * 100) + "% bs=" + dec.getCurrentBeamSize() + " exp=" + dec.getCurrentExpandedSize() + " bw=" + cbw);
+				if (!silencer)
+					System.err.print("\rprogress=" + (int)((i / (double) obs.size()) * 100) + "% bs=" + dec.getCurrentBeamSize() + " exp=" + dec.getCurrentExpandedSize() + " bw=" + cbw);
 			}
 			
 			// conclude the decoding (and reduce to active final states)

@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -169,9 +170,9 @@ public class IWRecognizer {
 	
 	public static final String SYNOPSIS =
 		"sikoried, 11/10/2010\n" +
-		"Isolated word recognition. For each word, a sil - word - sil sequence is\n" +
+		"Isolated word recognition. For each word, a \"sil word sil\" sequence is\n" +
 		"aligned, and the (n-best) word(s) with the highest actual word alignment score\n" +
-		"is given.\n\n" +
+		"is/are given.\n\n" +
 		"usage: app.IWRecognizer config codebook sil-symbol [options]\n" +
 		"-l <turn-list> <in-dir> <out-file>\n" +
 		"  Load turns and use the given input directory and write output to out-file.\n" +
@@ -184,6 +185,8 @@ public class IWRecognizer {
 		"  Do not produce debug output.\n";
 	
 	public static void main(String[] args) throws Exception {
+		BasicConfigurator.configure();
+		
 		if (args.length < 5) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);

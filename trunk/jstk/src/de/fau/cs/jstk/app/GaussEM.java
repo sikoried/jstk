@@ -26,6 +26,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
+
 import de.fau.cs.jstk.io.ChunkedDataSet;
 import de.fau.cs.jstk.io.FrameReader;
 import de.fau.cs.jstk.stat.Mixture;
@@ -34,6 +37,7 @@ import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.stat.Trainer;
 
 public class GaussEM {
+	private static Logger logger = Logger.getLogger(GaussEM.class);
 	
 	public static final String SYNOPSIS = 
 		"Estimate Gaussian mixture densities using an initial estimate and a\n" + 
@@ -63,6 +67,8 @@ public class GaussEM {
 		"default: -n 10 -p 0\n";
 	
 	public static void main(String[] args) throws IOException, Exception {
+		BasicConfigurator.configure();
+		
 		if (args.length < 6) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
@@ -119,7 +125,7 @@ public class GaussEM {
 			System.exit(1);
 		}
 		
-		System.err.println("Reading from " + inf + "...");
+		logger.info("Reading from " + inf + "...");
 		Mixture initial, estimate;
 		initial = Mixture.readFromFile(new File(inf));
 		
@@ -127,7 +133,7 @@ public class GaussEM {
 			initial.writeToFile(new File(ouf + ".0"));
 		
 		if (c == -1) {
-			System.err.print("Caching feature data...");
+			logger.info("Caching feature data...");
 			LinkedList<Sample> data = new LinkedList<Sample>();
 			ChunkedDataSet set = new ChunkedDataSet(new File(lif), inDir, 0);
 			ChunkedDataSet.Chunk chunk;
@@ -137,9 +143,9 @@ public class GaussEM {
 				while (r.read(buf))
 					data.add(new Sample(0, buf));
 			}
-			System.err.println(data.size() + " samples cached");
+			logger.info(data.size() + " samples cached");
 			
-			System.err.println("Starting " + n + " EM iterations: single-core, cached data");			
+			logger.info("Starting " + n + " EM iterations: single-core, cached data");			
 			
 			estimate = initial;
 			for (int i = 0; i < n; ++i) {
@@ -148,7 +154,7 @@ public class GaussEM {
 					estimate.writeToFile(new File(ouf + "." + (i+1)));
 			}
 		} else {
-			System.err.println("Starting " + n + " EM iterations on " + c + " cores");
+			logger.info("Starting " + n + " EM iterations on " + c + " cores");
 
 			ParallelEM pem = new ParallelEM(initial, new ChunkedDataSet(new File(lif), inDir, 0), c);
 
@@ -160,7 +166,7 @@ public class GaussEM {
 			estimate = pem.current;
 		}
 		
-		System.err.println("Saving new estimate...");
+		logger.info("Saving new estimate...");
 		estimate.writeToFile(new File(ouf));
 	}
 }
