@@ -26,7 +26,7 @@ JTransforms - http://sites.google.com/site/piotrwendykier/software/jtransforms
 JAMA - http://math.nist.gov/javanumerics/jama/
 	The JAMA package provides linear algebra routines such as decompositions
 	(e.g. Eigen, LR, QR) and matrix operations (calculus, inversions).
-	A single precision copy is attached to this toolkit and named FJAMA.
+	A single precision copy is maintained at the Speech Group named FJAMA.
 
 log4j - http://logging.apache.org/log4j
 	log4j provides scalable logging capabilities, however, JSTK only uses the
