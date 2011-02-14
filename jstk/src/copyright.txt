@@ -3,6 +3,8 @@
 		Speech Group at Informatik 5, Univ. Erlangen-Nuremberg, GERMANY
 		Korbinian Riedhammer
 		Tobias Bocklet
+		Florian Hoenig
+		Stefan Steidl
 
 	This file is part of the Java Speech Toolkit (JSTK).
 
