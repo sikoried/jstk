@@ -23,6 +23,8 @@ package de.fau.cs.jstk.framed;
 
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.FrameSource;
+
 import edu.emory.mathcs.jtransforms.dht.DoubleDHT_1D;
 
 public class DHT extends SpectralTransformation implements FrameSource {

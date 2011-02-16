@@ -21,47 +21,30 @@
 */
 package de.fau.cs.jstk.io;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.nio.ByteOrder;
+import java.io.Writer;
 import java.util.List;
 
 import de.fau.cs.jstk.stat.Sample;
 
 /**
- * Write out Samples to a given OutputStream, either in ASCII or binary format.
+ * Write out Samples to a given Writer
  * 
  * @author sikoried
  */
-public class SampleWriter {
+public class SampleWriter implements SampleDestination {
 	/** OutputStream to write to */
-	private OutputStream os;
-	
-	/** if not null: write ASCII to BufferedWriter */
-	private BufferedWriter bw = null;
-	
-	/** indicates if the classification results needs to be written as well */
-	private boolean classif;
+	private Writer wr;
 	
 	/**
 	 * Allocate a new SampleWriter to write to the given OutputStream either
 	 * binary or ASCII data. You may also request to save the classification 
 	 * result.
-	 * @param os
-	 * @param ascii write ASCII?
-	 * @param fd feature dimension
-	 * @param classif indicate to write classification result
+	 * @param wr
 	 * @throws IOException
 	 */
-	public SampleWriter(OutputStream os, boolean ascii, int fd, boolean classif) throws IOException {
-		this.os = os;
-		this.classif = classif;
-		if (ascii) 
-			bw = new BufferedWriter(new OutputStreamWriter(os));
-		else
-			IOUtil.writeInt(os, fd, ByteOrder.LITTLE_ENDIAN);
+	public SampleWriter(Writer wr) throws IOException {
+		this.wr = wr;
 	}
 	
 	/**
@@ -70,10 +53,7 @@ public class SampleWriter {
 	 * @throws IOException
 	 */
 	public void write(Sample s) throws IOException {
-		if (bw != null)
-			writeToAscii(bw, s, classif);
-		else
-			writeToBinary(os, s, classif);
+		wr.append(s.toClassifiedString() + "\n");
 	}
 	
 	/**
@@ -81,11 +61,8 @@ public class SampleWriter {
 	 * @throws IOException
 	 */
 	public void close() throws IOException {
-		if (bw != null)
-			bw.flush();
-
-		os.flush();
-		os.close();
+		wr.flush();
+		wr.close();
 	}
 	
 	/**
@@ -93,10 +70,8 @@ public class SampleWriter {
 	 */
 	public void finalize() throws Throwable{
 		try {
-			if (bw != null)
-				bw.flush();
-			os.flush();
-			os.close();
+			wr.flush();
+			wr.close();
 		} finally {
 			super.finalize();
 		}
@@ -105,66 +80,14 @@ public class SampleWriter {
 	/**
 	 * Write a list of Samples to the given OutputStream in ASCII format. Note
 	 * that the original class info is saved, but not the assigned (y).
-	 * @param os
+	 * @param wr
 	 * @param list List of Samples to write
-	 * @param classif indicate if to write the classification result
 	 * @throws IOException
 	 */
-	public static void writeToAscii(BufferedWriter bw, List<Sample> list, boolean classif) throws IOException {
+	public static void writeToAscii(Writer wr, List<Sample> list) throws IOException {
+		SampleWriter sw = new SampleWriter(wr);
 		for (Sample s : list) 
-			writeToAscii(bw, s, classif);
-	}
-	
-	/**
-	 * Write a single Sample to the given ASCII output stream.
-	 * @param bw initialized BufferedWriter
-	 * @param s 
-	 * @param classif indicate if to write the classification result
-	 * @throws IOException
-	 */
-	public static void writeToAscii(BufferedWriter bw, Sample s, boolean classif) throws IOException {
-		if (classif)
-			bw.append(s.toClassifiedString() + "\n");
-		else
-			bw.append(s.toString() + "\n");
-		
-		bw.flush();
-	}
-	
-	/**
-	 * Write a list of Samples to the given OutputStream in binary format. Note
-	 * that the assigned class (y) is not written. The resulting format is 
-	 * [frame-size][sample1: class-id data...][...]
-	 * @param os
-	 * @param list
-	 * @param classif indicate if to write the classification result
-	 * @throws IOException
-	 */
-	public static void writeToBinary(OutputStream os, List<Sample> list, boolean classif) throws IOException {
-		if (list.size() < 1)
-			throw new IOException("empty list");
-		
-		// write frame size as header
-		IOUtil.writeInt(os, list.get(0).x.length, ByteOrder.LITTLE_ENDIAN);
-			
-		// write all samples
-		for (Sample s : list)
-			writeToBinary(os, s, classif);
-	}
-	
-	/**
-	 * Write a single Sample to the output stream. Format is [class-id data...]
-	 * @param os
-	 * @param s
-	 * @param classif indicate if to write the classification result
-	 * @throws IOException
-	 */
-	public static void writeToBinary(OutputStream os, Sample s, boolean classif) throws IOException {
-		IOUtil.writeInt(os, s.c, ByteOrder.LITTLE_ENDIAN);
-		
-		if (classif)
-			IOUtil.writeInt(os, s.y, ByteOrder.LITTLE_ENDIAN);
-		
-		IOUtil.writeFloat(os, s.x, ByteOrder.LITTLE_ENDIAN);
+			sw.write(s);
+		sw.close();
 	}
 }

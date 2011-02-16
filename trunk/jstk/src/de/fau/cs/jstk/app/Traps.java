@@ -27,10 +27,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.framed.MVN;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
+import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.util.Pair;
 import edu.emory.mathcs.jtransforms.dct.DoubleDCT_1D;
 

@@ -183,7 +183,7 @@ public class Map {
 				List<Sample> data = new LinkedList<Sample>();
 				double [] buf = new double [fr.getFrameSize()];
 				while (fr.read(buf))
-					data.add(new Sample(0, buf));
+					data.add(new Sample((short) 0, buf));
 				fr.close();
 				
 				logger.info("Map.main(): " + data.size() + " samples read");

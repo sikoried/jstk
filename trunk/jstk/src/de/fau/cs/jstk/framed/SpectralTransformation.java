@@ -23,6 +23,8 @@ package de.fau.cs.jstk.framed;
 
 import org.apache.log4j.Logger;
 
+import de.fau.cs.jstk.io.FrameSource;
+
 public abstract class SpectralTransformation implements FrameSource {
 	private static Logger logger = Logger.getLogger(SpectralTransformation.class);
 	

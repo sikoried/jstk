@@ -30,6 +30,7 @@ import java.io.IOException;
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
+import de.fau.cs.jstk.io.FrameSource;
 
 
 /**

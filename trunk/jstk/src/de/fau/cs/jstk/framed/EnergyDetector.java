@@ -33,6 +33,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.exceptions.TrainingException;
+import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.sampled.RawAudioFormat;
@@ -111,20 +112,6 @@ public class EnergyDetector implements FrameSource {
 
 	public String toString() {
 		return "framed.EnergyDetector thres=" + threshold;
-	}
-	
-	/**
-	 * Compute the energy threshold from silence. Deprecated, use estimateThreshold!
-	 * @param source FrameSource to read from (usually a window)
-	 * @return threshold
-	 */
-	@Deprecated
-	public static double calcThresholdFromSilence(FrameSource source) throws IOException {
-		LinkedList<Sample> li = new LinkedList<Sample>();
-		double [] buf = new double [source.getFrameSize()];
-		while (source.read(buf))
-			li.add(new Sample(0, new double [] { Window.energy(buf) } ));
-		return estimateThreshold(li, ThresholdStrategy.MEAN);
 	}
 	
 	public enum ThresholdStrategy {
@@ -273,7 +260,7 @@ public class EnergyDetector implements FrameSource {
 			LinkedList<Sample> list = new LinkedList<Sample>();
 			
 			while (wnd.read(buf))
-				list.add(new Sample(0, new double [] { Window.energy(buf) }));
+				list.add(new Sample((short) 0, new double [] { Window.energy(buf) }));
 		
 			if (list.size() == 0){
 				System.err.println("No frames in file " + file);

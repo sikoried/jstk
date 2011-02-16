@@ -40,10 +40,10 @@ public class Sample implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** correct label */
-	public int c;
+	public short c;
 	
 	/** classified label */
-	public int y;
+	public short y;
 	
 	/** data vector */
 	public double [] x;
@@ -60,12 +60,12 @@ public class Sample implements Serializable {
 	 * @param c correct label
 	 * @param x data
 	 */
-	public Sample(int c, double [] x) {
+	public Sample(short c, double [] x) {
 		this.x = x.clone();
 		this.c = c;
 	}
 	
-	public Sample(int c, int y, double [] x) {
+	public Sample(short c, short y, double [] x) {
 		this.x = x.clone();
 		this.c = c;
 		this.y = y;
@@ -76,7 +76,7 @@ public class Sample implements Serializable {
 	 * @param c correct label
 	 * @param dim feature dimension
 	 */
-	public Sample(int c, int dim) {
+	public Sample(short c, int dim) {
 		this.c = c;
 		x = new double [dim];
 	}
@@ -106,7 +106,7 @@ public class Sample implements Serializable {
 	public static List<Sample> unlabeledArrayListFromArray(double [][] data) {
 		LinkedList<Sample> n = new LinkedList<Sample>();
 		for (double [] x : data)
-			n.add(new Sample(0, x));
+			n.add(new Sample((short) 0, x));
 		return n;
 	}
 	

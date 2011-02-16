@@ -38,7 +38,7 @@ import java.util.Map.Entry;
 
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
-import de.fau.cs.jstk.io.SampleReader;
+import de.fau.cs.jstk.io.SampleInputStream;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.util.Arithmetics;
 import de.fau.cs.jstk.util.Pair;
@@ -49,7 +49,7 @@ public class LDA extends Projection {
 	private Accumulator global = null;
 	
 	/** class dependent stats */
-	private HashMap<Integer, Accumulator> stats = new HashMap<Integer, Accumulator>();
+	private HashMap<Short, Accumulator> stats = new HashMap<Short, Accumulator>();
 	
 	/** for internal purposes: remember inverse(Sw) */
 	private double [][] Swi = null;
@@ -71,17 +71,24 @@ public class LDA extends Projection {
 	 * @param list
 	 */
 	public void accumulate(List<Sample> list) {
-		for (Sample s : list) {
-			// build up global stats
-			global.accumulate(s.x);
-			
-			// make sure we have an accumulator
-			if (!stats.containsKey(s.c))
-				stats.put(s.c, new Accumulator(s.x.length));
-			
-			// build up class dependent stats
-			stats.get(s.c).accumulate(s.x);
-		}
+		for (Sample s : list)
+			accumulate(s);
+	}
+	
+	/**
+	 * Accumulate a single Sample
+	 * @param s
+	 */
+	public void accumulate(Sample s) {
+		// build up global stats
+		global.accumulate(s.x);
+		
+		// make sure we have an accumulator
+		if (!stats.containsKey(s.c))
+			stats.put(s.c, new Accumulator(s.x.length));
+		
+		// build up class dependent stats
+		stats.get(s.c).accumulate(s.x);
 	}
 	
 	/**
@@ -90,11 +97,11 @@ public class LDA extends Projection {
 	 * desired, specify manual priors for the classes.
 	 * @param priors HashMap(ClassID->prior) to specify manual priors, or null
 	 */
-	public void estimate(HashMap<Integer, Double> priors) {
+	public void estimate(HashMap<Short, Double> priors) {
 		// compute priors if necessary
 		if (priors == null) {
-			priors = new HashMap<Integer, Double>();
-			for (Entry<Integer, Accumulator> e : stats.entrySet())
+			priors = new HashMap<Short, Double>();
+			for (Entry<Short, Accumulator> e : stats.entrySet())
 				priors.put(e.getKey(), (double) e.getValue().getCount() / global.getCount());
 		}
 		
@@ -107,7 +114,7 @@ public class LDA extends Projection {
 		// build up between-class-covariance (lower triangular)
 		double [] sb = new double [fd * (fd + 1) / 2];
 		
-		for (Entry<Integer, Accumulator> e : stats.entrySet()) {
+		for (Entry<Short, Accumulator> e : stats.entrySet()) {
 			double p = priors.get(e.getKey());
 			double [] m = e.getValue().getMean();
 			double [] c = e.getValue().getCovariance();
@@ -222,12 +229,13 @@ public class LDA extends Projection {
 		BufferedReader br = new BufferedReader(new FileReader(listf));
 		String line;
 		while ((line = br.readLine()) != null) {
-			List<Sample> li = SampleReader.readFromBinary(new FileInputStream(indir + line), false);
-			
-			if (lda == null)
-				lda = new LDA(li.get(0).x.length);
-			
-			lda.accumulate(li);
+			SampleInputStream sis = new SampleInputStream(new FileInputStream(indir + line));
+			Sample s;
+			while ((s = sis.read()) != null) {
+				if (lda == null)
+					lda = new LDA(s.x.length);
+				lda.accumulate(s);
+			}
 		}
 		
 		br.close();

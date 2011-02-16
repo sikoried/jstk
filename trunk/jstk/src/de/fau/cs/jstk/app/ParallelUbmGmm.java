@@ -45,9 +45,9 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.framed.SimulatedFrameSource;
 import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.trans.NAP;

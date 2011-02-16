@@ -21,35 +21,23 @@
 */
 package de.fau.cs.jstk.io;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.ByteOrder;
+import java.io.LineNumberReader;
+import java.io.Reader;
 import java.util.LinkedList;
 import java.util.List;
 
 import de.fau.cs.jstk.stat.Sample;
 
 /**
- * The SampleReader reads instances of Samples from the given Reader. 
- * You need to specify, if the InputStream provides Sample instances 
- * with or without saved classification result.
+ * The SampleReader reads instances of Samples from the given Reader using an 
+ * internal LineNumberReader.
  * 
  * @author sikoried
  */
-public class SampleReader {
-	/** InputStream to read from */
-	private InputStream is;
-	
-	/** not null if to read ASCII input */
-	private BufferedReader br = null;
-	
-	/** indicates whether the input is expected to have classification results */
-	private boolean classif;
-	
-	/** input feature dimension */
-	private int fd;
+public class SampleReader implements SampleSource {
+	/** read line by line line-by-line */
+	private LineNumberReader lnr = null;
 	
 	/**
 	 * Allocate a new SampleReader to read from the given stream. Indicate if
@@ -59,14 +47,11 @@ public class SampleReader {
 	 * @param classif is the classification result present?
 	 * @throws IOException
 	 */
-	public SampleReader(InputStream is, boolean ascii, boolean classif) throws IOException {
-		this.is = is;
-		this.classif = classif;
-		
-		if (ascii)
-			br = new BufferedReader(new InputStreamReader(is));
+	public SampleReader(Reader rd) throws IOException {
+		if (rd instanceof LineNumberReader)
+			lnr = (LineNumberReader) rd;
 		else
-			fd = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
+			lnr = new LineNumberReader(rd);
 	}
 	
 	/**
@@ -75,106 +60,41 @@ public class SampleReader {
 	 * @throws IOException
 	 */
 	public Sample read() throws IOException {
-		if (br != null)
-			return readFromAscii(br, classif);
-		else
-			return readFromBinary(is, fd, classif);
-	}
-	
-	/**
-	 * Read in a list of Samples from the given InputStream in ASCII format, 
-	 * i.e. line a la "label-no feat1 feat2 ..."
-	 * @param is
-	 * @param classif indicate if the input stream is expected to contain classification results
-	 * @return
-	 * @throws IOException
-	 */
-	public static List<Sample> readFromAscii(InputStream is, boolean classif) throws IOException{
-		List<Sample> list = new LinkedList<Sample>();
-		BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		Sample s;
-		while ((s = readFromAscii(br, classif)) != null) 
-			list.add(s);
-			
-		return list;
-	}
-	
-	/**
-	 * Read a single Sample from the prepared BufferedReader
-	 * @param br
-	 * @param classif indicate if the input stream is expected to contain classification results
-	 * @return
-	 * @throws IOException
-	 */
-	public static Sample readFromAscii(BufferedReader br, boolean classif) throws IOException {
-		String line = br.readLine();
+		String line = lnr.readLine();
 		if (line == null)
 			return null;
 		
 		String [] split = line.trim().split("\\s+");
-				
-		int lab = Integer.parseInt(split[0]);
-		int y = -1;
-		double [] feat = null;
 		
-		int disp = 1;
-		
-		// see if we need to read a classification result
-		if (classif) {
-			y = Integer.parseInt(split[disp]);
-			disp = 2;
-		}
+		if (split.length < 3)
+			throw new IOException("line " + lnr.getLineNumber() + ": no feature data");
+		try {
+			short c = Short.parseShort(split[0]);
+			short y = Short.parseShort(split[1]);
+			double [] x = new double [split.length - 2];
 			
-		feat = new double [split.length - disp];
-		for (int i = 0; i < feat.length; ++i)
-			feat[i] = Double.parseDouble(split[i+disp]);
-		
-		return new Sample(lab, y, feat);
+			for (int i = 0; i < x.length; ++i)
+				x[i] = Double.parseDouble(split[2 + i]);
+			return new Sample(c, y, x);
+		} catch (NumberFormatException e) {
+			throw new IOException("line " + lnr.getLineNumber() + ": invalid number format");
+		}
 	}
 	
 	/**
-	 * Read in a list of Samples from the given InputStream in binary format.
-	 * The expected format is [frame-size][sample1: class-id data...][...]
-	 * @param is
-	 * @param classif indicate if the input stream is expected to contain classification results
+	 * Read in a list of Samples from the given Reader in ASCII format, 
+	 * i.e. line a la "numeric-label feat1 feat2 ..."
+	 * @param rd Reader to read from
 	 * @return
 	 * @throws IOException
 	 */
-	public static List<Sample> readFromBinary(InputStream is, boolean classif) throws IOException {
+	public static List<Sample> readFile(Reader rd) throws IOException{
 		List<Sample> list = new LinkedList<Sample>();
-
-		// read the frame size
-		int fd = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
-		
-		// now read the samples
+		SampleReader sr = new SampleReader(rd);
 		Sample s;
-		while ((s = readFromBinary(is, fd, classif)) != null)
+		while ((s = sr.read()) != null) 
 			list.add(s);
-
+			
 		return list;
-	}
-	
-	/**
-	 * Read a single Sample with the given feature dimension from the stream.
-	 * The expected format is [class-id data...]
-	 * @param is
-	 * @param fd input feature dimension
-	 * @param classif indicate if the stream is expected to contain classification results
-	 * @return
-	 * @throws IOException
-	 */
-	public static Sample readFromBinary(InputStream is, int fd, boolean classif) throws IOException {
-		// read label
-		int c = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
-		int y = -1;
-		
-		if (classif)
-			y = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
-		
-		double [] x = new double [fd];
-		if (!IOUtil.readFloat(is, x, ByteOrder.LITTLE_ENDIAN))
-			return null;
-		
-		return new Sample(c, y, x);
 	}
 }

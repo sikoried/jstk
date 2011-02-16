@@ -23,6 +23,8 @@ package de.fau.cs.jstk.framed;
 
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.FrameSource;
+
 /**
  * Compute the autocorrelation coefficients. Make sure to use a proper window!
  * 

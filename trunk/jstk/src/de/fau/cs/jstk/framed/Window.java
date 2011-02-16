@@ -24,6 +24,7 @@ package de.fau.cs.jstk.framed;
 import java.io.IOException;
 
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
+import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.*;
 
 public abstract class Window implements FrameSource {

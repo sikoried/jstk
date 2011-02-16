@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import de.fau.cs.jstk.exceptions.*;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
+import de.fau.cs.jstk.io.FrameSource;
 
 public class Selection implements FrameSource {
 

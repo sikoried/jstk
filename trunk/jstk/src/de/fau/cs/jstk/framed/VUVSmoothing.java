@@ -23,6 +23,8 @@ package de.fau.cs.jstk.framed;
 
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.FrameSource;
+
 
 /**
  * Voiced/Unvoiced (VUV) smoothing using the minimum length
@@ -84,7 +86,7 @@ public class VUVSmoothing implements FrameSource {
 	 * Read the next frame from the VUVDetection and overwrite the first value by the smoothing decision;
 	 * shifting the rest of the frame
 	 * 
-	 * @see de.fau.cs.jstk.framed.FrameSource#read(double[])
+	 * @see de.fau.cs.jstk.io.FrameSource#read(double[])
 	 */
 	public boolean read(double [] buf) throws IOException {
 		

@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
+import de.fau.cs.jstk.io.FrameSource;
 
 
 public class FilterBank implements FrameSource {

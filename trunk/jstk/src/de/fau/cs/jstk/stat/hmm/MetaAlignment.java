@@ -39,8 +39,8 @@ import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.exceptions.AlignmentException;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
 import de.fau.cs.jstk.exceptions.TrainingException;
-import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameSource;
 
 
 /**

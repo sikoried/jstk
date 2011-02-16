@@ -185,7 +185,7 @@ public class ChunkedDataSet {
 		while ((chunk = nextChunk()) != null) {
 			double [] buf = new double [chunk.getFrameReader().getFrameSize()];
 			while (chunk.reader.read(buf))
-				data.add(new Sample(0, buf));
+				data.add(new Sample((short) 0, buf));
 		}
 		
 		// restore old index

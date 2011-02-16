@@ -21,7 +21,13 @@
 */
 package de.fau.cs.jstk.agmt;
 
-import de.fau.cs.jstk.stat.*;
+import java.io.FileReader;
+import java.util.List;
+
+import de.fau.cs.jstk.io.SampleReader;
+import de.fau.cs.jstk.stat.Density;
+import de.fau.cs.jstk.stat.Sample;
+import de.fau.cs.jstk.stat.Trainer;
 
 /**
  * Compute mue and sigma of a given random variable (double array).
@@ -35,9 +41,8 @@ public class MueSigma {
 	public static void main(String[] args) throws Exception {
 		for (int i = 0; i < args.length; ++i) {
 			try {
-				DataSet ds = new DataSet(args[i]);
-				ds.fromAsciiFile(args[i], -1);
-				Density d = Trainer.ml(ds.samples, true);
+				List<Sample> samples = SampleReader.readFile(new FileReader(args[i]));
+				Density d = Trainer.ml(samples, true);
 				System.out.print(args[i] + ": mue = [");
 				for (double dd : d.mue)
 					System.out.print(" " + dd);
