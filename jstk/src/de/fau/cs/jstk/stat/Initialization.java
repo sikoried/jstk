@@ -448,6 +448,21 @@ public abstract class Initialization {
 		}
 	}
 	
+	static class ClusterSizeRanker extends DensityRanker {
+		/**
+		 * Rank the clusters by number of assigned features. Split the one with
+		 * most samples.
+		 * 
+		 * @param clusters
+		 * @param assignment
+		 */
+		ClusterSizeRanker(List<Density> clusters, HashMap<Integer, LinkedList<Sample>> assignment) {
+			logger.info("ClusterSizeRanker: Sorting the clusters by number of assigned samples");
+			for (Density d : clusters)
+				scores.put(d.id, (double) assignment.get(d.id).size());
+		}
+	}
+	
 	/**
 	 * Rank components by their sum of (absolute) covariances. Fastest comparator.
 	 * 
@@ -646,7 +661,10 @@ public abstract class Initialization {
 		EV,
 		
 		/** Compare by Anderson-Darling statistics */
-		AD_STATISTIC
+		AD_STATISTIC,
+		
+		/** compare by number of assigned samples */
+		NUM_SAMPLES
 	}
 	
 	/**
@@ -688,6 +706,7 @@ public abstract class Initialization {
 			
 			// step 2: estimate components
 			for (Density d : clusters) {
+				logger.info("cluster " + d.id + " has " + assignment.get(d.id).size() + " samples");
 				Density tmp = Trainer.ml(assignment.get(d.id), diagonalCovariances);
 				d.fill(tmp.apr, tmp.mue, tmp.cov);
 			}
@@ -704,7 +723,9 @@ public abstract class Initialization {
 			case AD_STATISTIC:
 				ranker = new AndersonDarlingRanker(clusters, assignment); break;
 			case EV:
-				ranker = new EigenvalueRanker(clusters);
+				ranker = new EigenvalueRanker(clusters); break;
+			case NUM_SAMPLES:
+				ranker = new ClusterSizeRanker(clusters, assignment); break;
 			}
 
 			// rank the estimates by quality

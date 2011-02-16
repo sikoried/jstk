@@ -87,7 +87,8 @@ public class Initializer {
 			+ "                 values\n"
 			+ "    g-ad_score : split the cluster with the highest Anderson-Darling\n"
 			+ "                 statistics\n"
-			+ "    g-ev       : compare densities by the largest EV\n\n"
+			+ "    g-ev       : compare densities by the largest EV\n"
+			+ "    g-size     : split largest cluster first\n\n"
 			+ "    The following initializations provide rather trivial but very fast\n"
 			+ "    initializations:\n\n"
 			+ "    sequential[_<n>] : Add the next <n> samples to the current Gaussian, then\n"
@@ -200,6 +201,10 @@ public class Initializer {
 			estimate = Initialization.hierarchicalGaussianClustering(data,
 					numberOfDensities, diagonalCovariance,
 					DensityRankingMethod.EV);
+		else if (gmm_strategy.equals("g-size"))
+			estimate = Initialization.hierarchicalGaussianClustering(data, 
+					numberOfDensities, diagonalCovariance, 
+					DensityRankingMethod.NUM_SAMPLES);
 		// trivial strategies can be handled right here
 		else if (gmm_strategy.startsWith("sequential")
 				|| gmm_strategy.startsWith("random")
