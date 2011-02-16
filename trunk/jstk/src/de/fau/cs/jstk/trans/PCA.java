@@ -34,7 +34,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.fau.cs.jstk.framed.FrameSource;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.util.Pair;
 
@@ -199,7 +199,7 @@ public class PCA extends Projection {
 		BufferedReader br = new BufferedReader(new FileReader(listf));
 		String line;
 		while ((line = br.readLine()) != null) {
-			FrameReader fr = new FrameReader(new File(indir + line));
+			FrameInputStream fr = new FrameInputStream(new File(indir + line));
 			
 			if (pca == null)
 				pca = new PCA(fr.getFrameSize());

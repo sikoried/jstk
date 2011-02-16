@@ -34,8 +34,8 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.arch.Configuration;
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.util.Pair;
 
@@ -117,8 +117,8 @@ public class Gaussianization {
 		
 		while (iolist.size() > 0) {
 			Pair<String, String> p = iolist.remove();
-			FrameReader fr = new FrameReader(new File(p.a));
-			FrameWriter fw = new FrameWriter(fr.getFrameSize(), new File(p.b));
+			FrameInputStream fr = new FrameInputStream(new File(p.a));
+			FrameOutputStream fw = new FrameOutputStream(fr.getFrameSize(), new File(p.b));
 			
 			LinkedList<double []> data = new LinkedList<double []>();
 			

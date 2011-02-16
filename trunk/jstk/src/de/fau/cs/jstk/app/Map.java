@@ -33,7 +33,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.ChunkedDataSet;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.stat.Trainer;
@@ -179,7 +179,7 @@ public class Map {
 				logger.info("Map.main(): " + infile + " <- " + p.a + " => " + p.b);
 				logger.info("Map.main(): Reading feature data...");
 				
-				FrameReader fr = new FrameReader(p.a, true, ufv);
+				FrameInputStream fr = new FrameInputStream(p.a, true, ufv);
 				List<Sample> data = new LinkedList<Sample>();
 				double [] buf = new double [fr.getFrameSize()];
 				while (fr.read(buf))

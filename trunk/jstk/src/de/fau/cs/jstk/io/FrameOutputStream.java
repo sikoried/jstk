@@ -29,13 +29,13 @@ import java.io.OutputStream;
 import java.nio.ByteOrder;
 
 /**
- * Use the FrameWriter class to write Frame format data. The format is binary
+ * Use the FrameOutputStream class to write Frame format data. The format is binary
  * and places a (little endian) int as frame size and subsequent doubles or
  * floats as requested.
  * 
  * @author sikoried
  */
-public class FrameWriter {
+public class FrameOutputStream {
 	
 	/** OutputStream to write to */
 	private OutputStream os = System.out;
@@ -47,33 +47,33 @@ public class FrameWriter {
 	private boolean floats = true;
 	
 	/**
-	 * Generate a FrameWriter that writes a frame size and then floats to STDOUT
+	 * Generate a FrameOutputStream that writes a frame size and then floats to STDOUT
 	 * @param frameSize size of output frames
 	 * @throws IOException
 	 */
-	public FrameWriter(int frameSize) throws IOException {
+	public FrameOutputStream(int frameSize) throws IOException {
 		fs = frameSize;
 		initialize(true);
 	}
 	
 	/**
-	 * Generate a FrameWriter that writes to stdout
+	 * Generate a FrameOutputStream that writes to stdout
 	 * @param frameSize size of output frames
 	 * @throws IOException
 	 */
-	public FrameWriter(int frameSize, boolean floats) throws IOException {
+	public FrameOutputStream(int frameSize, boolean floats) throws IOException {
 		fs = frameSize;
 		this.floats = floats;
 		initialize(true);
 	}
 	
 	/**
-	 * Generate a FrameWriter that writes to the given file
+	 * Generate a FrameOutputStream that writes to the given file
 	 * @param frameSize
 	 * @param file if null, STDOUT is assigned
 	 * @throws IOException
 	 */
-	public FrameWriter(int frameSize, File file) throws IOException {
+	public FrameOutputStream(int frameSize, File file) throws IOException {
 		fs = frameSize;
 		if (file != null)
 			os = new BufferedOutputStream(new FileOutputStream(file));
@@ -82,13 +82,13 @@ public class FrameWriter {
 	}
 	
 	/**
-	 * Generate a FrameWriter that writes to the given file
+	 * Generate a FrameOutputStream that writes to the given file
 	 * @param frameSize
 	 * @param file is null, STDOUT is assigned
 	 * @param floats 
 	 * @throws IOException
 	 */
-	public FrameWriter(int frameSize, File file, boolean floats) throws IOException {
+	public FrameOutputStream(int frameSize, File file, boolean floats) throws IOException {
 		fs = frameSize;
 		this.floats = floats;
 		if (file != null)
@@ -98,14 +98,14 @@ public class FrameWriter {
 	}
 	
 	/**
-	 * Generate a FrameWriter that writes to the given file
+	 * Generate a FrameOutputStream that writes to the given file
 	 * @param frameSize
 	 * @param file is null, STDOUT is assigned
 	 * @param floats 
 	 * @param header write header (frame size as int)
 	 * @throws IOException
 	 */
-	public FrameWriter(int frameSize, File file, boolean floats, boolean header) throws IOException {
+	public FrameOutputStream(int frameSize, File file, boolean floats, boolean header) throws IOException {
 		fs = frameSize;
 		this.floats = floats;
 		if (file != null)

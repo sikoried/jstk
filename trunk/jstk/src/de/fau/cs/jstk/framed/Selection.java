@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import de.fau.cs.jstk.exceptions.*;
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 
 public class Selection implements FrameSource {
 
@@ -243,7 +243,7 @@ public class Selection implements FrameSource {
 		}
 		
 		// get a STDIN frame reader
-		FrameReader fr = (ufvin ? new FrameReader(null, true, ufvdim) : new FrameReader());
+		FrameInputStream fr = (ufvin ? new FrameInputStream(null, true, ufvdim) : new FrameInputStream());
 		
 		// attach to selection
 		FrameSource selection = Selection.create(fr, parameter);
@@ -251,9 +251,9 @@ public class Selection implements FrameSource {
 		double [] buf = new double [selection.getFrameSize()];
 		
 		// get a STDOUT frame writer if required
-		FrameWriter fw = null;
+		FrameOutputStream fw = null;
 		if (!ascii) {
-			fw = (ufvout ? new FrameWriter(buf.length, true) : new FrameWriter(buf.length));
+			fw = (ufvout ? new FrameOutputStream(buf.length, true) : new FrameOutputStream(buf.length));
 		}
 		
 		// read the frames, select

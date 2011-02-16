@@ -44,7 +44,7 @@ import de.fau.cs.jstk.decoder.ViterbiBeamSearch;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
 import de.fau.cs.jstk.exceptions.AlignmentException;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.lm.FixedSequences;
 import de.fau.cs.jstk.stat.hmm.MetaAlignment;
 import de.fau.cs.jstk.stat.hmm.MetaAlignment.Turn;
@@ -131,7 +131,7 @@ public class Aligner {
 			try {
 				Turn t;
 				while ((t = distributor.next()) != null) {
-					FrameReader fs = new FrameReader(new File(t.canonicalInputName()));
+					FrameInputStream fs = new FrameInputStream(new File(t.canonicalInputName()));
 					MetaAlignment ma = new MetaAlignment(fs, tok.getSentenceTokenization(t.transcription), tt, forced);
 					BufferedWriter bw = new BufferedWriter(new FileWriter(t.canonicalOutputName()));
 					ma.write(bw);
@@ -212,7 +212,7 @@ public class Aligner {
 					ViterbiBeamSearch dec = new ViterbiBeamSearch(root, 0., 1.);
 					
 					// read data and evaluate
-					FrameReader fs = new FrameReader(new File(t.canonicalInputName()));
+					FrameInputStream fs = new FrameInputStream(new File(t.canonicalInputName()));
 					List<double []> obs = new LinkedList<double []>();
 					double [] buf = new double [fs.getFrameSize()];
 					
@@ -236,7 +236,7 @@ public class Aligner {
 					if (h0 == null) {
 						// fall back to real viterbi
 						logger.info("Aligner.BWorker.run(): " + t.fileName + " no best hypothesis, falling back to regular Viterbi!");
-						fs = new FrameReader(new File(t.canonicalInputName()));
+						fs = new FrameInputStream(new File(t.canonicalInputName()));
 						ma = new MetaAlignment(fs, tok.getSentenceTokenization(t.transcription), tt, true);
 					} else
 						ma = h0.toMetaAlignment(tt);

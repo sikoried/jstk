@@ -28,8 +28,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 
 public class Concat {
 	public static final String SYNOPSIS = 
@@ -67,8 +67,8 @@ public class Concat {
 		}
 		
 		// read in all the frames, write them to output file.
-		FrameReader reader = new FrameReader(new File(files.remove()));
-		FrameWriter writer = new FrameWriter(reader.getFrameSize(), new File(outfile));
+		FrameInputStream reader = new FrameInputStream(new File(files.remove()));
+		FrameOutputStream writer = new FrameOutputStream(reader.getFrameSize(), new File(outfile));
 		
 		double [] buf = new double [reader.getFrameSize()];
 		
@@ -79,7 +79,7 @@ public class Concat {
 		
 		while (files.size() > 0) {
 			String f = files.remove();
-			reader = new FrameReader(new File(f));
+			reader = new FrameInputStream(new File(f));
 			
 			// ensure correct frame size
 			if (reader.getFrameSize() != buf.length)

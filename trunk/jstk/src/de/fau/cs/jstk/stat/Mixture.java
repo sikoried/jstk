@@ -37,8 +37,8 @@ import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.util.Arithmetics;
 import de.fau.cs.jstk.util.Pair;
@@ -649,8 +649,8 @@ public final class Mixture {
 			
 			// process files
 			while (inlist.size() > 0) {
-				FrameReader reader = new FrameReader(new File(inlist.remove()));
-				FrameWriter writer = new FrameWriter(cb.nd + 1, new File(outlist.remove()));
+				FrameInputStream reader = new FrameInputStream(new File(inlist.remove()));
+				FrameOutputStream writer = new FrameOutputStream(cb.nd + 1, new File(outlist.remove()));
 				
 				// read, evaluate, write
 				while (reader.read(x)) {
@@ -737,17 +737,17 @@ public final class Mixture {
 				while (inlist.size() > 0) {
 					Mixture md = Mixture.readFromFile(new File(inlist.remove()));
 					double [] sv = md.superVector(p, m, c);
-					FrameWriter fw = new FrameWriter(sv.length, new File(outlist.remove()));
+					FrameOutputStream fw = new FrameOutputStream(sv.length, new File(outlist.remove()));
 					fw.write(sv);
 					fw.close();
 				}
 			} else {
-				FrameWriter fw = null;
+				FrameOutputStream fw = null;
 				while (inlist.size() > 0) {
 					Mixture md = Mixture.readFromFile(new File(inlist.remove()));
 					double [] sv = md.superVector(p, m, c);
 					if (fw == null)
-						fw = new FrameWriter(sv.length, new File(singleOutFile));
+						fw = new FrameOutputStream(sv.length, new File(singleOutFile));
 					else if (fw.getFrameSize() != sv.length)
 						throw new RuntimeException("MixtureDensity dimensions are inconsistent!");
 					fw.write(sv);

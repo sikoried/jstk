@@ -40,7 +40,7 @@ import de.fau.cs.jstk.exceptions.AlignmentException;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
 import de.fau.cs.jstk.exceptions.TrainingException;
 import de.fau.cs.jstk.framed.FrameSource;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 
 
 /**
@@ -249,8 +249,8 @@ public class MetaAlignment {
 		// check if the observation sequence is long enough
 		if (cache.size() < meta.ns) {
 			logger.fatal("MetaAlignment.align(): observation shorter than meta HMM");
-			if (source instanceof FrameReader)
-				logger.fatal("possibly broken file or transcription: " + ((FrameReader) source).getFileName(true));
+			if (source instanceof FrameInputStream)
+				logger.fatal("possibly broken file or transcription: " + ((FrameInputStream) source).getFileName(true));
 			
 			throw new AlignmentException("MetaAlignment.align(): observation shorter than meta HMM");
 		}
@@ -289,8 +289,8 @@ public class MetaAlignment {
 				logger.fatal("MetaAlignment.align(): observation subsequence shorter than number of states at submodel " + i);
 				logger.fatal(meta.toString());
 				logger.fatal(a.toString());
-				if (source instanceof FrameReader)
-					logger.fatal("possible file or transcription: " + ((FrameReader) source).getFileName(true));
+				if (source instanceof FrameInputStream)
+					logger.fatal("possible file or transcription: " + ((FrameInputStream) source).getFileName(true));
 				
 				throw new AlignmentException("MetaAlignment.align(): observation subsequence shorter than token HMM");
 			}
@@ -338,8 +338,8 @@ public class MetaAlignment {
 			if (data.size() < length) {
 				// throw new IOException("MetaAlignment.read(): Alignment is too long for feature file, aborting.");
 				logger.info("MetaAlignment.read(): alignment is too long, shortening to feature sequence! Are you using manual alignments?");
-				if (source instanceof FrameReader)
-					logger.info("possibly broken file or transcription: " + ((FrameReader) source).getFileName(true));
+				if (source instanceof FrameInputStream)
+					logger.info("possibly broken file or transcription: " + ((FrameInputStream) source).getFileName(true));
 				length = data.size();
 			}
 			

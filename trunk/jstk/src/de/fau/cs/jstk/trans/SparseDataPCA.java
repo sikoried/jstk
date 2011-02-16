@@ -31,7 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import de.fau.cs.jstk.framed.FrameSource;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 
 import FJama.Matrix;
 import FJama.SingularValueDecomposition;
@@ -144,7 +144,7 @@ public class SparseDataPCA extends Projection {
 		BufferedReader br = new BufferedReader(new FileReader(listf));
 		String line;
 		while ((line = br.readLine()) != null) {
-			FrameReader fr = new FrameReader(new File(indir + line));
+			FrameInputStream fr = new FrameInputStream(new File(indir + line));
 			
 			if (pca == null)
 				pca = new SparseDataPCA(fr.getFrameSize());

@@ -25,7 +25,7 @@ package de.fau.cs.jstk.framed;
 import java.io.File;
 import java.io.IOException;
 
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.sampled.RawAudioFormat;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
@@ -205,7 +205,7 @@ public class FFT extends SpectralTransformation implements FrameSource {
 		Window w = Window.create(as, sWindow);
 		FrameSource spec = new FFT(w);
 		
-		FrameWriter fw = (outFile == null ? null : new FrameWriter(spec.getFrameSize(), new File(outFile)));
+		FrameOutputStream fw = (outFile == null ? null : new FrameOutputStream(spec.getFrameSize(), new File(outFile)));
 		
 		double [] buf = new double [spec.getFrameSize()];
 		

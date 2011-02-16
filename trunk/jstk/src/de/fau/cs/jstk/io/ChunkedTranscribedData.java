@@ -32,13 +32,13 @@ public final class ChunkedTranscribedData {
 	private int cind = 0;
 	
 	/**
-	 * A chunk consists of its name and a (ready-to-read) FrameReader
+	 * A chunk consists of its name and a (ready-to-read) FrameInputStream
 	 * @author sikoried
 	 *
 	 */
 	public static final class Chunk {
 		/**
-		 * Create a new Chunk and prepare the FrameReader to read from the given
+		 * Create a new Chunk and prepare the FrameInputStream to read from the given
 		 * file.
 		 * 
 		 * @param fileName
@@ -58,7 +58,7 @@ public final class ChunkedTranscribedData {
 		public void init() throws IOException {
 			if (reader != null)
 				reader.close();
-			reader = new FrameReader(new File(fileName));
+			reader = new FrameInputStream(new File(fileName));
 		}
 		
 		public void finalize() {
@@ -70,8 +70,8 @@ public final class ChunkedTranscribedData {
 			}
 		}
 		
-		/** FrameReader */
-		public FrameReader reader;
+		/** FrameInputStream */
+		public FrameInputStream reader;
 		
 		/** The word sequence for this training file */
 		public String [] words;

@@ -45,7 +45,7 @@ import de.fau.cs.jstk.arch.Configuration;
 import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.exceptions.AlignmentException;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.stat.hmm.MetaAlignment;
 import de.fau.cs.jstk.util.Pair;
 
@@ -130,7 +130,7 @@ public class IWRecognizer {
 					// generate candidates
 					List<Pair<Double, String>> hyp = new LinkedList<Pair<Double, String>>();
 					for (String w : cand) {
-						FrameReader fs = new FrameReader(new File(distributor.dir + System.getProperty("file.separator") + f.a));
+						FrameInputStream fs = new FrameInputStream(new File(distributor.dir + System.getProperty("file.separator") + f.a));
 						MetaAlignment ma = new MetaAlignment(fs, conf.tok.getSentenceTokenization(sil + " " + w + " " + sil), conf.tt, true);
 						hyp.add(new Pair<Double, String>(ma.score, w));
 						fs.close();

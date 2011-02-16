@@ -125,11 +125,11 @@ public class Convert {
 		
 		// possible readers
 		BufferedReader br = null;
-		FrameReader fr = null;
+		FrameInputStream fr = null;
 		SampleReader sr = null;
 		
 		// possible writers
-		FrameWriter fw = null;
+		FrameOutputStream fw = null;
 		SampleWriter sw = null;
 		
 		switch (inFormat) {
@@ -137,8 +137,8 @@ public class Convert {
 		case SAMPLE_B: sr = new SampleReader(System.in, false, false); break;
 		case CSAMPLE_A: sr = new SampleReader(System.in, true, true); break;
 		case CSAMPLE_B: sr = new SampleReader(System.in, false, true); break;
-		case FRAME: fr = new FrameReader(); fd = fr.getFrameSize(); break;
-		case FRAME_DOUBLE: fr = new FrameReader(null, false); fd = fr.getFrameSize(); break;
+		case FRAME: fr = new FrameInputStream(); fd = fr.getFrameSize(); break;
+		case FRAME_DOUBLE: fr = new FrameInputStream(null, false); fd = fr.getFrameSize(); break;
 		case ASCII:
 		case ASCII_L:
 			br = new BufferedReader(new InputStreamReader(System.in));
@@ -149,7 +149,7 @@ public class Convert {
 		// read until done...
 		while (true) {
 			Sample s = null;
-			byte [] label = null;
+			int label = 0;
 			
 			// try to read...
 			switch (inFormat) {
@@ -165,19 +165,20 @@ public class Convert {
 				s = sr.read();
 				break;
 			case LFV:
-				label = new byte [LABEL_SIZE];
-				if (!IOUtil.readByte(System.in, label))
+				byte [] bl = new byte [LABEL_SIZE];
+				if (!IOUtil.readByte(System.in, bl))
 					break;
+				String textual = new String(bl);
+				try {
+					label = Integer.parseInt(textual);
+				} catch (NumberFormatException e) {
+					throw new IOException("Invalid label '" + textual + "' -- only numeric labels allowed!");
+				}
 			case UFV:
 				if (!IOUtil.readFloat(System.in, buf, ByteOrder.LITTLE_ENDIAN)) 
 					break;
 				
-				int length = 0;
-				while (label != null && length < label.length && label[length] != 0)
-					length++;
-				String ls = (label == null ? null : new String(label, 0, length, "ASCII"));
-				s = new Sample(label == null ? 0 : lookup1.get(ls), buf);
-
+				s = new Sample(label, buf);
 				break;
 			case ASCII:
 			case ASCII_L:
@@ -186,15 +187,12 @@ public class Convert {
 					break;
 				String [] cols = line.trim().split("\\s+");
 				int i1 = 0;
-				ls = null;
 				
-				if (inFormat == Format.ASCII_L)
-					ls = cols[i1++];
-				
-				if (!lookup1.containsKey(ls)) {
-					lookup1.put(ls, lab);
-					lookup2.put(lab, ls);
-					lab++;
+				try {
+					if (inFormat == Format.ASCII_L)
+						label = Integer.parseInt(cols[i1++]);
+				} catch (NumberFormatException e) {
+					throw new IOException("Invalid label '" + cols[i1-1] + "' -- only numeric labels allowed");
 				}
 				
 				int i2 = 0;
@@ -202,7 +200,7 @@ public class Convert {
 				for (; i1 < cols.length; ++i1)
 					buf[i2++] = Double.parseDouble(cols[i1]);
 				
-				s = new Sample(ls == null ? 0 : lookup1.get(ls), buf);
+				s = new Sample(label, buf);
 			}
 			
 			// anything read?
@@ -233,17 +231,17 @@ public class Convert {
 				break;
 			case FRAME:
 				if (fw == null)
-					fw = new FrameWriter(s.x.length);
+					fw = new FrameOutputStream(s.x.length);
 				fw.write(s.x);
 				break;
 			case FRAME_DOUBLE:
 				if (fw == null)
-					fw = new FrameWriter(s.x.length, false);
+					fw = new FrameOutputStream(s.x.length, false);
 				fw.write(s.x);
 				break;
 			case LFV:
 				byte [] outlabel1 = new byte [LABEL_SIZE];
-				byte [] outlabel2 = (s.c == 0 ? "UNSET".getBytes("ASCII") : lookup2.get(s.c).getBytes("ASCII"));
+				byte [] outlabel2 = Integer.toString(s.c).getBytes();
 				for (int i = 0; i < LABEL_SIZE; ++i) {
 					if (i < outlabel2.length)
 						outlabel1[i] = outlabel2[i];
@@ -263,8 +261,7 @@ public class Convert {
 				System.out.write(bb.array());
 				break;
 			case ASCII_L:
-				String lab = lookup2.get(s.c);
-				System.out.print((lab == null ? "UNSET" : lab) + "\t");
+				System.out.print(Integer.toString(s.c) + "\t");
 			case ASCII:
 				for (int i = 0; i < s.x.length; ++i) {
 					System.out.print(s.x[i]);
