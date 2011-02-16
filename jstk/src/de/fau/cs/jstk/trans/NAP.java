@@ -45,8 +45,8 @@ import org.apache.log4j.Logger;
 
 import FJama.EigenvalueDecomposition;
 import FJama.Matrix;
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.util.Pair;
 
@@ -668,7 +668,7 @@ public class NAP {
 				for (int f = argOffset; f < args.length; ++f) {
 					logger.info("NAP.main(): reading channel " + args[f]);
 	
-					FrameReader fr = new FrameReader(new File(args[f]));
+					FrameInputStream fr = new FrameInputStream(new File(args[f]));
 					
 					// allocate or check buffer
 					if (buf == null)
@@ -706,7 +706,7 @@ public class NAP {
 					
 					int nf = 0;
 					for (String f : files) {
-						FrameReader fr = new FrameReader(new File(ch + System.getProperty("file.separator") + f));
+						FrameInputStream fr = new FrameInputStream(new File(ch + System.getProperty("file.separator") + f));
 						
 						if (buf == null)
 							buf = new float [fr.getFrameSize()];
@@ -789,7 +789,7 @@ public class NAP {
 			BufferedReader br = new BufferedReader(new FileReader(list));
 			while ((outf = br.readLine()) != null) {
 				// read in file
-				FrameReader fr = new FrameReader(new File(inDir == null ? outf : inDir + System.getProperty("file.separator") + outf));
+				FrameInputStream fr = new FrameInputStream(new File(inDir == null ? outf : inDir + System.getProperty("file.separator") + outf));
 				LinkedList<float []> xx = new LinkedList<float []>();
 				float [] buf = new float [fr.getFrameSize()];
 				while (fr.read(buf))
@@ -806,7 +806,7 @@ public class NAP {
 				nap.project(x, rank);
 					
 				// write out
-				FrameWriter fw = new FrameWriter(nap.getDimension(), new File(outd + System.getProperty("file.separator") + outf));
+				FrameOutputStream fw = new FrameOutputStream(nap.getDimension(), new File(outd + System.getProperty("file.separator") + outf));
 				for (float [] px : x)
 					fw.write(px);
 				fw.close();

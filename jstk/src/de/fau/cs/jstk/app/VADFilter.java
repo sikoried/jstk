@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 
 import de.fau.cs.jstk.framed.FrameSource;
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 
 public class VADFilter {
 
@@ -125,8 +125,8 @@ public class VADFilter {
 			String f3 = lfOut.remove();
 			
 			// init I/O
-			FrameSource fs1 = new FrameReader(new File(f1));
-			FrameWriter fw = new FrameWriter(fs1.getFrameSize(), new File(f3));
+			FrameSource fs1 = new FrameInputStream(new File(f1));
+			FrameOutputStream fw = new FrameOutputStream(fs1.getFrameSize(), new File(f3));
 			
 			// read in VAD
 			BufferedReader br = new BufferedReader(new FileReader(f2));
@@ -158,7 +158,7 @@ public class VADFilter {
 			
 			fw.close();
 			
-			((FrameReader) fs1).close();
+			((FrameInputStream) fs1).close();
 			br.close();
 		}
 	}

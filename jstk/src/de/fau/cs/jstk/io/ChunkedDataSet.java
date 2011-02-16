@@ -40,14 +40,14 @@ public class ChunkedDataSet {
 	private int fs = 0;  // frame size for all chunks
 	
 	/**
-	 * A chunk consists of its name and a (ready-to-read) FrameReader
+	 * A chunk consists of its name and a (ready-to-read) FrameInputStream
 	 */
 	public class Chunk {
 		/** file to work on */
 		private File file;
 		
 		/**
-		 * Create a new Chunk and prepare the FrameReader to read from the given
+		 * Create a new Chunk and prepare the FrameInputStream to read from the given
 		 * file.
 		 * 
 		 * @param fileName
@@ -57,15 +57,15 @@ public class ChunkedDataSet {
 			this.file = file;
 		}
 		
-		/** FrameReader allocated on demand */
-		private FrameReader reader = null;
+		/** FrameInputStream allocated on demand */
+		private FrameInputStream reader = null;
 		
 		/**
-		 * Get the initialized FrameReader
+		 * Get the initialized FrameInputStream
 		 */
-		public FrameReader getFrameReader() throws IOException {
+		public FrameInputStream getFrameReader() throws IOException {
 			if (reader == null)
-				reader = new FrameReader(file, true, fs);
+				reader = new FrameInputStream(file, true, fs);
 			
 			return reader;
 		}

@@ -117,31 +117,33 @@ public final class DensityFull extends Density {
 	/** Update the internal variables. Required after modification. */
 	public void update() {
 		// check for NaN!
-		StringBuffer nanFixes = new StringBuffer();
-		StringBuffer minFixes = new StringBuffer();
+		long nans = 0;
+		long minc = 0;
+		
 		for (int i = 0; i < fd; ++i) {
 			if (Double.isNaN(mue[i])) {
 				mue[i] = 0;
-				nanFixes.append(" mue[" + i + "]");
+				nans++;
 			}
 			if (Double.isNaN(cov[i])) {
 				cov[i] = MIN_COV;
-				nanFixes.append(" cov[" + i + "]");
+				nans++;
 			} else if (Math.abs(cov[i]) < MIN_COV) {
 				double sig = (cov[i] >= 0. ? 1. : -1.);
 				cov[i] = sig * MIN_COV;
-				minFixes.append(" " + i);
+				minc++;
 			}
 		}
+		
 		// some more values to check for full covariance...
 		for (int i = fd; i < cov.length; ++i) {
 			if (Double.isNaN(cov[i])) {
 				cov[i] = MIN_COV;
-				nanFixes.append(" cov[" + i + "]");
+				nans++;
 			} else if (Math.abs(cov[i]) < MIN_COV) {
 				double sig = (cov[i] >= 0. ? 1. : -1.); 
 				cov[i] = sig * MIN_COV;
-				minFixes.append(" " + i);
+				minc++;
 			}
 		}
 		
@@ -150,13 +152,13 @@ public final class DensityFull extends Density {
 		if (Double.isNaN(apr) || Double.isNaN(lapr)) {
 			apr = 1e-10;
 			lapr = Math.log(1e-10);
-			nanFixes.append(" apr");
+			nans++;
 		}
 		
-		if (nanFixes.length() > 0)
-			logger.fatal("Density#" + id + ".update(): fixed NaN at:" + nanFixes.toString());
-		if (minFixes.length() > 0)
-			logger.info("Density#" + id + ".update(): enforced min cov at:" + minFixes.toString());
+		if (nans > 0)
+			logger.fatal("Density#" + id + ".update(): fixed " + nans + " NaN values (this should NEVER be!)");
+		if (minc > 0)
+			logger.info("Density#" + id + ".update(): enforced " + minc + " minimum covariances");
 		
 		
 		// construct the matrix

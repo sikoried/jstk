@@ -37,8 +37,8 @@ import java.util.List;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.stat.Trainer;
@@ -401,7 +401,7 @@ public class MVN implements FrameSource {
 			// read all data
 			LinkedList<Sample> cache = new LinkedList<Sample>();
 			for (Pair<String, String> p : iolist) {
-				FrameReader fr = new FrameReader(new File(p.a));
+				FrameInputStream fr = new FrameInputStream(new File(p.a));
 				double [] buf = new double [fr.getFrameSize()];
 				while (fr.read(buf))
 					cache.add(new Sample(0, buf));
@@ -421,7 +421,7 @@ public class MVN implements FrameSource {
 			// for individual CMVN, we need to process the data first -- if not read from file
 			if (!cumulative && parameterInputFile == null) {
 				work.resetStatistics();
-				work.extendStatistics(new FrameReader(new File(p.a)));
+				work.extendStatistics(new FrameInputStream(new File(p.a)));
 				
 				if (parameterOutputFile != null)
 					work.saveToFile(parameterOutputFile);
@@ -430,8 +430,8 @@ public class MVN implements FrameSource {
 			if (simulate)
 				continue;
 			
-			work.setFrameSource(new FrameReader(new File(p.a)));
-			FrameWriter fw = new FrameWriter(work.getFrameSize(), new File(p.b));
+			work.setFrameSource(new FrameInputStream(new File(p.a)));
+			FrameOutputStream fw = new FrameOutputStream(work.getFrameSize(), new File(p.b));
 			double [] buf = new double [work.getFrameSize()];
 			
 			// read and normalize all samples

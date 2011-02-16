@@ -30,8 +30,8 @@ import java.util.List;
 import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.framed.Selection;
 import de.fau.cs.jstk.framed.SimulatedFrameSource;
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 
 
 public final class Merge {
@@ -67,12 +67,12 @@ public final class Merge {
 					String [] tok = args[i].split(":");
 					if (tok.length == 1)
 						sources.add(cache ? 
-								new SimulatedFrameSource(new FrameReader(new File(tok[0]))) 
-								: new FrameReader(new File(tok[0])));
+								new SimulatedFrameSource(new FrameInputStream(new File(tok[0]))) 
+								: new FrameInputStream(new File(tok[0])));
 					else if (tok.length == 2)
 						sources.add(cache ? 
-								new SimulatedFrameSource(Selection.create(new FrameReader(new File(tok[0])), tok[1])) 
-								: Selection.create(new FrameReader(new File(tok[0])), tok[1]));
+								new SimulatedFrameSource(Selection.create(new FrameInputStream(new File(tok[0])), tok[1])) 
+								: Selection.create(new FrameInputStream(new File(tok[0])), tok[1]));
 					else
 						throw new IOException("Merge.main(): malformed parameter string at argument " + i);
 				}
@@ -87,7 +87,7 @@ public final class Merge {
 		}
 		
 		System.err.println("writing " + outf + " fs=" + outdim);
-		FrameWriter fw = new FrameWriter(outdim, new File(outf));
+		FrameOutputStream fw = new FrameOutputStream(outdim, new File(outf));
 		
 		double [] buf = new double [outdim];
 		boolean done = false;

@@ -41,7 +41,7 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.arch.Codebook;
 import de.fau.cs.jstk.arch.Configuration;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.stat.hmm.Alignment;
 import de.fau.cs.jstk.stat.hmm.MetaAlignment;
 import de.fau.cs.jstk.stat.hmm.MetaAlignment.Turn;
@@ -152,7 +152,7 @@ public class Trainer {
 				// work off all jobs
 				Job job;
 				while ((job = dist.next()) != null) {
-					FrameReader fs = new FrameReader(new File(job.turn.canonicalInputName()));
+					FrameInputStream fs = new FrameInputStream(new File(job.turn.canonicalInputName()));
 					
 					// generate requested alignment
 					MetaAlignment ma = null;

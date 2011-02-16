@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.ChunkedDataSet;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.util.Arithmetics;
 
 
@@ -238,7 +238,7 @@ public final class ParallelEM {
 				
 				// as long as we have chunks to do... NB: data is (synchronized) from ParallelEM!
 				while ((chunk = data.nextChunk()) != null) {
-					FrameReader source = chunk.getFrameReader();
+					FrameInputStream source = chunk.getFrameReader();
 						
 					while (source.read(f)) {
 						work.evaluate(f);

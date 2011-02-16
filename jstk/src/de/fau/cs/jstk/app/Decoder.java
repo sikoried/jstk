@@ -43,7 +43,7 @@ import de.fau.cs.jstk.arch.TokenTree.TreeNode;
 import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.lm.Unigram;
 
 public class Decoder {
@@ -196,7 +196,7 @@ public class Decoder {
 		
 		for (String f : files) {
 			logger.info("reading " + f);
-			FrameReader fr = new FrameReader(new File(f));
+			FrameInputStream fr = new FrameInputStream(new File(f));
 			double [] buf = new double [fr.getFrameSize()];
 			LinkedList<double []> obs = new LinkedList<double []>();
 			

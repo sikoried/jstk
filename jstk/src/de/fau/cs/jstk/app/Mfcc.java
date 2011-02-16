@@ -41,7 +41,7 @@ import de.fau.cs.jstk.framed.Selection;
 import de.fau.cs.jstk.framed.Slope;
 import de.fau.cs.jstk.framed.SpectralTransformation;
 import de.fau.cs.jstk.framed.Window;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.sampled.AudioCapture;
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioSource;
@@ -553,7 +553,7 @@ public class Mfcc implements FrameSource {
 			
 			double [] buf = new double [mfcc.getFrameSize()];
 			
-			FrameWriter writer = new FrameWriter(buf.length, new File(outFile));
+			FrameOutputStream writer = new FrameOutputStream(buf.length, new File(outFile));
 			while (mfcc.read(buf))
 				writer.write(buf);
 			

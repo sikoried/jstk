@@ -32,7 +32,7 @@ import de.fau.cs.jstk.framed.FrameSource;
  * 
  * @author sikoried
  */
-public class FrameReader implements de.fau.cs.jstk.framed.FrameSource {
+public class FrameInputStream implements de.fau.cs.jstk.framed.FrameSource {
 
 	/** input buffer size (1MB) */
 	private static final int BUF_SIZE = 1048576;
@@ -50,19 +50,19 @@ public class FrameReader implements de.fau.cs.jstk.framed.FrameSource {
 	private boolean floats = true;
 	
 	/**
-	 * Initialize a FrameReader from STDIN
+	 * Initialize a FrameInputStream from STDIN
 	 * @throws IOException
 	 */
-	public FrameReader() throws IOException {
+	public FrameInputStream() throws IOException {
 		initialize(true);
 	}
 	
 	/**
-	 * Initialize a new FrameReader on the given file	
+	 * Initialize a new FrameInputStream on the given file	
 	 * @param file
 	 * @throws IOException
 	 */
-	public FrameReader(File file) throws IOException {
+	public FrameInputStream(File file) throws IOException {
 		this.file = file;
 		
 		if (file != null)
@@ -72,12 +72,12 @@ public class FrameReader implements de.fau.cs.jstk.framed.FrameSource {
 	}
 	
 	/**
-	 * Initialize a FrameReader on the given file.
+	 * Initialize a FrameInputStream on the given file.
 	 * @param file
 	 * @param floats
 	 * @throws IOException
 	 */
-	public FrameReader(File file, boolean floats) throws IOException {
+	public FrameInputStream(File file, boolean floats) throws IOException {
 		this.floats = floats;
 		this.file = file;
 		
@@ -88,13 +88,13 @@ public class FrameReader implements de.fau.cs.jstk.framed.FrameSource {
 	}
 	
 	/**
-	 * Initialize a FrameReader on the given file but do not read header
+	 * Initialize a FrameInputStream on the given file but do not read header
 	 * @param file
 	 * @param floats
 	 * @param fs frame size to assume (0 for frame format)
 	 * @throws IOException
 	 */
-	public FrameReader(File file, boolean floats, int fs) throws IOException {
+	public FrameInputStream(File file, boolean floats, int fs) throws IOException {
 		this.floats = floats;
 		this.file = file;
 		this.fs = fs;
@@ -148,7 +148,7 @@ public class FrameReader implements de.fau.cs.jstk.framed.FrameSource {
 	}
 	
 	/**
-	 * Close the FrameReader's input file
+	 * Close the FrameInputStream's input file
 	 * @throws IOException
 	 */
 	public void close() throws IOException {
@@ -165,7 +165,7 @@ public class FrameReader implements de.fau.cs.jstk.framed.FrameSource {
 	}
 	
 	public String toString() {
-		return "FrameReader: source=" + (file == null ? "stdin" : file.getAbsolutePath()) + " frame_size=" + fs;
+		return "FrameInputStream: source=" + (file == null ? "stdin" : file.getAbsolutePath()) + " frame_size=" + fs;
 	}
 	
 	/** indicator for EOF */

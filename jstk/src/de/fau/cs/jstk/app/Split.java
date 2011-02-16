@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.util.Pair;
 
 
@@ -63,12 +63,12 @@ public class Split {
 		if (segs.size() == 0)
 			throw new IOException("Split.main(): no output files listed!");
 		
-		FrameReader fr = new FrameReader(new File(file));
+		FrameInputStream fr = new FrameInputStream(new File(file));
 		float [] buf = new float [fr.getFrameSize()];
 		
 		int i = 0;
 		Pair<String, Integer> p = segs.remove(0);
-		FrameWriter fw = new FrameWriter(fr.getFrameSize(), new File(outd == null ? p.a : outd + System.getProperty("file.separator") + p.a));
+		FrameOutputStream fw = new FrameOutputStream(fr.getFrameSize(), new File(outd == null ? p.a : outd + System.getProperty("file.separator") + p.a));
 		
 		while (fr.read(buf)) {
 			fw.write(buf);
@@ -83,7 +83,7 @@ public class Split {
 				
 				p = segs.remove(0);
 				fw.close();
-				fw = new FrameWriter(fr.getFrameSize(), new File(outd == null ? p.a : outd + System.getProperty("file.separator") + p.a));
+				fw = new FrameOutputStream(fr.getFrameSize(), new File(outd == null ? p.a : outd + System.getProperty("file.separator") + p.a));
 				i = 0;
 			}
 		}

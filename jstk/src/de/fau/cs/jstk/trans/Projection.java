@@ -29,8 +29,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 
 /**
  * Load and apply a linear projection y = A * (x-m) with optional dimension 
@@ -163,7 +163,7 @@ public class Projection {
 	 * @throws IOException
 	 */
 	private void load(File file) throws IOException {
-		FrameReader fr = new FrameReader(file);
+		FrameInputStream fr = new FrameInputStream(file);
 		double [] buf = new double [fr.getFrameSize()];
 		
 		// read mean
@@ -191,7 +191,7 @@ public class Projection {
 		if (fd == 0 || proj == null)
 			throw new RuntimeException("Projection.save(): Projection not initialized");
 		
-		FrameWriter fw = new FrameWriter(fd, file);
+		FrameOutputStream fw = new FrameOutputStream(fd, file);
 		
 		// write mean
 		fw.write(mean);
@@ -313,10 +313,10 @@ public class Projection {
 		BufferedReader br = new BufferedReader(new FileReader(args[2]));
 		String line;
 		while ((line = br.readLine()) != null) {
-			FrameReader fr = new FrameReader(new File(indir + line));
+			FrameInputStream fr = new FrameInputStream(new File(indir + line));
 			double [] buf = new double [fr.getFrameSize()];
 			double [] out = new double [ofd == 0 ? proj.getMaxOutputDimension() : ofd];
-			FrameWriter fw = new FrameWriter(out.length, new File(outdir + line));
+			FrameOutputStream fw = new FrameOutputStream(out.length, new File(outdir + line));
 			
 			while (fr.read(buf)) {
 				proj.transform(buf, out);

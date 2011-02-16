@@ -29,8 +29,8 @@ import java.util.LinkedList;
 
 import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.framed.MVN;
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.util.Pair;
 import edu.emory.mathcs.jtransforms.dct.DoubleDCT_1D;
 
@@ -68,7 +68,7 @@ public class Traps implements FrameSource {
 	
 	/**
 	 * Create a TRAPS instance that reads from the given FrameSource (usually 
-	 * a FrameReader on precomputed MFB files), context length in frames. 
+	 * a FrameInputStream on precomputed MFB files), context length in frames. 
 	 * Enables scaled DCT.
 	 * @param source FrameSource to read from
 	 * @param context number of frames to consider
@@ -79,7 +79,7 @@ public class Traps implements FrameSource {
 	
 	/**
 	 * Create a TRAPS instance that reads from the given FrameSource (usually 
-	 * a FrameReader on precomputed MFB files), context length in frames and
+	 * a FrameInputStream on precomputed MFB files), context length in frames and
 	 * the scale parameter for DCT
 	 * @param source FrameSource to read from
 	 * @param context number of frames to consider
@@ -199,7 +199,7 @@ public class Traps implements FrameSource {
 		
 		while (iolist.size() > 0) {
 			Pair<String, String> p = iolist.remove(0);
-			FrameSource fs = new FrameReader(new File(p.a));
+			FrameSource fs = new FrameInputStream(new File(p.a));
 			
 			Traps traps = new Traps(fs, c, scale, dodct);
 			
@@ -209,14 +209,14 @@ public class Traps implements FrameSource {
 				mvn.extendStatistics(traps);
 				
 				// re-init the traps and attach them to the MVN
-				traps = new Traps(new FrameReader(new File(p.a)), c, scale, dodct);
+				traps = new Traps(new FrameInputStream(new File(p.a)), c, scale, dodct);
 				mvn.setSource(traps);
 				
 				fs = mvn;
 			} else
 				fs = traps;
 			
-			FrameWriter fw = new FrameWriter(fs.getFrameSize(), new File(p.b));
+			FrameOutputStream fw = new FrameOutputStream(fs.getFrameSize(), new File(p.b));
 			double [] buf = new double [fs.getFrameSize()];
 			
 			while (fs.read(buf))

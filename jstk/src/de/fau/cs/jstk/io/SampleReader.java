@@ -32,8 +32,8 @@ import java.util.List;
 import de.fau.cs.jstk.stat.Sample;
 
 /**
- * The SampleReader reads instances of Samples from the given InputStream (ASCII
- * or binary). You need to specify, if the InputStream provides Sample instances 
+ * The SampleReader reads instances of Samples from the given Reader. 
+ * You need to specify, if the InputStream provides Sample instances 
  * with or without saved classification result.
  * 
  * @author sikoried

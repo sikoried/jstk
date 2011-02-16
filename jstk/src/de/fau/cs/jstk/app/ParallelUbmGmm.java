@@ -47,7 +47,7 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.framed.SimulatedFrameSource;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.trans.NAP;
@@ -319,8 +319,8 @@ public class ParallelUbmGmm {
 			this.modelDir = modelDir;
 		}
 		
-		public FrameReader getFrameReader() throws IOException {
-			return new FrameReader(new File((featureFileDir != null ? featureFileDir + System.getProperty("file.separator") : "") + fileName));
+		public FrameInputStream getFrameReader() throws IOException {
+			return new FrameInputStream(new File((featureFileDir != null ? featureFileDir + System.getProperty("file.separator") : "") + fileName));
 		}
 		
 		public String summary() {

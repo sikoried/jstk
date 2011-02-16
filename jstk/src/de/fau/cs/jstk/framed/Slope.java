@@ -28,8 +28,8 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
-import de.fau.cs.jstk.io.FrameReader;
-import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
 
 
 /**
@@ -399,9 +399,9 @@ public class Slope implements FrameSource {
 		BufferedReader br = new BufferedReader(new FileReader(listFile));
 		String lbuf;
 		while ((lbuf = br.readLine()) != null) {
-			FrameReader fr = new FrameReader(new File(inDir + lbuf));
+			FrameInputStream fr = new FrameInputStream(new File(inDir + lbuf));
 			Slope slope = Slope.create(fr, slopeString);
-			FrameWriter fw = new FrameWriter(slope.getFrameSize(), new File(outDir + lbuf));
+			FrameOutputStream fw = new FrameOutputStream(slope.getFrameSize(), new File(outDir + lbuf));
 			double [] buf = new double [slope.getFrameSize()];
 
 			while (slope.read(buf))

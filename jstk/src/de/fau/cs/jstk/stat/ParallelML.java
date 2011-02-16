@@ -30,7 +30,7 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.ChunkedDataSet;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 
 /**
  * A parallel implementation of the maximum likelihood estimation. Uses a 
@@ -205,7 +205,7 @@ public class ParallelML {
 				ChunkedDataSet.Chunk chunk;
 				
 				while ((chunk = data.nextChunk()) != null) {
-					FrameReader source = chunk.getFrameReader();
+					FrameInputStream source = chunk.getFrameReader();
 						
 					// reset the estimate for this chunk
 					for (int i = 0; i < est.length; ++i)

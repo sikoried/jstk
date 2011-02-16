@@ -30,7 +30,7 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.ChunkedDataSet;
-import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.stat.ParallelEM;
 import de.fau.cs.jstk.stat.Sample;
@@ -138,7 +138,7 @@ public class GaussEM {
 			ChunkedDataSet set = new ChunkedDataSet(new File(lif), inDir, 0);
 			ChunkedDataSet.Chunk chunk;
 			while ((chunk = set.nextChunk()) != null) {
-				FrameReader r = chunk.getFrameReader();
+				FrameInputStream r = chunk.getFrameReader();
 				double [] buf = new double [r.getFrameSize()];
 				while (r.read(buf))
 					data.add(new Sample(0, buf));
