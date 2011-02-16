@@ -17,3 +17,9 @@ hoenig
 	Speech Group at Informatik 5 
 	Univ. Erlangen-Nuremberg
 	GERMANY
+
+steidl
+	Stefan Steidl, currently: Int'l Computer Science Institute, Berkeley, CA
+	Speech Group at Informatik 5 
+	Univ. Erlangen-Nuremberg
+	GERMANY
