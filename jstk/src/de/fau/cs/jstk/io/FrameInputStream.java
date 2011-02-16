@@ -21,18 +21,19 @@
 */
 package de.fau.cs.jstk.io;
 
-import java.io.*;
-import java.nio.*;
-
-import de.fau.cs.jstk.framed.FrameSource;
-
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteOrder;
 
 /**
  * Read frames from a file or stdin in Frame format.
  * 
  * @author sikoried
  */
-public class FrameInputStream implements de.fau.cs.jstk.framed.FrameSource {
+public class FrameInputStream implements FrameSource {
 
 	/** input buffer size (1MB) */
 	private static final int BUF_SIZE = 1048576;

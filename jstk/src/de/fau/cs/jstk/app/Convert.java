@@ -21,12 +21,25 @@
 */
 package de.fau.cs.jstk.app;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.HashMap;
 
-import de.fau.cs.jstk.io.*;
+import de.fau.cs.jstk.io.FrameDestination;
+import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameOutputStream;
+import de.fau.cs.jstk.io.FrameReader;
+import de.fau.cs.jstk.io.FrameSource;
+import de.fau.cs.jstk.io.FrameWriter;
+import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.io.SampleDestination;
+import de.fau.cs.jstk.io.SampleInputStream;
+import de.fau.cs.jstk.io.SampleOutputStream;
+import de.fau.cs.jstk.io.SampleReader;
+import de.fau.cs.jstk.io.SampleSource;
+import de.fau.cs.jstk.io.SampleWriter;
 import de.fau.cs.jstk.stat.Sample;
 
 public class Convert {
@@ -38,23 +51,16 @@ public class Convert {
 		"formats:\n" +
 		"  ufv,dim\n" +
 		"    Unlabeled feature data, 4 byte (float) per sample dimension\n" +
-		"  lfv,dim,label1,label2,...,labeln\n" +
+		"  lfv,dim\n" +
 		"    Labeled feature data; 12 byte label, then 4 byte (float) per sample.\n" +
-		"    Label ID will be attached according to the sequence of labels in the\n" +
-		"    argument: label1 -> 0, label2 -> 1, etc. as the Sample class requires\n" +
-		"    numeric labels.\n" +
+		"    Labels must be numeric.\n" +
 		"  frame, frame_double\n" +
 		"    Unlabeled feature data, 4/8 byte (float/double) per sample dimension\n" +
 		"  sample_a, sample_b\n" +
-		"    Labeled feature data using the statistics.Sample class, either (a)scii or\n" +
-		"    (b)inary.\n" +
-		"  csample_a, csample_b\n" +
-		"    Labeled and classified feature data using the statistics.Sample class,\n" +
-		"    either (a)scii or (b)inary.\n" +
+		"    Labeled feature data using the stat.Sample class, either (a)scii or\n" +
+		"    (b)inary. Format is <short:label> <short:classif-result> <float: feature data>\n" +
 		"  ascii\n" +
-		"    Unlabeled ASCII data: TAB separated double values, one sample per line.\n" +
-		"  ascii_label\n" +
-		"    Labelled ASCII data: TAB separated values, first field is label.\n";
+		"    Unlabeled ASCII data: TAB separated double values, one sample per line.\n";
 	
 	public static enum Format {
 		UFV,
@@ -63,18 +69,10 @@ public class Convert {
 		FRAME_DOUBLE,
 		SAMPLE_A,
 		SAMPLE_B,
-		CSAMPLE_A,
-		CSAMPLE_B,
-		ASCII,
-		ASCII_L
+		ASCII
 	}
 	
 	public static int fd = 0;
-	
-	public static HashMap<String, Integer> lookup1 = new HashMap<String, Integer>();
-	public static HashMap<Integer, String> lookup2 = new HashMap<Integer, String>();
-	
-	private static int lab = 1;
 	
 	/**
 	 * Analyze the format string
@@ -86,12 +84,6 @@ public class Convert {
 		} else if (arg.startsWith("lfv,")) {
 			String [] list = arg.split(",");
 			fd = Integer.parseInt(list[1]);
-			
-			for (int i = 2; i < list.length; ++i) {
-				lookup1.put(list[i], lab);
-				lookup2.put(lab, list[i]);
-				lab++;
-			}
 			return Format.LFV;
 		} else if (arg.equals("frame"))
 			return Format.FRAME;
@@ -101,14 +93,8 @@ public class Convert {
 			return Format.SAMPLE_A;
 		else if (arg.equals("sample_b"))
 			return Format.SAMPLE_B;
-		else if (arg.equals("csample_a"))
-			return Format.CSAMPLE_A;
-		else if (arg.equals("csample_b"))
-			return Format.CSAMPLE_B;
 		else if (arg.equals("ascii"))
 			return Format.ASCII;
-		else if (arg.equals("ascii_label"))
-			return Format.ASCII_L;
 		else
 			throw new RuntimeException("invalid format \"" + arg + "\"");
 	}
@@ -124,24 +110,20 @@ public class Convert {
 		Format outFormat = determineFormat(args[1]);
 		
 		// possible readers
-		BufferedReader br = null;
-		FrameInputStream fr = null;
-		SampleReader sr = null;
+		FrameSource fsource = null;
+		SampleSource ssource = null;
+		
 		
 		// possible writers
-		FrameOutputStream fw = null;
-		SampleWriter sw = null;
+		FrameDestination fdest = null;
+		SampleDestination sdest = null;
 		
 		switch (inFormat) {
-		case SAMPLE_A: sr = new SampleReader(System.in, true, false); break;
-		case SAMPLE_B: sr = new SampleReader(System.in, false, false); break;
-		case CSAMPLE_A: sr = new SampleReader(System.in, true, true); break;
-		case CSAMPLE_B: sr = new SampleReader(System.in, false, true); break;
-		case FRAME: fr = new FrameInputStream(); fd = fr.getFrameSize(); break;
-		case FRAME_DOUBLE: fr = new FrameInputStream(null, false); fd = fr.getFrameSize(); break;
-		case ASCII:
-		case ASCII_L:
-			br = new BufferedReader(new InputStreamReader(System.in));
+		case SAMPLE_A: ssource = new SampleReader(new InputStreamReader(System.in)); break;
+		case SAMPLE_B: ssource = new SampleInputStream(System.in); break;
+		case FRAME: fsource = new FrameInputStream(null); fd = fsource.getFrameSize(); break;
+		case FRAME_DOUBLE: fsource = new FrameInputStream(null, false); fd = fsource.getFrameSize(); break;
+		case ASCII: fsource = new FrameReader(new InputStreamReader(System.in)); fd = fsource.getFrameSize(); break;
 		}
 		
 		double [] buf = new double [fd];
@@ -149,20 +131,19 @@ public class Convert {
 		// read until done...
 		while (true) {
 			Sample s = null;
-			int label = 0;
+			short label = 0;
 			
 			// try to read...
 			switch (inFormat) {
 			case FRAME:
 			case FRAME_DOUBLE:
-				if (fr.read(buf))
-					s = new Sample(0, buf);
+			case ASCII:
+				if (fsource.read(buf))
+					s = new Sample((short) 0, buf);
 				break;
 			case SAMPLE_A:
 			case SAMPLE_B:
-			case CSAMPLE_A:
-			case CSAMPLE_B:
-				s = sr.read();
+				s = ssource.read();
 				break;
 			case LFV:
 				byte [] bl = new byte [LABEL_SIZE];
@@ -170,7 +151,7 @@ public class Convert {
 					break;
 				String textual = new String(bl);
 				try {
-					label = Integer.parseInt(textual);
+					label = Short.parseShort(textual);
 				} catch (NumberFormatException e) {
 					throw new IOException("Invalid label '" + textual + "' -- only numeric labels allowed!");
 				}
@@ -180,64 +161,33 @@ public class Convert {
 				
 				s = new Sample(label, buf);
 				break;
-			case ASCII:
-			case ASCII_L:
-				String line = br.readLine();
-				if (line == null)
-					break;
-				String [] cols = line.trim().split("\\s+");
-				int i1 = 0;
-				
-				try {
-					if (inFormat == Format.ASCII_L)
-						label = Integer.parseInt(cols[i1++]);
-				} catch (NumberFormatException e) {
-					throw new IOException("Invalid label '" + cols[i1-1] + "' -- only numeric labels allowed");
-				}
-				
-				int i2 = 0;
-				buf = new double [cols.length - i1];
-				for (; i1 < cols.length; ++i1)
-					buf[i2++] = Double.parseDouble(cols[i1]);
-				
-				s = new Sample(label, buf);
 			}
 			
 			// anything read?
 			if (s == null)
 				break;
-			
+						
 			// write out...
 			switch (outFormat) {
 			case SAMPLE_A:
-				if (sw == null)
-					sw = new SampleWriter(System.out, true, s.x.length, false);
-				sw.write(s);
+				if (sdest == null)
+					sdest = new SampleWriter(new OutputStreamWriter(System.out));
+				sdest.write(s);
 				break;
 			case SAMPLE_B:
-				if (sw == null)
-					sw = new SampleWriter(System.out, false, s.x.length, false);
-				sw.write(s);
-				break;
-			case CSAMPLE_A:
-				if (sw == null)
-					sw = new SampleWriter(System.out, true, s.x.length, true);
-				sw.write(s);
-				break;
-			case CSAMPLE_B:
-				if (sw == null)
-					sw = new SampleWriter(System.out, false, s.x.length, true);
-				sw.write(s);
+				if (sdest == null)
+					sdest = new SampleOutputStream(System.out, s.x.length);
+				sdest.write(s);
 				break;
 			case FRAME:
-				if (fw == null)
-					fw = new FrameOutputStream(s.x.length);
-				fw.write(s.x);
+				if (fdest == null)
+					fdest = new FrameOutputStream(s.x.length);
+				fdest.write(s.x);
 				break;
 			case FRAME_DOUBLE:
-				if (fw == null)
-					fw = new FrameOutputStream(s.x.length, false);
-				fw.write(s.x);
+				if (fdest == null)
+					fdest = new FrameOutputStream(s.x.length, false);
+				fdest.write(s.x);
 				break;
 			case LFV:
 				byte [] outlabel1 = new byte [LABEL_SIZE];
@@ -260,24 +210,20 @@ public class Convert {
 				
 				System.out.write(bb.array());
 				break;
-			case ASCII_L:
-				System.out.print(Integer.toString(s.c) + "\t");
 			case ASCII:
-				for (int i = 0; i < s.x.length; ++i) {
-					System.out.print(s.x[i]);
-					if (i < s.x.length - 1)
-						System.out.print("\t");
-					else
-						System.out.println();
-				}
+				if (fdest == null)
+					fdest = new FrameWriter(new OutputStreamWriter(System.out));
+				fdest.write(s.x);
 				break;
 			}
 		}
 		
 		// be nice, close everything
-		if (fw != null)
-			fw.close();
-	
+		if (fdest != null)
+			fdest.close();
+		if (sdest != null)
+			sdest.close();
+		
 		System.out.flush();
 	}
 }

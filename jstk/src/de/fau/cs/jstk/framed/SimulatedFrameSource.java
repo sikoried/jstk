@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.LinkedList;
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.FrameSource;
+
 /**
  * Use the SimulatedFrameReader to generate a FrameSource with a predefined
  * sequence of frame values. Usefull for debugging and testing.

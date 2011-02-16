@@ -24,6 +24,7 @@ package de.fau.cs.jstk.framed;
 import java.io.IOException;
 import java.util.Arrays;
 
+import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.sampled.RawAudioFormat;

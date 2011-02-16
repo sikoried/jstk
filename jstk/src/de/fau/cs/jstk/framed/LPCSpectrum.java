@@ -23,6 +23,7 @@ package de.fau.cs.jstk.framed;
 
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioSource;
 
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;

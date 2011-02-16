@@ -112,7 +112,7 @@ public final class IOUtil {
 	 * @throws IOException
 	 */
 	public static boolean readShort(InputStream is, short [] buf, ByteOrder bo) throws IOException {
-		byte [] bbuf = new byte [Short.SIZE / 8];
+		byte [] bbuf = new byte [buf.length * Short.SIZE / 8];
 		int read = is.read(bbuf);
 
 		// complete frame?

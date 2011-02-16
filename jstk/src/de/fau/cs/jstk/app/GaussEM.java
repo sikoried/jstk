@@ -141,7 +141,7 @@ public class GaussEM {
 				FrameInputStream r = chunk.getFrameReader();
 				double [] buf = new double [r.getFrameSize()];
 				while (r.read(buf))
-					data.add(new Sample(0, buf));
+					data.add(new Sample((short) 0, buf));
 			}
 			logger.info(data.size() + " samples cached");
 			

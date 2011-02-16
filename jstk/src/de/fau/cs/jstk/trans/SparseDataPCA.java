@@ -30,8 +30,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.FrameSource;
 
 import FJama.Matrix;
 import FJama.SingularValueDecomposition;

@@ -27,11 +27,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.fau.cs.jstk.framed.FrameSource;
 import de.fau.cs.jstk.framed.Selection;
 import de.fau.cs.jstk.framed.SimulatedFrameSource;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
+import de.fau.cs.jstk.io.FrameSource;
 
 
 public final class Merge {

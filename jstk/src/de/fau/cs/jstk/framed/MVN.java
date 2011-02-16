@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
+import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.stat.Trainer;
@@ -189,7 +190,7 @@ public class MVN implements FrameSource {
 		LinkedList<Sample> data = new LinkedList<Sample>();
 		
 		while (src.read(buf))
-			data.add(new Sample(0, buf));
+			data.add(new Sample((short) 0, buf));
 		
 		extendStatistics(data);
 	}
@@ -404,7 +405,7 @@ public class MVN implements FrameSource {
 				FrameInputStream fr = new FrameInputStream(new File(p.a));
 				double [] buf = new double [fr.getFrameSize()];
 				while (fr.read(buf))
-					cache.add(new Sample(0, buf));
+					cache.add(new Sample((short) 0, buf));
 			}
 			
 			work.extendStatistics(cache);

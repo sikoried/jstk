@@ -35,7 +35,7 @@ import java.nio.ByteOrder;
  * 
  * @author sikoried
  */
-public class FrameOutputStream {
+public class FrameOutputStream implements FrameDestination {
 	
 	/** OutputStream to write to */
 	private OutputStream os = System.out;

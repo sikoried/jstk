@@ -24,6 +24,8 @@ package de.fau.cs.jstk.framed;
 import java.io.IOException;
 import java.util.Arrays;
 
+import de.fau.cs.jstk.io.FrameSource;
+
 /**
  * Voiced/Unvoiced (VUV) detection with the threshold-classifier after Kiessling (K-) 
  * 
@@ -114,7 +116,7 @@ public class VUVDetection implements FrameSource {
 	 * read the next frame from the Window and store the VUV decision in the
 	 * first buffer value, shifting the window in the following values
 	 * 
-	 * @see de.fau.cs.jstk.framed.FrameSource#read(double[])
+	 * @see de.fau.cs.jstk.io.FrameSource#read(double[])
 	 */
 	public boolean read(double [] buf) throws IOException {
 		

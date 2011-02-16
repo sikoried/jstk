@@ -19,7 +19,7 @@
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
 */
-package de.fau.cs.jstk.framed;
+package de.fau.cs.jstk.io;
 
 import java.io.IOException;
 

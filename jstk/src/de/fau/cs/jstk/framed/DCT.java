@@ -22,6 +22,8 @@
 package de.fau.cs.jstk.framed;
 
 import java.io.IOException;
+
+import de.fau.cs.jstk.io.FrameSource;
 import edu.emory.mathcs.jtransforms.dct.DoubleDCT_1D;
 
 public class DCT extends SpectralTransformation implements FrameSource {
