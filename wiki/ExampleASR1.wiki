@@ -82,10 +82,10 @@ sikoried@lme126: ~jstk/vm$ jstk arch.Configuration --compile arch/vm-mono.a arch
 }}}
 
 = Train the Token Hierarchy =
-Use a few manual alignments for a first training of the models to obtain robust forced alignments later on. Use the Trainer for this. Then iterate on 
+Use a few manual alignments for a first training of the models to obtain robust forced alignments later on. Use the Trainer for this. Then iterate on the whole training set. Note that the first Training pass should be done with Viterbi do allow the densities to settle for specific models.
 
 {{{
-sikoried@lme126: ~/jstk/vm$ jstk app.Trainer conf-mono.xml conf-mono.cb.0 conf-mono.cb.1 lists/list.train.malign.trl ft/ -a manual_linear malign/ -t bw -p 3
+sikoried@lme126: ~/jstk/vm$ jstk app.Trainer conf-mono.xml conf-mono.cb.0 conf-mono.cb.1 lists/list.train.malign.trl ft/ -a manual_linear malign/ -t vt -p 2
 
 sikoried@lme126: ~/jstk/vm$ for i in `seq 2 6`; do
 > j=`expr $i - 1`
