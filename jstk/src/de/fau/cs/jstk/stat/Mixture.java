@@ -285,8 +285,11 @@ public final class Mixture {
 	public void reestimate() {
 		// first, compute normalization factor for new weights
 		double sum = 0.;
-		for (Density d : components)
+		for (Density d : components) {
+			if (d.accu == null)
+				return;
 			sum += d.accu.apr;
+		}
 		
 		// update the components and set new weight
 		for (Density d : components)

@@ -168,7 +168,8 @@ public abstract class Density {
 	 * @param d
 	 */
 	public void absorb(Density d) {
-		accu.absorb(d.accu);
+		if (d.accu != null)
+			accu.absorb(d.accu);
 	}
 	
 	/**
