@@ -26,6 +26,9 @@ import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 
+import Jama.CholeskyDecomposition;
+import Jama.Matrix;
+
 /**
  * The DensityFull is a Gaussian density with full covariance matrix. The
  * computation is sped up using Cholesky decomposition. This is also numerically 
@@ -43,9 +46,6 @@ import org.apache.log4j.Logger;
  */
 public final class DensityFull extends Density {
 	private static Logger logger = Logger.getLogger(DensityFull.class);
-			
-	/** regularization constant */
-	public transient static final double GAMMA = 1e-3;
 	
 	/** cov = L L^T where L is a lower triangular, packed matrix; Cholesky decomposition! */
 	transient public double [] L;
@@ -116,107 +116,83 @@ public final class DensityFull extends Density {
 	
 	/** Update the internal variables. Required after modification. */
 	public void update() {
-		// check for NaN!
+		// check numeric properties
 		long nans = 0;
 		long minc = 0;
 		
+		// validate mean vector
 		for (int i = 0; i < fd; ++i) {
 			if (Double.isNaN(mue[i])) {
 				mue[i] = 0;
 				nans++;
 			}
-			if (Double.isNaN(cov[i])) {
-				cov[i] = MIN_COV;
-				nans++;
-			} else if (Math.abs(cov[i]) < MIN_COV) {
-				double sig = (cov[i] >= 0. ? 1. : -1.);
-				cov[i] = sig * MIN_COV;
-				minc++;
-			}
 		}
 		
-		// some more values to check for full covariance...
-		for (int i = fd; i < cov.length; ++i) {
-			if (Double.isNaN(cov[i])) {
-				cov[i] = MIN_COV;
-				nans++;
-			} else if (Math.abs(cov[i]) < MIN_COV) {
-				double sig = (cov[i] >= 0. ? 1. : -1.); 
-				cov[i] = sig * MIN_COV;
+		// validate covariance
+		int k = 0;
+		for (int i = 0; i < fd; ++i) {
+			// covariances
+			for (int j = 0; j < i; ++j) {
+				if (Double.isNaN(cov[k])) {
+					cov[k] = 0.;
+					nans++;
+				} 
+				k++;
+			}
+			
+			// variances
+			if (cov[k] < MIN_COV) {
+				cov[k] = MIN_COV;
 				minc++;
 			}
+			k++;
 		}
 		
 		lapr = Math.log(apr);
 		
 		if (Double.isNaN(apr) || Double.isNaN(lapr)) {
-			apr = 1e-10;
-			lapr = Math.log(1e-10);
+			apr = MIN_WEIGHT;
+			lapr = Math.log(MIN_WEIGHT);
 			nans++;
 		}
 		
 		if (nans > 0)
 			logger.fatal("Density#" + id + ".update(): fixed " + nans + " NaN values (this should NEVER be!)");
 		if (minc > 0)
-			logger.info("Density#" + id + ".update(): enforced " + minc + " minimum covariances");
-		
+			logger.info("Density#" + id + ".update(): enforced " + minc + " minimum variances");
 		
 		// construct the matrix
 		double [][] help = new double [fd][fd];
-		int k = 0;
+		k = 0;
 		for (int i = 0; i < fd; ++i) {
 			for (int j = 0; j <= i; ++j)
 				help[i][j] = help[j][i] = cov[k++];
 		}
 		
-		// regularize the matrix on demand
-		Jama.Matrix cm = new Jama.Matrix(help);
-		Jama.CholeskyDecomposition chol = null;
-		double gamma = GAMMA;
+		// compute cholesky decomposition
+		Matrix cm = new Jama.Matrix(help);
+		CholeskyDecomposition chol = cm.chol();
+		Matrix mat = chol.getL();
 		
-		// we might need to regularize the covariance matrix
-		while (gamma < 1.) {
-			chol = cm.chol();
-			
-			// yay, works!
-			if (chol.isSPD())
-				break;
-						
-			// regularize...
-			double trace = cm.trace();
-			for (int i = 0; i < fd; ++i) {
-				double regularized = (1. - gamma) * cm.get(i,i) + gamma * trace / fd;
-				cm.set(i, i, regularized);
-			}
-			
-			gamma += gamma;
-		}
-		
-		// regularization not possible, fall back to diagonal matrix
+		// if the covariance matrix was not symmetric positive definite due to
+		// data sparsity, enforce a diagonal covariance and compute the Cholesky
+		// by hand
 		if (!chol.isSPD()) {
-			logger.fatal("DensityFull.update(): regularization of covariance matrix impossible, falling back to diagonal");
+			logger.info("Density#" + id + ".update(): enforced diagonal covariance");
 			k = 0;
 			for (int i = 0; i < fd; ++i) {
-				for (int j = 0; j <= i; ++j) {
+				for (int j = 0; j <= i; ++j, ++k) {
 					if (i == j)
-						cm.set(i, i, cov[k]);
+						mat.set(i, i, Math.sqrt(cm.get(i, i)));
 					else {
-						// set other values to zero
-						cov[k] = 0.;
-						cm.set(i, j, 0.);
-						cm.set(j, i, 0.);
+						mat.set(i, j, 0.);
+						mat.set(i, j, 0.);
+						cov[k] = 0.; 
 					}
-					k++;
 				}
 			}
-			
-			// redo the decomposition
-			chol = cm.chol();
 		}
-		
-		Jama.Matrix mat = chol.getL();
-		
-		
+	
 		// log |K| = log | L L^T | = log (det |L|)^2 = 2 * sum_i log L(i,i) 
 		logdet = 0.;
 		for (int i = 0; i < fd; ++i)

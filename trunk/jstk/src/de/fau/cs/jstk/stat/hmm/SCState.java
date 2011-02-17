@@ -28,6 +28,8 @@ import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 
+import org.apache.log4j.Logger;
+
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.stat.Mixture;
 
@@ -40,6 +42,8 @@ import de.fau.cs.jstk.stat.Mixture;
  * @author sikoried
  */
 public final class SCState extends State {
+	private static Logger logger = Logger.getLogger(SCState.class);
+	
 	/** shared codebook */
 	Mixture cb = null;
 	
@@ -187,10 +191,12 @@ public final class SCState extends State {
 		for (int i = 0; i < c.length; ++i)
 			sum += caccu[i];
 		
-		if (sum <= 0.)
-			System.err.println("Wurgs!" + sum);
-		for (int i = 0; i < c.length; ++i)
-			c[i] = caccu[i] / sum;
+		// only re-estimate weights if there has been any accumulation
+		if (sum > 0.)
+			for (int i = 0; i < c.length; ++i)
+				c[i] = caccu[i] / sum;
+		else
+			logger.info("no activity for weights -- no re-estimation");
 		
 		cb.reestimate();
 		discard();

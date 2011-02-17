@@ -35,12 +35,9 @@ import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-import org.apache.log4j.Logger;
-
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.IOUtil;
-import de.fau.cs.jstk.util.Arithmetics;
 import de.fau.cs.jstk.util.Pair;
 
 /**
@@ -50,7 +47,7 @@ import de.fau.cs.jstk.util.Pair;
  *
  */
 public final class Mixture {
-	private static Logger logger = Logger.getLogger(Mixture.class);
+	// private static Logger logger = Logger.getLogger(Mixture.class);
 	
 	/** number of densities */
 	public int nd;
@@ -261,18 +258,15 @@ public final class Mixture {
 		llh = 0.;
 		for (Density d : components)
 			d.clear();
+		discard();
 	}
-	
-	/** Accumulator for incremental statistics (e.g. EM, BW, VT, ...) */
-	public transient Accumulator accumulator = null;
 	
 	/**
 	 * If there is no current accumulator, initialize a new accumulator. 
 	 */
 	public void init() {
-		if (accumulator != null)
-			return;
-		accumulator = new Accumulator();
+		for (Density d : components)
+			d.init();
 	}
 	
 	/**
@@ -280,17 +274,8 @@ public final class Mixture {
 	 * @param source
 	 */
 	public void absorb(Mixture source) {
-		// is there anything to absorb?	
-		if (source.accumulator == null)
-			return;
-		
-		// do we have an accumulator?
-		if (accumulator == null)
-			init();
-		
-		// absorb and reset
-		accumulator.absorb(source.accumulator);
-		source.discard();
+		for (int i = 0; i < nd; ++i)
+			components[i].absorb(source.components[i]);
 	}
 	
 	/**
@@ -298,42 +283,22 @@ public final class Mixture {
 	 * forget to discard the accumulator afterwards!
 	 */
 	public void reestimate() {
-		if (accumulator == null)
-			return;
-		
+		// first, compute normalization factor for new weights
 		double sum = 0.;
-		for (int i = 0; i < nd; ++i) {
-			sum += accumulator.aapr[i];
-			
-			Arithmetics.sdiv2(accumulator.amue[i], accumulator.aapr[i]);
-			Arithmetics.sdiv2(accumulator.acov[i], accumulator.aapr[i]);
-			
-			// conclude covariance computation
-			if (diagonal) {
-				for (int j = 0; j < fd; ++j)
-					accumulator.acov[i][j] -= accumulator.amue[i][j] * accumulator.amue[i][j];
-			} else {
-				int l = 0;
-				for (int j = 0; j < fd; ++j)
-					for (int k = 0; k <= j; ++k)
-						accumulator.acov[i][l++] -= accumulator.amue[i][j] * accumulator.amue[i][k];
-			}
-		}
+		for (Density d : components)
+			sum += d.accu.apr;
 		
-		for (int i = 0; i < nd; ++i) {
-			// normalize prior
-			accumulator.aapr[i] /= sum;
-			
-			// bring in the new values
-			components[i].fill(accumulator.aapr[i], accumulator.amue[i], accumulator.acov[i]);
-		}
+		// update the components and set new weight
+		for (Density d : components)
+			d.reestimate(d.accu.apr / sum);
 	}
 	
 	/**
 	 * Discard the current accumulator.
 	 */
 	public void discard() {
-		accumulator = null;
+		for (Density d : components)
+			d.discard();
 	}
 	
 	/**
@@ -343,98 +308,7 @@ public final class Mixture {
 	 * @param i target density
 	 */
 	public void accumulate(double gamma, double [] x, int i) {
-		if (accumulator == null) {
-			logger.info("MixtureDensity.accumulate(): Warning, calling accumulate on unallocated accumulator!");
-			accumulator = new Accumulator();
-		}
-		
-		// increment stats
-		accumulator.n++;
-		
-		// save your breath
-		if (gamma == 0.)
-			return;
-		
-		accumulator.aapr[i] += gamma;
-		
-		double [] mue = accumulator.amue[i];
-		double [] cov = accumulator.acov[i];
-		
-		if (diagonal) {
-			for (int k = 0; k < fd; ++k) {
-				double t = gamma * x[k];
-				mue[k] += t;
-				cov[k] += t * x[k];
-			}
-		} else {
-			for (int k = 0; k < fd; ++k)
-				mue[k] += gamma * x[k];
-			
-			int m = 0;
-			for (int k = 0; k < fd; ++k)
-				for (int l = 0; l <= k; ++l)
-					cov[m++] += gamma * x[k] * x[l];
-		}
-	}
-	
-	/**
-	 * The mixture density accumulator can hold all critical statistics required
-	 * for incremental algorithms like EM, BW, VT, ...
-	 */
-	private final class Accumulator {
-		private long n = 0;
-		
-		public double [] aapr;
-		public double [][] amue;
-		public double [][] acov;
-		
-		public Accumulator() {
-			aapr = new double [nd];
-			amue = new double [nd][fd];
-			acov = new double [nd][];
-			
-			for (int i = 0; i < nd; ++i)
-				acov[i] = new double [components[i].cov.length];
-		}
-		
-		/**
-		 * Add the referenced accumulator's scores to this one's.
-		 * @param source
-		 */
-		public void absorb(Accumulator source) {
-			for (int i = 0; i < nd; ++i) {
-				aapr[i] += source.aapr[i];
-				Arithmetics.vadd2(amue[i], source.amue[i]);
-				Arithmetics.vadd2(acov[i], source.acov[i]);
-			}
-			
-			// don't forget the stats
-			n += source.n;
-			
-			// make sure the source is not absorbed twice!
-			source.flush();
-		}
-		
-		/**
-		 * Flush the accumulator by setting all values to zero
-		 */
-		public void flush() {
-			n = 0;
-			for (int i = 0; i < nd; ++i) {
-				aapr[i] = 0.;
-				for (int j = 0; j < amue[i].length; ++j) {
-					amue[i][j] = 0.;
-					acov[i][j] = 0.;
-				}
-				
-				for (int j = amue[i].length; j < acov[i].length; ++j)
-					acov[i][j] = 0.;
-			}
-		}
-		
-		public String toString() {
-			return "Mixture.Accumulator (" + n + " observations)";
-		}
+		components[i].accumulate(gamma, x);
 	}
 	
 	/**
