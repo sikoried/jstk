@@ -217,7 +217,11 @@ public class Initializer {
 		}
 
 		// write the estimated parameters
+		for (int i = 0; i < estimate.nd; ++i)
+			estimate.components[i].id = i;
+		
 		System.err.println("Initializer.main(): Writing parameters to " + output);
+		
 		estimate.writeToFile(new File(output));
 	}
 }

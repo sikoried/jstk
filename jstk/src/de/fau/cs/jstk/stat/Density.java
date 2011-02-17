@@ -25,8 +25,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.util.Arrays;
+
+import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.util.Arithmetics;
 
 /**
  * The abstract Density class provides the basic assets of a Gaussian density.
@@ -35,12 +39,16 @@ import de.fau.cs.jstk.io.IOUtil;
  *
  */
 public abstract class Density {
+	private static Logger logger = Logger.getLogger(Density.class);
 	
 	/** minimum density score */
 	public static final double MIN_PROB = 1e-256;
 	
 	/** minimum covariance */
-	public static final double MIN_COV = 1e-5;
+	public static final double MIN_COV = 1e-10;
+	
+	/** minimum weight in case of Mixture */
+	public static final double MIN_WEIGHT = 1e-10;
 	
 	/** feature dimension */
 	public int fd;
@@ -74,6 +82,9 @@ public abstract class Density {
 	
 	/** covariance matrix: either diagonal, or packed lower triangle */
 	public double [] cov;
+	
+	/** accumulator for sufficient statistics */
+	public Accumulator accu = null;
 	
 	/**
 	 * Create a new density with a certain feature dimension
@@ -142,6 +153,140 @@ public abstract class Density {
 	 * Update the internally cached variables. Required after modification.
 	 */
 	public abstract void update();
+	
+	/**
+	 * If there is no current accumulator, initialize one
+	 */
+	public void init() {
+		if (accu != null)
+			return;
+		accu = new Accumulator();
+	}
+	
+	/**
+	 * Absorb the accumulator of the given Density
+	 * @param d
+	 */
+	public void absorb(Density d) {
+		accu.absorb(d.accu);
+	}
+	
+	/**
+	 * Discard the current accumulator
+	 */
+	public void discard() {
+		accu = null;
+	}
+	
+	/**
+	 * Reestimate the density from accumulator statistics and set the weight/prior.
+	 */
+	public void reestimate(double weight) {
+		if (accu == null)
+			return;
+		
+		if  (accu.n < fd + 1) {
+			logger.info("less observations than feature dimension -- no re-estimation!");
+			return;
+		}
+		
+		// normalize statistics
+		Arithmetics.sdiv2(accu.mue, accu.apr);
+		Arithmetics.sdiv2(accu.cov, accu.apr);
+		
+		// conclude covariance computation by subtracting new mean
+		if (this instanceof DensityDiagonal) {
+			for (int i = 0; i < fd; ++i)
+				accu.cov[i] -= accu.mue[i] * accu.mue[i];
+		} else {
+			int l = 0;
+			for (int j = 0; j < fd; ++j)
+				for (int k = 0; k <= j; ++k)
+					accu.cov[l++] -= accu.mue[j] * accu.mue[k];
+		}
+		
+		// update statistics
+		fill(weight, accu.mue, accu.cov);
+		
+		// discard accumulator
+		discard();
+	}
+	
+	/**
+	 * For the given density posterior, accumulate x
+	 * @param gamma
+	 * @param x
+	 */
+	public void accumulate(double gamma, double [] x) {
+		accu.n++;
+		
+		// save your breath
+		if (gamma == 0.)
+			return;
+		
+		accu.apr += gamma;
+
+		if (this instanceof DensityDiagonal) {
+			for (int k = 0; k < fd; ++k) {
+				double t = gamma * x[k];
+				accu.mue[k] += t;
+				accu.cov[k] += t * x[k];
+			}
+		} else {
+			for (int k = 0; k < fd; ++k)
+				accu.mue[k] += gamma * x[k];
+			
+			int m = 0;
+			for (int k = 0; k < fd; ++k)
+				for (int l = 0; l <= k; ++l)
+					accu.cov[m++] += gamma * x[k] * x[l];
+		}
+	}
+	
+	/**
+	 * The Density.Accumulator keeps track of the accumulated statistics
+	 *  
+	 * @author sikoried
+	 */
+	public final class Accumulator {
+		/** number of observations */
+		long n = 0;
+		
+		/** weight accumulator */
+		double apr = 0;
+		
+		/** mean value accumulator */
+		double [] mue = new double [fd];
+		
+		/** covariance accumulator */
+		double [] cov = new double [Density.this.cov.length];
+		
+		/**
+		 * Add the referenced accumulator's scores to this one's.
+		 * @param source
+		 */
+		void absorb(Accumulator source) {
+			// observations
+			n += source.n;
+			
+			// stats
+			apr += source.apr;
+			Arithmetics.vadd2(mue, source.mue);
+			Arithmetics.vadd2(cov, source.cov);
+			
+			// flush source to prevent further absorbtion
+			source.flush();
+		}
+		
+		/**
+		 * Flush the accumulator by setting all values to zero
+		 */
+		void flush() {
+			n = 0;
+			Arrays.fill(mue, 0.);
+			Arrays.fill(cov, 0.);
+		}
+	}
 	
 	/**
 	 * Reset all the components.

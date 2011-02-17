@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.ChunkedDataSet;
 import de.fau.cs.jstk.io.FrameInputStream;
-import de.fau.cs.jstk.util.Arithmetics;
 
 
 /**
@@ -61,9 +60,6 @@ public final class ParallelEM {
 	/** feature dimension */
 	private int fd;
 	
-	/** diagonal covariances? */
-	private boolean dc;
-	
 	/** number of iterations performed by this instance */
 	public int ni = 0;
 	
@@ -82,7 +78,6 @@ public final class ParallelEM {
 		this.current = initial;
 		this.fd = initial.fd;
 		this.nd = initial.nd;
-		this.dc = initial.diagonal();
 	}
 	
 	/**
@@ -118,8 +113,7 @@ public final class ParallelEM {
 	public void iterate() throws IOException, InterruptedException {
 		logger.info("ParallelEM.iterate(): BEGIN iteration " + (++ni));
 		
-		// each thread gets a partial estimate and a working copy of the current
-		Mixture [] partialEstimates = new Mixture[numThreads];
+		// each thread an individual working copy of the current estiamte
 		Mixture [] workingCopies = new Mixture[numThreads];
 		
 		// save the old mixture, put zeros in the current
@@ -131,7 +125,7 @@ public final class ParallelEM {
 		CountDownLatch latch = new CountDownLatch(numThreads);
 		
 		for (int i = 0; i < numThreads; ++i)
-			e.execute(new Worker(workingCopies[i] = current.clone(), partialEstimates[i] = new Mixture(fd, nd, dc), latch));
+			e.execute(new Worker(workingCopies[i] = current.clone(), latch));
 		
 		// wait for all jobs to be done
 		latch.await();
@@ -142,54 +136,15 @@ public final class ParallelEM {
 		// rewind the list 
 		data.rewind();
 		
-		// BEGIN EM PART2: combine the partial estimates
-		current.clear();
+		// BEGIN EM PART2: combine the partial estimates by combining the accus
+		current.discard();
+		current.init();
+	
+		for (Mixture est : workingCopies)
+			current.absorb(est);
 		
-		// sum of all posteriors
-		double ps = 0.;
-		
-		for (Mixture est : partialEstimates) {
-			for (int i = 0; i < nd; ++i) {
-				Density source = est.components[i];
-				Density target = current.components[i];
-				
-				target.apr += source.apr;
-				ps += source.apr;				
-				
-				for (int j = 0; j < fd; ++j)
-					target.mue[j] += source.mue[j];
-				
-				for (int j = 0; j < target.cov.length; ++j)
-					target.cov[j] += source.cov[j];
-			}
-		}
-		
-		// normalize means and covariances
-		for (int i = 0; i < nd; ++i) {
-			Density d = current.components[i];
-			
-			double [] mue = d.mue;
-			double [] cov = d.cov;
-			
-			Arithmetics.sdiv2(mue, d.apr);
-			Arithmetics.sdiv2(cov, d.apr);
-			
-			d.apr /= ps;
-			
-			// conclude covariance computation
-			if (dc) {
-				for (int j = 0; j < fd; ++j)
-					cov[j] -= mue[j] * mue[j];
-			} else {
-				int l = 0;
-				for (int j = 0; j < fd; ++j)
-					for (int k = 0; k <= j; ++k)
-						cov[l++] -= mue[j] * mue[k];
-			}
-			
-			// update the internals of the new estimate
-			d.update();
-		}
+		current.reestimate();
+		current.discard();
 		
 		// END EM Part2
 
@@ -200,7 +155,7 @@ public final class ParallelEM {
 	 * First part of the EM: Accumulate posteriors, prepare priors and mean
 	 */
 	private class Worker implements Runnable {
-		Mixture work, est;
+		Mixture m;
 		CountDownLatch latch;
 		
 		/** feature buffer */
@@ -215,17 +170,16 @@ public final class ParallelEM {
 		/** number of frames processed by this thread */
 		int cnt_frame = 0;
 		
-		Worker(Mixture workingCopy, Mixture partialEstimate, CountDownLatch latch) {
+		Worker(Mixture m, CountDownLatch latch) {
 			this.latch = latch;
-			this.work = workingCopy;
-			this.est = partialEstimate;
+			this.m = m;
 			
 			// init the buffers
 			f = new double [fd];
 			p = new double [nd];
 			
-			// make sure the estimate is cleared up!
-			est.clear();
+			m.discard();
+			m.init();
 		}
 		
 		/**
@@ -241,36 +195,12 @@ public final class ParallelEM {
 					FrameInputStream source = chunk.getFrameReader();
 						
 					while (source.read(f)) {
-						work.evaluate(f);
-						work.posteriors(p);
-												
-						for (int i = 0; i < nd; ++i) {
-							// prior
-							est.components[i].apr += p[i];
-							
-							double [] mue = est.components[i].mue;
-							double [] cov = est.components[i].cov;
-							
-							double pf;
-							
-							// diagonal ? cov and mue in one run
-							if (dc) {
-								for (int j = 0; j < fd; ++j) {
-									pf = p[i] * f[j];
-									mue[j] += pf;
-									cov[j] += pf * f[j];
-								}
-							} else {
-								int l = 0;
-								for (int j = 0; j < fd; ++j) {
-									pf = p[i] * f[j];
-									mue[j] += pf;
-									for (int k = 0; k <= j; ++k)
-										cov[l++] += pf * f[k];
-								}
-							}
-						}
+						m.evaluate(f);
+						m.posteriors(p);
 						
+						for (int i = 0; i < nd; ++i)
+							m.accumulate(p[i], f, i);
+
 						cnt_frame++;
 					}
 					

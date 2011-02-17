@@ -141,10 +141,7 @@ public class CState extends State {
 	 */
 	public String toString() {
 		StringBuffer buf = new StringBuffer();
-		buf.append(cb.toString());		
-		if (cb.accumulator != null)
-			buf.append(" codebook accumulator present");
-		
+		buf.append(cb.toString());				
 		return buf.toString();
 	}
 

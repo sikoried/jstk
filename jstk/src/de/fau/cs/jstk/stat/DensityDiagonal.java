@@ -139,8 +139,8 @@ public final class DensityDiagonal extends Density {
 		lapr = Math.log(apr);
 		
 		if (Double.isNaN(apr) || Double.isNaN(lapr)) {
-			apr = 1e-10;
-			lapr = Math.log(1e-10);
+			apr = MIN_WEIGHT;
+			lapr = Math.log(MIN_WEIGHT);
 			nans++;
 		}
 		
