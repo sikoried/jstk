@@ -229,12 +229,12 @@ public class VisualizerPitch extends FileVisualizer {
 				if (getNumberOfSelectedFrames() == 1) {
 					markSelectedFrame(idx);
 				}
-				informF0PointsSelectedListeners();
 			} else {
 				for (int i = 0; i < selected.length; i++) {
 					selected[i] = false;
 				}
 			}
+			informF0PointsSelectedListeners();
 			draw();
 			repaint();
 		}
