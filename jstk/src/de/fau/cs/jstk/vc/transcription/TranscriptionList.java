@@ -61,7 +61,9 @@ public class TranscriptionList {
 
 		Iterator<Transcription> iterator = list.listIterator();
 		while (iterator.hasNext()) {
-			writer.write(iterator.next().toString() + '\n');
+			Transcription transcription = iterator.next(); 
+			writer.write(transcription.toString() + '\n');
+			transcription.markAsSaved();
 		}
 		writer.close();
 		this.filename = filename;
