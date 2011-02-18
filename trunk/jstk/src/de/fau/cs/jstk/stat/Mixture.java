@@ -612,16 +612,19 @@ public final class Mixture {
 			
 			if (singleOutFile == null) {
 				while (inlist.size() > 0) {
-					Mixture md = Mixture.readFromFile(new File(inlist.remove()));
+					String inf = inlist.remove();
+					Mixture md = Mixture.readFromFile(inf == null ? null : new File(inf));
 					double [] sv = md.superVector(p, m, c);
-					FrameOutputStream fw = new FrameOutputStream(sv.length, new File(outlist.remove()));
+					String ouf = outlist.remove();
+					FrameOutputStream fw = new FrameOutputStream(sv.length, ouf == null ? null : new File(ouf));
 					fw.write(sv);
 					fw.close();
 				}
 			} else {
 				FrameOutputStream fw = null;
 				while (inlist.size() > 0) {
-					Mixture md = Mixture.readFromFile(new File(inlist.remove()));
+					String inf = inlist.remove();
+					Mixture md = Mixture.readFromFile(inf == null ? null : new File(inf));
 					double [] sv = md.superVector(p, m, c);
 					if (fw == null)
 						fw = new FrameOutputStream(sv.length, new File(singleOutFile));
@@ -665,7 +668,7 @@ public final class Mixture {
 			
 			while (inout.size() > 0) {
 				Pair<String, String> p = inout.remove();
-				Mixture md = Mixture.readFromFile(new File(p.a));
+				Mixture md = Mixture.readFromFile(p.a == null ? null : new File(p.a));
 				
 				for (int i = 0; i < md.nd; ++i)
 					System.arraycopy(md.components[i].mue, 0, tmp, i*md.fd, md.fd);
