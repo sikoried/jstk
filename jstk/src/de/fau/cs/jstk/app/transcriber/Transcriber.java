@@ -860,7 +860,6 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 							JOptionPane.QUESTION_MESSAGE);
 			if (answer == JOptionPane.OK_OPTION) {
 				try {
-					System.err.println("Saving transcription");
 					list.save();
 				} catch (IOException e) {
 					JOptionPane.showMessageDialog(this, e.getMessage(),
