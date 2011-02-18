@@ -118,7 +118,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		Box box = Box.createVerticalBox();
 
 		JPanel panel = new JPanel();
-		playButton = new JButton("", new ImageIcon("res/app/transcriber/play.png"));
+		playButton = new JButton("", new ImageIcon(this.getClass().getResource("/app/transcriber/play.png")));
 		playButton.setEnabled(false);
 		playButton.setMnemonic('p');
 		playButton.addActionListener(new ActionListener() {
