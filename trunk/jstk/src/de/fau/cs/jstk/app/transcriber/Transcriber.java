@@ -33,9 +33,7 @@ import de.fau.cs.jstk.io.BufferedFrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioPlay;
 import de.fau.cs.jstk.vc.*;
-import de.fau.cs.jstk.vc.interfaces.PitchDefinedListener;
-import de.fau.cs.jstk.vc.interfaces.SampleSelectedListener;
-import de.fau.cs.jstk.vc.interfaces.WordHighlightedListener;
+import de.fau.cs.jstk.vc.interfaces.*;
 import de.fau.cs.jstk.vc.transcription.*;
 
 
@@ -89,6 +87,11 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	private JMenuItem connectToPrevWordItem;
 	private JMenuItem disconnectFromNextWordItem;
 	private JMenuItem disconnectFromPrevWordItem;
+	private JMenuItem f0SetToOriginalItem;
+	private JMenuItem f0SetToZeroItem;
+	private JMenuItem f0SetToDoubleItem; 
+	private JMenuItem f0SetTohalfItem; 
+	private JMenuItem f0SplineInterpolationItem; 
 	private JCheckBoxMenuItem viewSpectrumItem;
 	private JCheckBoxMenuItem viewAutocorrelationItem;
 	private JCheckBoxMenuItem viewPitchEstimatorItem;
@@ -183,14 +186,11 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 			}
 
 			public void keyTyped(KeyEvent arg0) {
+				if (arg0.getKeyChar() == ' ') {
+					arg0.consume();
+				}
 			}
 		});
-
-		/*
-		 * myVisualizer = new MyVisualizer("myVis", source);
-		 * myVisualizer.setPreferredSize(new Dimension(640, 150));
-		 * box.add(myVisualizer);
-		 */
 
 		c.add(box, BorderLayout.NORTH);
 
@@ -255,6 +255,13 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 						}
 					}
 				});
+		
+		pitchVisualizer.addF0PointsSelectedListener(new F0PointsSelectedListener() {
+			public void f0PointsSelected(F0Point[] points) {
+				int n = pitchVisualizer.getNumberOfSelectedFrames();
+				modifyPopUpMenu(n);
+			}
+		});
 
 		addKeyListener(this);
 		this.setJMenuBar(createMenuBar());
@@ -369,11 +376,12 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 
 	public JPopupMenu createPopupMenu() {
 		JPopupMenu popup = new JPopupMenu();
-		newMenuItem(popup, "Set to original value", "F0_setToOriginal");
-		newMenuItem(popup, "Set to zero", "F0_setToZero");
-		newMenuItem(popup, "Double value", "F0_setToDouble");
-		newMenuItem(popup, "Half value", "F0_setToHalf");
-		newMenuItem(popup, "Spline interpolation", "F0_splineInterpolation");
+		f0SetToOriginalItem = newMenuItem(popup, "Set to original value", "F0_setToOriginal");
+		f0SetToZeroItem = newMenuItem(popup, "Set to zero", "F0_setToZero");
+		f0SetToDoubleItem = newMenuItem(popup, "Double value", "F0_setToDouble");
+		f0SetTohalfItem = newMenuItem(popup, "Half value", "F0_setToHalf");
+		f0SplineInterpolationItem = newMenuItem(popup, "Spline interpolation", "F0_splineInterpolation");
+		modifyPopUpMenu(0);
 		return popup;
 	}
 
@@ -420,6 +428,9 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 			break;
 		case KeyEvent.VK_F6:
 			showAutocorrelation();
+			break;
+		case KeyEvent.VK_F7:
+			showPitchEstimator();
 			break;
 		case KeyEvent.VK_ESCAPE:
 			if (zoomItem.isSelected()) {
@@ -623,6 +634,31 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		}
 	}
 
+	private void modifyPopUpMenu(int n) {
+		switch (n) {
+		case 0: 
+			f0SetToOriginalItem.setEnabled(false);
+			f0SetToZeroItem.setEnabled(false);
+			f0SetToDoubleItem.setEnabled(false); 
+			f0SetTohalfItem.setEnabled(false); 
+			f0SplineInterpolationItem.setEnabled(false); 					
+			break;
+		case 1: 
+			f0SetToOriginalItem.setEnabled(true);
+			f0SetToZeroItem.setEnabled(true);
+			f0SetToDoubleItem.setEnabled(true); 
+			f0SetTohalfItem.setEnabled(true); 
+			f0SplineInterpolationItem.setEnabled(false); 					
+			break;
+		default:
+			f0SetToOriginalItem.setEnabled(true);
+			f0SetToZeroItem.setEnabled(true);
+			f0SetToDoubleItem.setEnabled(true); 
+			f0SetTohalfItem.setEnabled(true); 
+			f0SplineInterpolationItem.setEnabled(true); 					
+		}
+	}
+	
 	public void turnSelected(int index) {
 		try {
 			if (!savePitch()) {
