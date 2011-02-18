@@ -128,6 +128,10 @@ public class Transcription {
 	public boolean hasChanged() {
 		return !toString().equals(original_transcription);
 	}
+	
+	public void markAsSaved() {
+		original_transcription = toString();
+	}
 
 	public int moveRightBorder(int currentEntry, int samples) {
 		TranscriptionEntry entry = get(currentEntry);
