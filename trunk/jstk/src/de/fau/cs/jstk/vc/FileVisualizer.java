@@ -82,7 +82,7 @@ public abstract class FileVisualizer extends VisualComponent implements
 	private static final Cursor VALUE_CURSOR = new Cursor(
 			Cursor.CROSSHAIR_CURSOR);
 	private final Cursor ZOOM_CURSOR = getToolkit().createCustomCursor(
-			new ImageIcon("res/vc/magnifier.gif").getImage(), new Point(10, 10), "magnifier");
+			new ImageIcon(this.getClass().getResource("/vc/magnifier.gif")).getImage(), new Point(10, 10), "magnifier");
 
 	private static final long serialVersionUID = 5437098041319843569L;
 	protected String name;
