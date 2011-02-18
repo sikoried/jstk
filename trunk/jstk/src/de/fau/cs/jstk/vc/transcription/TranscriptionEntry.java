@@ -33,7 +33,7 @@ public class TranscriptionEntry {
 	}
 	
 	public String toString(){
-		String w = word.trim();
+		String w = word.trim().replace(' ', '_').replace('\t', '_');
 		if (w.equals("")) {
 			w = "[empty]";
 		}
