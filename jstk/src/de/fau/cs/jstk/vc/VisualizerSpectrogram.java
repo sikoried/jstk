@@ -17,7 +17,7 @@
 
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 package de.fau.cs.jstk.vc;
 
 import java.awt.Color;
@@ -28,11 +28,9 @@ import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.framed.*;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 
-
 public class VisualizerSpectrogram extends FileVisualizer {
 
 	private static final long serialVersionUID = 877673756485841354L;
-
 
 	public int windowFunction = Window.HAMMING_WINDOW;
 	public double windowLength = 16;
@@ -42,6 +40,7 @@ public class VisualizerSpectrogram extends FileVisualizer {
 	private double min = 0;
 	private double max = 0;
 	private int fft_size = 64;
+	private double gamma = 1.0;
 
 	public VisualizerSpectrogram(String name, BufferedAudioSource source) {
 		super(name, source);
@@ -58,7 +57,8 @@ public class VisualizerSpectrogram extends FileVisualizer {
 
 	@Override
 	protected void drawSelectedArea(Graphics g) {
-		// nothing to do since only vertical lines are shown (after drawing the spectrogram)
+		// nothing to do since only vertical lines are shown (after drawing the
+		// spectrogram)
 	}
 
 	@Override
@@ -70,16 +70,16 @@ public class VisualizerSpectrogram extends FileVisualizer {
 		if (audiosource == null) {
 			return;
 		}
-		
+
 		Window window;
 		shift = (xPerPixel * 1000 / samplerate);
 		if (shift < 5.0) {
 			shift = 5.0;
 		}
-		
+
 		int size = (int) Math.ceil(xMax * 1000 / (shift * samplerate));
 		AudioSource as = audiosource.getReader();
-		
+
 		switch (windowFunction) {
 		case Window.RECTANGULAR_WINDOW:
 			window = new RectangularWindow(as, windowLength, shift);
@@ -92,7 +92,8 @@ public class VisualizerSpectrogram extends FileVisualizer {
 		}
 		FFT fft = new FFT(window, fft_size);
 
-		if ((spectrogram == null) || (spectrogram.length < size) || (spectrogram[0].length < fft.getFrameSize())) {
+		if ((spectrogram == null) || (spectrogram.length < size)
+				|| (spectrogram[0].length < fft.getFrameSize())) {
 			spectrogram = new double[size][fft.getFrameSize()];
 		}
 
@@ -100,6 +101,7 @@ public class VisualizerSpectrogram extends FileVisualizer {
 			int i = 0;
 			while ((i < spectrogram.length) && fft.read(spectrogram[i])) {
 				for (int j = 0; j < spectrogram[i].length; j++) {
+					spectrogram[i][j] = Math.pow(spectrogram[i][j], gamma);
 					if (spectrogram[i][j] < min) {
 						min = spectrogram[i][j];
 					}
@@ -119,10 +121,10 @@ public class VisualizerSpectrogram extends FileVisualizer {
 		if (spectrogram == null) {
 			calculate_spectrogram();
 		}
-		
+
 		draw(g);
 	}
-	
+
 	protected void draw(Graphics g) {
 		double nshift = shift * samplerate / 1000;
 		int y0 = getHeight() - border_bottom;
@@ -136,7 +138,7 @@ public class VisualizerSpectrogram extends FileVisualizer {
 		int c2_b = colorHighlightedSignal.getBlue();
 		int num_samples = audiosource.getBufferSize();
 		int size = (int) Math.ceil(num_samples / nshift);
-		
+
 		double samples = xMin;
 		for (int x = border_left; x < getWidth() - border_right; x++) {
 			samples += xPerPixel;
@@ -146,7 +148,8 @@ public class VisualizerSpectrogram extends FileVisualizer {
 			}
 			double spectrum[] = spectrogram[idx];
 			boolean selected = false;
-			if (showHighlightedSection && isHighlighted && (x >= x1) && (x <= x2)) {
+			if (showHighlightedSection && isHighlighted && (x >= x1)
+					&& (x <= x2)) {
 				selected = true;
 			}
 			int s = fft_size / 2;
@@ -163,17 +166,17 @@ public class VisualizerSpectrogram extends FileVisualizer {
 				}
 				f = 255 - f;
 				if (selected) {
-					int f1 = (f * c1_r + (255-f) * c2_r) / 255;
-					int f2 = (f * c1_g + (255-f) * c2_g) / 255;
-					int f3 = (f * c1_b + (255-f) * c2_b) / 255;
+					int f1 = (f * c1_r + (255 - f) * c2_r) / 255;
+					int f2 = (f * c1_g + (255 - f) * c2_g) / 255;
+					int f3 = (f * c1_b + (255 - f) * c2_b) / 255;
 					g.setColor(new Color(f1, f2, f3));
 				} else {
-				    g.setColor(new Color(f, f, f));					
+					g.setColor(new Color(f, f, f));
 				}
-			    g.drawLine(x, y0 - i, x, y0 - i);
+				g.drawLine(x, y0 - i, x, y0 - i);
 			}
 		}
-		
+
 		// draw vertical lines to show selected area
 		if (isSelected) {
 			g.setColor(colorSelectedSignal);
@@ -193,16 +196,29 @@ public class VisualizerSpectrogram extends FileVisualizer {
 		}
 		yMax = h * samplerate / new_fft_size;
 		if (new_fft_size != fft_size) {
-		
+
 			fft_size = new_fft_size;
 			calculate_spectrogram();
 		}
 		super.onResize();
 	}
-	
+
 	@Override
 	public String toString() {
 		return "VisualizerSpectrogram '" + name + "'";
 	}
-	
+
+	public void setGamma(double gamma) {
+		if ((gamma > 0.09) && (gamma < 2.01)) {
+			this.gamma = gamma;
+			recalculate();
+			draw();
+			repaint();
+		}
+	}
+
+	public double getGamma() {
+		return this.gamma;
+	}
+
 }
