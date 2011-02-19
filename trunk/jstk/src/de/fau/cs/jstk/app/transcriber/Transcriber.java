@@ -118,7 +118,13 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		Box box = Box.createVerticalBox();
 
 		JPanel panel = new JPanel();
-		playButton = new JButton("", new ImageIcon(this.getClass().getResource("/app/transcriber/play.png")));
+		playButton = new JButton("", new ImageIcon(this.getClass().getResource("/app/transcriber/play1.png")));
+		playButton.setRolloverIcon(new ImageIcon(this.getClass().getResource("/app/transcriber/play2.png")));
+		playButton.setDisabledIcon(new ImageIcon(this.getClass().getResource("/app/transcriber/play3.png")));
+		playButton.setRolloverEnabled(true);
+		playButton.setContentAreaFilled(false);
+		playButton.setBorderPainted(false);
+		playButton.setMargin(new Insets(0, 0, 0, 0));;
 		playButton.setEnabled(false);
 		playButton.setMnemonic('p');
 		playButton.addActionListener(new ActionListener() {
@@ -445,7 +451,15 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 				audioSignalVisualizer.setMarked(false);
 			}
 			break;
-		}
+		case KeyEvent.VK_PLUS:
+		case KeyEvent.VK_ADD:
+			spectrogramVisualizer.setGamma(spectrogramVisualizer.getGamma() + 0.1);
+			break;
+		case KeyEvent.VK_MINUS:
+		case KeyEvent.VK_SUBTRACT:
+			spectrogramVisualizer.setGamma(spectrogramVisualizer.getGamma() - 0.1);
+			break;
+		}			
 	}
 
 	@Override
@@ -1005,10 +1019,10 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 			while (audioPlay.write() > 0) {
 			}
 
-		} catch (IOException e1) {
-			e1.printStackTrace();
-		} catch (LineUnavailableException e1) {
-			e1.printStackTrace();
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, e.getMessage(), "File error", JOptionPane.ERROR_MESSAGE);
+		} catch (LineUnavailableException e) {
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Audio error", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
