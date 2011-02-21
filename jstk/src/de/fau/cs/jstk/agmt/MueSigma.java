@@ -24,6 +24,10 @@ package de.fau.cs.jstk.agmt;
 import java.io.FileReader;
 import java.util.List;
 
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import de.fau.cs.jstk.io.SampleReader;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.stat.Sample;
@@ -39,6 +43,8 @@ public class MueSigma {
 		"usage: MueSigma data-file-1 <data-file-2 ...>";
 	
 	public static void main(String[] args) throws Exception {
+		BasicConfigurator.configure();
+		Logger.getLogger("de.fau.cs.jstk").setLevel(Level.FATAL);
 		for (int i = 0; i < args.length; ++i) {
 			try {
 				List<Sample> samples = SampleReader.readFile(new FileReader(args[i]));
