@@ -488,7 +488,7 @@ public class ParallelUbmGmm {
 //					logger.info("ParallelUbmGmm.main(): more CPUs requested than available, scaling back to " + threads);
 //				}
 			} else if (args[i].equals("--silent"))
-				Logger.getLogger("de.fau.cd.jstk").setLevel(Level.FATAL);
+				Logger.getLogger("de.fau.cs.jstk").setLevel(Level.FATAL);
 			else if (args[i].equals("--model-dir")) {
 			    modelDir = args[++i];
 			} else if (args[i].equals("-t")) {
