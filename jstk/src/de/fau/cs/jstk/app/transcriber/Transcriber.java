@@ -51,6 +51,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	private VisualizerTranscription transcriptionVisualizer;
 	private VisualizerPitch pitchVisualizer;
 	private TranscriptionList list;
+	private String transcriptionFile;
 	private JLabel fileLabel;
 	private JButton playButton;
 	private JTextField wordEdit = new JTextField(20);
@@ -105,6 +106,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 
 		preferences = new Preferences("transcriber.ini");
 		setPreferences(preferences);
+		transcriptionFile = preferences.getString("transcriptionFile");
 
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
@@ -762,11 +764,14 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	}
 
 	public void loadTranscription() {
-		try {
-			JFileChooser fc = new JFileChooser();
+		try {			
+			JFileChooser fc = new JFileChooser(transcriptionFile);
+			fc.setSelectedFile(new File(transcriptionFile));
+			fc.setDialogTitle("Load transcription");
 			if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 				list = new TranscriptionList();
-				list.load(fc.getSelectedFile().getPath());
+				transcriptionFile = fc.getSelectedFile().getPath();
+				list.load(transcriptionFile);
 				turnListDialog.fillList(list.getTurnList());
 				newTranscription(list.goTo(0));
 				enableMenuItems(true);
@@ -791,7 +796,9 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 
 	public void saveAsTranscription() {
 		if (list != null) {
-			JFileChooser fc = new JFileChooser();
+			JFileChooser fc = new JFileChooser(transcriptionFile);
+			fc.setSelectedFile(new File(transcriptionFile));
+			fc.setDialogTitle("Save transcription");
 			if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
 				try {
 					list.save(fc.getSelectedFile().getName());
@@ -906,6 +913,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		spectrumWindow.saveWindowProperties();
 		acWindow.saveWindowProperties();
 		pitchEstimatorWindow.saveWindowProperties();
+		preferences.set("transcriptionFile", transcriptionFile);
 		try {
 			preferences.save();
 		} catch (IOException e) {
