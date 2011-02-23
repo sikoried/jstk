@@ -597,6 +597,13 @@ public final class Hmm {
 			a[ns-1][ns-1] = 1.f;
 			break;
 		}
+		case ERGODIC: {
+			for (int i = 0; i < ns; ++i) {
+				pi[i] = (float) (1. / ns);
+				for (int j = 0; j < ns; ++j)
+					a[i][j] = (float) (1. / ns);
+			}
+		}
 		default:
 			logger.info("HMM.setTransitions(): requested topology not implemented (yet)");
 		}
