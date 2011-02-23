@@ -26,8 +26,8 @@ import java.io.IOException;
 /**
  * wraps a double array as an AudioSource.
  * 
- * @author hoenig
- *
+ * @author hoenig 
+ * 
  */
 public class AudioBuffer implements AudioSource {
 
