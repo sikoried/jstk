@@ -32,6 +32,7 @@ public class Preferences {
 	public Preferences(String filename) {
 		this.filename = filename;
 		properties = new LinkedHashMap<String, String>();
+		properties.put("transcriptionFile", "");
 		properties.put("wavdir", "./WAV/");
 		properties.put("f0dir_original", "./F0_AUTO/");
 		properties.put("f0dir_corrected", "./F0_CORRECTED/");
@@ -54,10 +55,10 @@ public class Preferences {
 		properties.put("acWindow.width", "400");
 		properties.put("acWindow.height", "400");
 		properties.put("pitchEstimatorWindow.x", "0");
-		properties.put("pitchEstimatorWindow.y", "800");
+		properties.put("pitchEstimatorWindow.y", "0");
 		properties.put("pitchEstimatorWindow.width", "1050");
 		properties.put("pitchEstimatorWindow.height", "150");
-		properties.put("pitchEstimatorWindow.zoom", "5");
+		properties.put("pitchEstimatorWindow.zoom", "3");
 
 		defaults = new LinkedHashMap<String, String>(properties);
 		try {
