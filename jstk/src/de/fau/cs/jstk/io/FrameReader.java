@@ -83,7 +83,7 @@ public class FrameReader implements FrameSource {
 			if (l == null)
 				return false;
 			
-			String [] split = l.trim().split("\\s+)");
+			String [] split = l.trim().split("\\s+");
 			if (split.length != fd)
 				throw new IOException("line " + lnr.getLineNumber() + ": invalid number of features");
 			
