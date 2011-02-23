@@ -34,6 +34,8 @@ public class VisualizerSpectrogram extends FileVisualizer {
 
 	public int windowFunction = Window.HAMMING_WINDOW;
 	public double windowLength = 16;
+	public float brightness = 0.4f;
+	public boolean colorSpectrogram = false;
 
 	private double[][] spectrogram;
 	double shift;
@@ -164,14 +166,27 @@ public class VisualizerSpectrogram extends FileVisualizer {
 				if (f < 0) {
 					f = 0;
 				}
-				f = 255 - f;
-				if (selected) {
-					int f1 = (f * c1_r + (255 - f) * c2_r) / 255;
-					int f2 = (f * c1_g + (255 - f) * c2_g) / 255;
-					int f3 = (f * c1_b + (255 - f) * c2_b) / 255;
-					g.setColor(new Color(f1, f2, f3));
+
+				if (colorSpectrogram) {
+					Color c = new Color(Color.HSBtoRGB((255-f)/360.0f, 1.0f, brightness+(1.0f-brightness)*f/255.0f));
+					if (selected) {
+						int f1 = (c.getRed() * c1_r + (255 - c.getRed()) * c2_r) / 255;
+						int f2 = (c.getGreen() * c1_g + (255 - c.getGreen()) * c2_g) / 255;
+						int f3 = (c.getBlue() * c1_b + (255 - c.getBlue()) * c2_b) / 255;
+						g.setColor(new Color(f1, f2, f3));
+					} else {
+						g.setColor(c);
+					}					
 				} else {
-					g.setColor(new Color(f, f, f));
+					f = 255 - f;
+					if (selected) {
+						int f1 = (f * c1_r + (255 - f) * c2_r) / 255;
+						int f2 = (f * c1_g + (255 - f) * c2_g) / 255;
+						int f3 = (f * c1_b + (255 - f) * c2_b) / 255;
+						g.setColor(new Color(f1, f2, f3));
+					} else {
+						g.setColor(new Color(f, f, f));
+					}
 				}
 				g.drawLine(x, y0 - i, x, y0 - i);
 			}
