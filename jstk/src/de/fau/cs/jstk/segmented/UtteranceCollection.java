@@ -36,6 +36,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Node;
 
+
 public class UtteranceCollection implements Serializable{
 	private static final long serialVersionUID = -2577602064537299436L;
 	public Utterance [] turns;

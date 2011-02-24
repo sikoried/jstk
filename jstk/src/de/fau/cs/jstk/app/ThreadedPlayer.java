@@ -129,10 +129,9 @@ public class ThreadedPlayer implements Runnable {
 	
 	/**
 	 * Setup the ThreadedPlayer to play from the given AudioSource.
-	 * @param mixer null for default mixer (not advised)
-	 * @param format
-	 * @param data
-	 * @throws IOException
+     *
+	 * @param desiredBufDur buffer duration in seconds. Determines latency e.g. if 
+	 * you stop audio playback. Too small values (< 0.01?) will result in higher load and scrambled playback. 
 	 */
 	public double setup(String mixer, AudioSource source, double desiredBufDur) throws IOException {
 		try {
