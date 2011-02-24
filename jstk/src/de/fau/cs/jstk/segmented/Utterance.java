@@ -1,4 +1,4 @@
-package de.fau.cs.jstk.assess.struc;
+package de.fau.cs.jstk.segmented;
 
 
 import java.io.Serializable;
@@ -7,7 +7,7 @@ import java.util.List;
 
 import org.w3c.dom.Node;
 
-import de.fau.cs.jstk.assess.struc.Boundary.BOUNDARIES;
+import de.fau.cs.jstk.segmented.Boundary.BOUNDARIES;
 
 public class Utterance implements Serializable{
 	

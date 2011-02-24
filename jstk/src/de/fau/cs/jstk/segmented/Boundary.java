@@ -1,4 +1,4 @@
-package de.fau.cs.jstk.assess.struc;
+package de.fau.cs.jstk.segmented;
 
 
 
