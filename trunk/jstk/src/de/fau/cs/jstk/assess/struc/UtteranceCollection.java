@@ -13,15 +13,15 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.w3c.dom.Node;
 
-public class Session implements Serializable{
+public class UtteranceCollection implements Serializable{
 	private static final long serialVersionUID = -2577602064537299436L;
 	public Utterance [] turns;
 
-	Session(Utterance [] turns){
+	UtteranceCollection(Utterance [] turns){
 		this.turns = turns;
 	}
 	
-	public static Session read(Node node) throws Exception {
+	public static UtteranceCollection read(Node node) throws Exception {
 		List<Utterance> turns = new LinkedList<Utterance>();
 		
 		String nodeName = node.getNodeName();
@@ -79,10 +79,10 @@ public class Session implements Serializable{
 		
 		Utterance [] dummy = new Utterance[0];
 		
-		return new Session(turns.toArray(dummy));
+		return new UtteranceCollection(turns.toArray(dummy));
 	}
 
-	public static Session read(BufferedInputStream in) throws Exception {
+	public static UtteranceCollection read(BufferedInputStream in) throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
 		DocumentBuilder db;
@@ -108,7 +108,7 @@ public class Session implements Serializable{
 	
 	public static void main(String[] args) {		
 		try {
-			Session session = Session.read(new BufferedInputStream(new FileInputStream("pronunciation/test/dialog.xml")));
+			UtteranceCollection session = UtteranceCollection.read(new BufferedInputStream(new FileInputStream("pronunciation/test/dialog.xml")));
 			
 			int i;
 			for (i = 0; i < session.turns.length; i++)
