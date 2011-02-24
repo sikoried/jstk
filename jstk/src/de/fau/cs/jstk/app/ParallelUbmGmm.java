@@ -132,7 +132,7 @@ public class ParallelUbmGmm {
 		 * The actual scoring procedure. As long as the distributor has jobs, get
 		 * the next job and evaluate (fast-score) the feature file. The method
 		 * also caches the speaker models on demand.
-		 */
+		 */ 
 		public void run() {
 			Job current = null;
 			try {
@@ -285,7 +285,7 @@ public class ParallelUbmGmm {
 				logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): Exception working on file " + current.fileName);
 			} catch (ClassNotFoundException e) {
 				logger.info(e.toString());
-				logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): Exception loading models for " + current.fileName);
+				logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): Exception loading models");// for " + current.fileName);
 			} finally {
 				// notify the main thread
 				latch.countDown();

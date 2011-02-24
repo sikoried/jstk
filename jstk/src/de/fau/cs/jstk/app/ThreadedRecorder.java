@@ -168,9 +168,9 @@ public class ThreadedRecorder implements Runnable {
 		stopRequested = true;
 		try {
 			if (thread != null){
-				//System.err.println("stop(): thread.join() ...");
+				System.err.println("stop(): thread.join() ...");
 				thread.join();
-				//System.err.println("stop(): thread.join() done.");
+				System.err.println("stop(): thread.join() done.");
 			}
 			thread = null;
 		} catch (InterruptedException e) {
@@ -196,8 +196,7 @@ public class ThreadedRecorder implements Runnable {
 				if (!paused)
 					synchronized(os){
 						os.write(source.getRawBuffer());
-					}
-				
+					}				
 			}
 
 			// close and cleanup
