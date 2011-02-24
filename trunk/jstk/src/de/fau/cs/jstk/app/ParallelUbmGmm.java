@@ -32,11 +32,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,7 +43,6 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import de.fau.cs.jstk.framed.SimulatedFrameSource;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.stat.Density;
@@ -53,12 +50,14 @@ import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.trans.NAP;
 import de.fau.cs.jstk.util.Pair;
 
-
+/**
+ * The ParallelUbmGmm class reads a trial file and distributes the trials to the
+ * available worker threads
+ * 
+ * @author sikoried
+ */
 public class ParallelUbmGmm {
 	private static Logger logger = Logger.getLogger(ParallelUbmGmm.class);
-	
-	/** use UFV instead of Frame format */
-	public static int ufv = 0;
 	
 	/**
 	 * The Worker class uses Job instances to evaluate data on (cached) models.
@@ -72,8 +71,7 @@ public class ParallelUbmGmm {
 		/** universal background model to be evaluated by every instance */
 		Mixture ubm;
 		
-		/** lookup table for string->speakermodel */
-		HashMap<String, Mixture> models;
+		/** fast scoring? */
 		int fastScoring;
 		
 		/** main thread synchronization */
@@ -82,6 +80,7 @@ public class ParallelUbmGmm {
 		/** per-density nap transformations */
 		NAP [] nap = null;
 		
+		/** reduction rank for NAP transformation */
 		int rank;
 		
 		/** fast scoring buffers */
@@ -94,12 +93,15 @@ public class ParallelUbmGmm {
 		long processed_files = 0;
 		
 		/**
-		 * Generate a new Worker instance. Make sure the referenced models are
+		 * Generate a new Worker instance. Make sure the referenced Mixture is
 		 * only accessible by this thread/instance as for the internal caching
 		 * of scores.
 		 * @param ubm needs to be a copy for this thread exclusively!
 		 * @param jobDistributor
 		 * @param fastScoring number of densities for fast scoring (typically 5)
+		 * @param latch count down latch for synchronization with main thread
+		 * @param nap component-wise NAP transformation to apply before computation
+		 * @param rank rank of projection
 		 */
 		Worker(Mixture ubm, Distributor jobDistributor, int fastScoring, CountDownLatch latch, NAP [] nap, int rank) {
 			this.ubm = ubm;
@@ -108,9 +110,7 @@ public class ParallelUbmGmm {
 			this.latch = latch;
 			this.nap = nap;
 			this.rank = rank;
-			models = new HashMap<String, Mixture>();
-			
-			
+		
 			if (fastScoring > 0) {
 				ndx = new int [fastScoring];
 				scr = new double [fastScoring];
@@ -137,32 +137,17 @@ public class ParallelUbmGmm {
 			Job current = null;
 			try {
 				while ((current = jobDistributor.next()) != null) {
-					logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): starting job " + current.summary());
 					
-					// cache unloaded models
-					for (String spk : current.models) {
-						if (!models.containsKey(spk)) {
-							models.put(spk, Mixture.readFromFile(new File((current.modelDir != null ? current.modelDir + System.getProperty("file.separator") : "") + spk)));
-							logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): caching speaker model " + spk);
-						}
-					}
-					
-					// open the feature file, prepare buffers
-					FrameSource source = new SimulatedFrameSource(current.getFrameReader());
+					Mixture speaker = new Mixture(new FileInputStream(current.getModelFile()));
+					FrameSource source = new FrameInputStream(current.getFeatureFile());
 					
 					double [] buf = new double [source.getFrameSize()];
 					
 					// score accumulators
-					double h1;
-					double [] h2 = new double [buf.length];
+					double h1, h2;
+					double [] hb = new double [buf.length];
 					double score_ubm = 0.;
-					double [] score_spk = new double [current.models.size()];
-					
-					// cache the densities for faster access
-					Mixture [] speakers = new Mixture [current.models.size()];
-					int m = 0;
-					for (String key : current.models)
-						speakers[m++] = models.get(key);
+					double score_spk = 0.;
 					
 					// number of frames for later normalization
 					long frames = 0;
@@ -170,35 +155,21 @@ public class ParallelUbmGmm {
 					if (fastScoring == 0) {
 						while (source.read(buf)) {
 							// score all densities -- time consuming!
-
-							// background model
 							if (nap != null) {
-								h1 = 0.;
+								// UBM
+								h1 = 0.; h2 = 0.;
 								for (int i = 0; i < ubm.nd; ++i) {
-									System.arraycopy(buf, 0, h2, 0, buf.length);
-									nap[i].project(h2, rank);
-									h1 += ubm.components[i].evaluate(h2);
+									System.arraycopy(buf, 0, hb, 0, buf.length);
+									nap[i].project(hb, rank);
+									h1 += ubm.components[i].evaluate(hb);
+									h2 += speaker.components[i].evaluate(hb);
 								}
 								score_ubm += Math.log(h1);
-							} else
-								score_ubm += Math.log(ubm.evaluate(buf));						
-							
-							// speaker models
-							if (nap != null) {
-								for (int i = 0; i < score_spk.length; ++i) {
-									h1 = 0.;
-									for (int j = 0; j < speakers[i].nd; ++j) {
-										System.arraycopy(buf, 0, h2, 0, buf.length);
-										nap[j].project(h2, rank);
-										h1 += speakers[i].components[j].evaluate(h2);
-									}
-									score_spk[i] += Math.log(h1);
-								}
-							} else
-								for (int i = 0; i < score_spk.length; ++i)
-									score_spk[i] += Math.log(speakers[i].evaluate(buf));
-							
-							// increase number of frames for later normalization
+								score_spk += Math.log(h2);
+							} else {
+								score_ubm += Math.log(ubm.evaluate(buf));
+								score_spk += Math.log(speaker.evaluate(buf));
+							}
 							frames++;
 						}
 					} else {
@@ -213,9 +184,9 @@ public class ParallelUbmGmm {
 							Density [] c = ubm.components;
 							for (int i = 0; i < ubm.components.length; ++i) {
 								if (nap != null) {
-									System.arraycopy(buf, 0, h2, 0, buf.length);
-									nap[i].project(h2, rank);
-									c[i].evaluate(h2);
+									System.arraycopy(buf, 0, hb, 0, buf.length);
+									nap[i].project(hb, rank);
+									c[i].evaluate(hb);
 								} else
 									c[i].evaluate(buf);
 								
@@ -248,44 +219,37 @@ public class ParallelUbmGmm {
 							score_ubm += Math.log(ubm_part);
 							
 							// step 4: now evaluate the best densities for each speaker model
-							for (int i = 0; i < score_spk.length; ++i) {
-								double spk_part = 0.;
-								c = speakers[i].components;
-								
-								if (nap != null) {
-									for (int j = 0; j < fastScoring; ++j) {
-										System.arraycopy(buf, 0, h2, 0, buf.length);
-										nap[ndx[j]].project(h2, rank);
-										spk_part += c[ndx[j]].evaluate(h2); 
-									}									
-								} else
-									for (int j = 0; j < fastScoring; ++j)
-										spk_part += c[ndx[j]].evaluate(buf);
-								score_spk[i] += Math.log(spk_part);
-							}
+							h1 = 0.;
+							c = speaker.components;
 							
+							if (nap != null) {
+								for (int j = 0; j < fastScoring; ++j) {
+									System.arraycopy(buf, 0, hb, 0, buf.length);
+									nap[ndx[j]].project(hb, rank);
+									h1 += c[ndx[j]].evaluate(hb); 
+								}									
+							} else
+								for (int j = 0; j < fastScoring; ++j)
+									h1 += c[ndx[j]].evaluate(buf);
+							
+							score_spk += Math.log(h1);
+														
 							// increase number of frames for later normalization
 							frames++;
 						}
 					}
 					
 					// finish score computation
-					for (int i = 0; i < score_spk.length; ++i)
-						current.scores.add((score_spk[i] - score_ubm) / frames);
-					
-					logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): processed " + frames + " frames");
-					
+					current.score = (score_spk - score_ubm) / frames;
+
 					// private statistics
 					processed_frames += frames;
 					processed_files++;
-					processed_models += score_spk.length;
+					processed_models += 1;
 				}
 			} catch (IOException e) {
 				logger.info(e.toString());
-				logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): Exception working on file " + current.fileName);
-			} catch (ClassNotFoundException e) {
-				logger.info(e.toString());
-				logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): Exception loading models");// for " + current.fileName);
+				logger.info("ParallelUbmGmm.Worker#" + Thread.currentThread().getId() + ".run(): Exception working on file " + current.featureFile);
 			} finally {
 				// notify the main thread
 				latch.countDown();
@@ -297,61 +261,43 @@ public class ParallelUbmGmm {
 	}
 
 	/**
-	 * A Job consists of a feature file and a list of speaker models
-	 * to evaluate. The worker provides the actual models and the UBM
-	 * and will place the scores in the job and mark it as processed.
+	 * A Job consists of a feature and model file name and stores the score.
 	 * @author sikoried
 	 */
 	static class Job {
 		private static int idcnt = 0;
-		String fileName;
-		String featureFileDir = null;
+		
+		String featureFile;
+		String featureDir = null;
+		
+		String modelFile;
 		String modelDir = null;
-		List<String> models;
-		List<Double> scores = new LinkedList<Double>();
+		
+		double score;
 		
 		int id = idcnt++;
 		
-		Job(String fileName, List<String> modelFiles, String featureFileDir, String modelDir) {
-			this.fileName = fileName;
-			this.models = modelFiles;
-			this.featureFileDir = featureFileDir;
+		Job(String featureFile, String modelFile, String featureDir, String modelDir) {
+			this.featureFile = featureFile;
+			this.modelFile = modelFile;
+			this.featureDir = featureDir;
 			this.modelDir = modelDir;
 		}
 		
-		public FrameInputStream getFrameReader() throws IOException {
-			return new FrameInputStream(new File((featureFileDir != null ? featureFileDir + System.getProperty("file.separator") : "") + fileName));
+		public File getModelFile() {
+			return new File(modelDir == null ? modelFile : modelDir + System.getProperty("file.separator") + modelFile);
 		}
 		
-		public String summary() {
-			StringBuffer sb = new StringBuffer();
-			sb.append(id + ":" + fileName + ":" + models.size() + ":");
-			for (String m : models)
-				sb.append(m + ",");
-			return sb.toString();
+		public File getFeatureFile() {
+			return new File(featureDir == null ? featureFile : featureDir + System.getProperty("file.separator") + featureFile);
 		}
-		
+				
 		/**
-		 * Produce a ASCII representation of the evaluated
-		 * trials in lines of "speaker file score". Scores 
-		 * are not normalized.
+		 * Produce a ASCII representation of the evaluated trial as 
+		 * "speaker-model feature-file score". Scores are not normalized.
 		 */
 		public String toString() {
-			StringBuffer sb = new StringBuffer();
-			
-			Iterator<String> i1 = models.iterator();
-			Iterator<Double> i2 = scores.iterator();
-			
-			for (int i = 0; i < scores.size(); ++i) {
-				sb.append(i1.next());
-				sb.append(" " + fileName + " ");
-				sb.append(i2.next());
-				
-				if (i < scores.size() - 1)
-					sb.append("\n");
-			}
-			
-			return sb.toString();
+			return modelFile + " " + featureFile + " " + score;
 		}
 	}
 	
@@ -393,8 +339,8 @@ public class ParallelUbmGmm {
 	}
 	
 	/**
-	 * Read in a trial file, specify a feature file directory if required, and 
-	 * generate the Job list.
+	 * Read in a trial file, specify a model and feature file directory if 
+	 * required, and generate the Job list.
 	 * @param trialFile
 	 * @param featureFileDir
 	 * @param modelDir
@@ -404,9 +350,9 @@ public class ParallelUbmGmm {
 		logger.info("ParallelUbmGmm.readTrialFile(): reading " + trialFile);
 		
 		BufferedReader br = new BufferedReader(new FileReader(trialFile));
-		HashMap<String, List<String>> fileToModels = new HashMap<String, List<String>>();
+		List<Job> jl = new LinkedList<Job>();
+		
 		String line;
-		int numTrials = 0;
 		while ((line = br.readLine()) != null) {
 			// format is "<speaker-model> <feature-file>"
 			String [] trial = line.split("\\s+");
@@ -416,21 +362,12 @@ public class ParallelUbmGmm {
 			if (!(new File((featureFileDir != null ? featureFileDir + System.getProperty("file.separator") : "") + trial[1])).canRead())
 				throw new IOException("Could not read feature file" + trial[1]);
 			
-			if (!fileToModels.containsKey(trial[1]))
-				fileToModels.put(trial[1], new LinkedList<String>());
-			
-			fileToModels.get(trial[1]).add(trial[0]);
-			numTrials++;
+			jl.add(new Job(trial[1], trial[0], featureFileDir, modelDir));
 		}
 		br.close();
 		
-		logger.info("ParallelUbmGmm.readTrialFile(): read " + numTrials + " trials; organizing...");
-		List<Job> jl = new LinkedList<Job>();
+		logger.info("ParallelUbmGmm.readTrialFile(): read " + jl.size() + " trials");
 		
-		for (Entry<String, List<String>> e : fileToModels.entrySet())
-			jl.add(new Job(e.getKey(), e.getValue(), featureFileDir, modelDir));
-		
-		logger.info("ParallelUbmGmm.readTrialFile(): prepared " + jl.size() + " jobs for execution");
 		return jl;
 	}
 	
@@ -509,9 +446,7 @@ public class ParallelUbmGmm {
 			logger.info("ParallelUbmGmm.main(): model-dir     : " + modelDir);
 		logger.info("ParallelUbmGmm.main(): fast-scoring  : " + fastScoring); 
 		logger.info("ParallelUbmGmm.main(): num-threads   : " + threads);
-		if (ufv > 0)
-			logger.info("ParallelUbmGmm.main(): using UFV(" + ufv + ")");
-		
+				
 		// read in trial file
 		List<Job> jobs = readTrialFile(parsedArgs[1], parsedArgs[3], modelDir);
 		Distributor d = new Distributor(jobs);
