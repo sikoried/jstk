@@ -57,7 +57,7 @@ public class FFT extends SpectralTransformation implements FrameSource {
 	private DoubleFFT_1D fft = null;
 	
     public FFT(FrameSource source, int min_fft_size) {
-        this(source, true, true, 0, min_fft_size);
+        this(source, true, true, 1, min_fft_size);
     }
 
 	
