@@ -17,24 +17,22 @@
 
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 package de.fau.cs.jstk.vc;
 
 import java.awt.Graphics;
 
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
-import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.framed.*;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedAudioSourceReader;
-
 
 public class VisualizerSpectrum extends VisualComponent {
 
 	private static final long serialVersionUID = -4210642749764396885L;
 
 	private int windowLength; // in [ms]
-	private int blockSize;    // minimum block size (power of 2)
+	private int blockSize; // minimum block size (power of 2)
 	private int windowType;
 
 	private int samplerate;
@@ -62,7 +60,7 @@ public class VisualizerSpectrum extends VisualComponent {
 			samplerate = source.getSampleRate();
 			xMax = samplerate / 2;
 			audiosource = source.getReader();
-			window = createWindow(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10);
 			enabled = true;
 		}
 	}
@@ -74,24 +72,11 @@ public class VisualizerSpectrum extends VisualComponent {
 		if (source != null) {
 			samplerate = source.getSampleRate();
 			audiosource = source.getReader();
-			window = createWindow(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10);
 			enabled = true;
 		}
 		draw();
 		repaint();
-	}
-
-	private Window createWindow(AudioSource source, int windowType,
-			int windowLength, int shift) {
-		switch (windowType) {
-		case Window.RECTANGULAR_WINDOW:
-			return new RectangularWindow(source, windowLength, shift);
-		case Window.HANN_WINDOW:
-			return new HannWindow(source, windowLength, shift);
-		case Window.HAMMING_WINDOW:
-		default:
-			return new HammingWindow(source, windowLength, shift);
-		}
 	}
 
 	public void setParameters(int windowLength, int minBlockSize, int windowType) {
@@ -101,7 +86,8 @@ public class VisualizerSpectrum extends VisualComponent {
 			this.windowLength = windowLength;
 			this.windowType = windowType;
 			if (audiosource != null) {
-				window = createWindow(audiosource, windowType, windowLength, 10);
+				window = Window.create(audiosource, windowType, windowLength,
+						10);
 				changed = true;
 			}
 		}
@@ -116,7 +102,6 @@ public class VisualizerSpectrum extends VisualComponent {
 		}
 	}
 
-
 	/**
 	 * Reaction to the componentResized event
 	 */
@@ -128,17 +113,18 @@ public class VisualizerSpectrum extends VisualComponent {
 		repaint();
 	}
 
-	private void calculateSpectrum(int sample) {
-		int windowSize = windowLength * samplerate / 1000;
+	public static double[] calculateSpectrum(
+			BufferedAudioSourceReader audiosource, int sample, int samplerate,
+			double windowLength, int blockSize, Window window, boolean log) {
+		int windowSize = (int) (windowLength * samplerate / 1000);
 
 		while (windowSize > blockSize) {
 			blockSize *= 2;
 		}
-		this.sample = sample;
 
 		double buf[] = new double[blockSize];
 		DoubleFFT_1D fft = new DoubleFFT_1D(blockSize);
-		spectrum = new double[blockSize / 2 + 1];
+		double[] spectrum = new double[blockSize / 2 + 1];
 
 		audiosource.setReadIndex(sample);
 		int count = audiosource.read(buf, windowSize);
@@ -163,8 +149,8 @@ public class VisualizerSpectrum extends VisualComponent {
 		if (blockSize % 2 == 0) {
 			spectrum[blockSize / 2] = Math.abs(buf[1]);
 		} else {
-			spectrum[blockSize / 2] = Math.sqrt(buf[blockSize - 1]
-					* buf[blockSize - 1] + buf[1] * buf[1]);
+			spectrum[blockSize / 2] = Math.sqrt(buf[blockSize - 1] * buf[blockSize - 1]
+					+ buf[1] * buf[1]);
 		}
 
 		spectralEnergy += spectrum[blockSize / 2];
@@ -173,10 +159,11 @@ public class VisualizerSpectrum extends VisualComponent {
 		if (spectralEnergy > 0.) {
 			for (int i = 0; i < spectrum.length; i++) {
 				spectrum[i] /= spectralEnergy;
-				spectrum[i] = 20 * Math.log10(spectrum[i]);
+				if (log) {spectrum[i] = 20 * Math.log10(spectrum[i]); }
 			}
 		}
 
+		return spectrum;
 	}
 
 	@Override
@@ -198,7 +185,9 @@ public class VisualizerSpectrum extends VisualComponent {
 	}
 
 	public void showSpectrum(int sample) {
-		calculateSpectrum(sample);
+		this.sample = sample;
+		spectrum = calculateSpectrum(audiosource, sample, samplerate,
+				windowLength, blockSize, window, true);
 		draw();
 		repaint();
 	}

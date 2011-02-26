@@ -38,7 +38,7 @@ public class VisualizerPitch extends FileVisualizer {
 	public int f0max = 600;
 	public int f0min = 50;
 	public int shift;
-	public Color colorSignal2 = Color.RED;
+	public Color colorSignal2 = Color.ORANGE;
 
 	private BufferedFrameSource pitchSource1;
 	private BufferedFrameSource pitchSource2;
@@ -128,8 +128,9 @@ public class VisualizerPitch extends FileVisualizer {
 					g.setColor(colorSignal2);
 					g.drawOval(px - 1, py2 - 1, 3, 3);
 					if (selected[i]) {
-						g.fillOval(px - 1, py2 - 1, 3, 3);
-					}
+						g.setColor(colorSignal2);
+						g.fillOval(px - 1, py2 - 1, 3, 3);					
+					}						
 				}
 			}
 		}
