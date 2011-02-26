@@ -24,7 +24,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 
+import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.Mixer;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.*;
 
@@ -47,6 +49,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	private BufferedAudioSource source;
 	private BufferedFrameSource pitchsource;
 	private VisualizerSpeechSignal audioSignalVisualizer;
+	private VisualizerPower powerVisualizer;
 	private VisualizerSpectrogram spectrogramVisualizer;
 	private VisualizerTranscription transcriptionVisualizer;
 	private VisualizerPitch pitchVisualizer;
@@ -55,6 +58,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	private JLabel fileLabel;
 	private JButton playButton;
 	private JTextField wordEdit = new JTextField(20);
+	private SpectrogramControlWindow spectrogramControlWindow;
 	private SpectrumWindow spectrumWindow;
 	private AutocorrelationWindow acWindow;
 	private PitchEstimatorWindow pitchEstimatorWindow;
@@ -93,6 +97,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	private JMenuItem f0SetToDoubleItem; 
 	private JMenuItem f0SetTohalfItem; 
 	private JMenuItem f0SplineInterpolationItem; 
+	private JCheckBoxMenuItem viewSpectrogramControlItem;
 	private JCheckBoxMenuItem viewSpectrumItem;
 	private JCheckBoxMenuItem viewAutocorrelationItem;
 	private JCheckBoxMenuItem viewPitchEstimatorItem;
@@ -153,10 +158,15 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		audioSignalVisualizer.setPreferredSize(new Dimension(640, 100));
 		box.add(audioSignalVisualizer);
 		box.add(Box.createVerticalStrut(10));
+		
+		powerVisualizer = new VisualizerPower("powerVis", source);
+		powerVisualizer.setPreferredSize(new Dimension(640, 100));
+		box.add(powerVisualizer);
+		box.add(Box.createVerticalStrut(10));
 
 		spectrogramVisualizer = new VisualizerSpectrogram("spectrogramVis",
 				source);
-		spectrogramVisualizer.setPreferredSize(new Dimension(640, 160));
+		spectrogramVisualizer.setPreferredSize(new Dimension(640, 158));
 		box.add(spectrogramVisualizer);
 		box.add(Box.createVerticalStrut(10));
 
@@ -222,6 +232,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		// visual components:
 		VisualizationInformer informer = new VisualizationInformer();
 		audioSignalVisualizer.setVisualizationInformer(informer);
+		powerVisualizer.setVisualizationInformer(informer);
 		spectrogramVisualizer.setVisualizationInformer(informer);
 		pitchVisualizer.setVisualizationInformer(informer);
 		transcriptionVisualizer.setVisualizationInformer(informer);
@@ -231,9 +242,12 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		// ZOOM_MODE
 		audioSignalVisualizer.switchMode(FileVisualizer.SELECTION_MODE);
 		audioSignalVisualizer.showCursorY = false;
+		powerVisualizer.switchMode(FileVisualizer.SELECTION_MODE);
+		powerVisualizer.showCursorY = false;
 		spectrogramVisualizer.switchMode(FileVisualizer.SELECTION_MODE);
 		c.add(scrollbar, BorderLayout.SOUTH);
 
+		spectrogramControlWindow = new SpectrogramControlWindow(preferences, this, spectrogramVisualizer);
 		spectrumWindow = new SpectrumWindow(preferences, this, source);
 		acWindow = new AutocorrelationWindow(preferences, this, source);
 		pitchEstimatorWindow = new PitchEstimatorWindow(preferences, this,
@@ -244,6 +258,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		aboutDialog = new AboutDialog(this);
 
 		audioSignalVisualizer.addSampleSelectedListener(this);
+		powerVisualizer.addSampleSelectedListener(this);
 		spectrogramVisualizer.addSampleSelectedListener(this);
 		pitchVisualizer.addSampleSelectedListener(new SampleSelectedListener() {
 			public void sampleSelected(int sample) {
@@ -365,6 +380,8 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 
 		// View menu
 		JMenu viewMenu = new JMenu("View");
+		viewSpectrogramControlItem = newCheckBoxMenuItem(viewMenu, "View spectrogram control window");
+		viewMenu.addSeparator();		
 		viewSpectrumItem = newCheckBoxMenuItem(viewMenu, "View spectrum");
 		viewAutocorrelationItem = newCheckBoxMenuItem(viewMenu,
 				"View autocorrelation");
@@ -428,6 +445,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 			break;
 		case KeyEvent.VK_F3:
 			audioSignalVisualizer.switchMode(VisualComponent.ZOOM_MODE);
+			powerVisualizer.switchMode(VisualComponent.ZOOM_MODE);
 			spectrogramVisualizer.switchMode(VisualComponent.ZOOM_MODE);
 			zoomItem.setSelected(true);
 			break;
@@ -444,6 +462,8 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 			if (zoomItem.isSelected()) {
 				audioSignalVisualizer
 						.switchMode(VisualComponent.SELECTION_MODE);
+				powerVisualizer
+				.switchMode(VisualComponent.SELECTION_MODE);
 				spectrogramVisualizer
 						.switchMode(VisualComponent.SELECTION_MODE);
 				zoomItem.setSelected(false);
@@ -453,15 +473,25 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 				audioSignalVisualizer.setMarked(false);
 			}
 			break;
+		/*
 		case KeyEvent.VK_PLUS:
 		case KeyEvent.VK_ADD:
-			spectrogramVisualizer.setGamma(spectrogramVisualizer.getGamma() + 0.1);
+			if (mod == InputEvent.SHIFT_DOWN_MASK) {
+				spectrogramVisualizer.setProperties(spectrogramVisualizer.getGamma() + 0.1, spectrogramVisualizer.getBrightness());
+			} else {
+				spectrogramVisualizer.setProperties(spectrogramVisualizer.getGamma(), spectrogramVisualizer.getBrightness() + 0.05f);				
+			}
 			break;
 		case KeyEvent.VK_MINUS:
 		case KeyEvent.VK_SUBTRACT:
-			spectrogramVisualizer.setGamma(spectrogramVisualizer.getGamma() - 0.1);
+			if (mod == InputEvent.SHIFT_DOWN_MASK) {
+				spectrogramVisualizer.setProperties(spectrogramVisualizer.getGamma() - 0.1, spectrogramVisualizer.getBrightness());
+			} else {
+				spectrogramVisualizer.setProperties(spectrogramVisualizer.getGamma(), spectrogramVisualizer.getBrightness() - 0.05f);				
+			}
 			break;
-		}			
+		*/			
+		}
 	}
 
 	@Override
@@ -591,6 +621,10 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 			transcriptionVisualizer.disconnect(-1);
 			return;
 		}
+		if (arg0.getSource() == viewSpectrogramControlItem) {
+			showSpectrogramControl();
+			return;
+		}
 		if (arg0.getSource() == viewSpectrumItem) {
 			showSpectrum();
 			return;
@@ -639,6 +673,9 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	}
 
 	public void windowClosed(Object sender) {
+		if (sender == spectrogramControlWindow) {
+			viewSpectrogramControlItem.setSelected(false);
+		}
 		if (sender == spectrumWindow) {
 			viewSpectrumItem.setSelected(false);
 		}
@@ -716,6 +753,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		connectToPrevWordItem.setEnabled(enable);
 		disconnectFromNextWordItem.setEnabled(enable);
 		disconnectFromPrevWordItem.setEnabled(enable);
+		viewSpectrogramControlItem.setEnabled(enable);
 		viewSpectrumItem.setEnabled(enable);
 		viewAutocorrelationItem.setEnabled(enable);
 		viewPitchEstimatorItem.setEnabled(enable);
@@ -731,6 +769,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 							+ list.getTurnName(), false);
 			source = new BufferedAudioSource(reader);
 			audioSignalVisualizer.setBufferedAudioSource(source);
+			powerVisualizer.setBufferedAudioSource(source);
 			spectrogramVisualizer.setBufferedAudioSource(source);
 			transcriptionVisualizer.setBufferedAudioSource(source);
 			// myVisualizer.setBufferedAudioSource(source);
@@ -746,6 +785,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		} catch (Exception e) {
 			source = null;
 			audioSignalVisualizer.setBufferedAudioSource(source);
+			powerVisualizer.setBufferedAudioSource(source);
 			spectrogramVisualizer.setBufferedAudioSource(source);
 			pitchVisualizer.setBufferedAudioSource(source);
 			transcriptionVisualizer.setBufferedAudioSource(source);
@@ -1046,6 +1086,16 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 		}
 	}
 
+	public void showSpectrogramControl() {
+		if (spectrogramControlWindow.isVisible()) {
+			spectrogramControlWindow.setVisible(false);
+			viewSpectrogramControlItem.setSelected(false);
+		} else {
+			spectrogramControlWindow.setVisible(true);
+			viewSpectrogramControlItem.setSelected(true);			
+		}
+	}
+	
 	public void showSpectrum() {
 		if (spectrumWindow.isVisible()) {
 			spectrumWindow.setVisible(false);
@@ -1079,9 +1129,11 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	public void zoomMode() {
 		if (zoomItem.isSelected()) {
 			audioSignalVisualizer.switchMode(VisualComponent.ZOOM_MODE);
+			powerVisualizer.switchMode(VisualComponent.ZOOM_MODE);
 			spectrogramVisualizer.switchMode(VisualComponent.ZOOM_MODE);
 		} else {
 			audioSignalVisualizer.switchMode(VisualComponent.SELECTION_MODE);
+			powerVisualizer.switchMode(VisualComponent.SELECTION_MODE);
 			spectrogramVisualizer.switchMode(VisualComponent.SELECTION_MODE);
 		}
 	}
@@ -1111,6 +1163,11 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	}
 
 	public static void main(String[] args) throws Exception {
+		// System.err.println(AudioSystem.getMixer(null).getMixerInfo().getName());
+		// Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
+		// for (Mixer.Info m : availableMixers)
+		//  	System.out.println(m.getName());
+		
 		new Transcriber("JSTK Transcriber");
 	}
 

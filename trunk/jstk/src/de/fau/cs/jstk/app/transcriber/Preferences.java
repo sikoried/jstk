@@ -46,6 +46,10 @@ public class Preferences {
 		properties.put("mainWindow.y", "0");
 		properties.put("mainWindow.width", "650");
 		properties.put("mainWindow.height", "400");
+		properties.put("spectrogramControlWindow.x", "650");
+		properties.put("spectrogramControlWindow.y", "0");
+		properties.put("spectrogramControlWindow.width", "400");
+		properties.put("spectrogramControlWindow.height", "400");
 		properties.put("spectrumWindow.x", "650");
 		properties.put("spectrumWindow.y", "0");
 		properties.put("spectrumWindow.width", "400");
