@@ -279,6 +279,20 @@ public abstract class Window implements FrameSource {
 			}
 		}
 	}
+	
+	public static Window create(AudioSource source, int windowType,
+			double windowLength, double shift) {
+		switch (windowType) {
+		case Window.RECTANGULAR_WINDOW:
+			return new RectangularWindow(source, windowLength, shift);
+		case Window.HANN_WINDOW:
+			return new HannWindow(source, windowLength, shift);
+		case Window.HAMMING_WINDOW:
+		default:
+			return new HammingWindow(source, windowLength, shift);
+		}
+	}
+
 
 	public static void main(String[] args) throws Exception {
 		AudioSource as = new de.fau.cs.jstk.sampled.AudioFileReader(args[0],
