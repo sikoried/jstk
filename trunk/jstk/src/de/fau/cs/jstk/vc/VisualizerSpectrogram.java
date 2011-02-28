@@ -21,15 +21,11 @@
 package de.fau.cs.jstk.vc;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics;
-import java.io.*;
 
-import de.fau.cs.jstk.sampled.AudioSource;
-import de.fau.cs.jstk.framed.*;
+import de.fau.cs.jstk.framed.Window;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedAudioSourceReader;
-import de.fau.cs.jstk.io.BufferedFrameSource;
 
 public class VisualizerSpectrogram extends FileVisualizer {
 

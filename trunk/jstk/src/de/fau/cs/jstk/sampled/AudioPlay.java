@@ -95,6 +95,17 @@ public class AudioPlay {
 		this.desiredBufDur = desiredBufDur;
 
 		initialize();
+		Runtime.getRuntime().addShutdownHook(new Thread(){
+			public void run(){
+				System.err.println("calling tearDown...");
+				try {
+					tearDown();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	
@@ -170,7 +181,7 @@ public class AudioPlay {
 	 */
 	public void tearDown() throws IOException {
 		//No, don't! line.flush();
-		line.drain();
+		// drain is likely to cause problems, too: line.drain();
 		line.stop();
 		line.close();
 		//source.tearDown(); DO NOT tear down the audiosource after play back!!! steidl

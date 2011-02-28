@@ -29,6 +29,8 @@ import java.util.List;
 
 import javax.sound.sampled.*;
 
+
+
 /**
  * Use this class to capture audio directly from a microphone. The default i
  * s 16kHz at 16bit. Other sampling and bit rates are possible, but capturing is 
@@ -149,7 +151,20 @@ public class AudioCapture implements AudioSource {
 		);
 		this.desiredBufDur = desiredBufDur;
 		initialize();
+		
+		Runtime.getRuntime().addShutdownHook(new Thread(){
+			public void run(){
+				System.err.println("calling tearDown...");
+				try {
+					tearDown();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
 	}
+		
 	
 	/**
 	 * Create an AudioCapture object reading from the specified mixer using 
@@ -285,14 +300,7 @@ public class AudioCapture implements AudioSource {
 		tdl.close();		
 		ais.close();		
 	}
-	
-	protected void finalize() throws Throwable {
-		try {
-			tearDown();
-		} finally {
-			super.finalize();
-		}
-	}
+		
 
 	/** the private reading buffer; will be allocated dynamically */
 	private byte [] buf = null;
