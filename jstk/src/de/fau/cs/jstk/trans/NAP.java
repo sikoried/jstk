@@ -185,6 +185,8 @@ public class NAP {
 			}
 		}
 		
+		az = null;
+		
 //		logger.info("A * Z(W) A^t = ");
 //		for (float [] ii : azaT)
 //			logger.info(Arrays.toString(ii));
@@ -195,6 +197,7 @@ public class NAP {
 		// step 4: copy rank most principal EV
 		// use transposed access as Matrix uses [row][column] indexing
 		float [][] vh = eig.getV().getArray();
+		float [] ev = eig.getRealEigenvalues();
 		for (int i = 0; i < m; ++i) {
 			for (int j = i + 1; j < m; ++j) {
 				float h = vh[j][i];
@@ -203,10 +206,16 @@ public class NAP {
 			}
 		}
 		
+		// release the decomposition
+		eig = null;
+		azaT = null;
+		
+		System.gc();
+		
 		// sort by eigenvalue
 		LinkedList<Pair<float [], Float>> sortedEV = new LinkedList<Pair<float [], Float>>();
 		for (int i = 0; i < m; ++i)
-			sortedEV.add(new Pair<float [], Float>(vh[i], eig.getD().get(i, i)));
+			sortedEV.add(new Pair<float [], Float>(vh[i], ev[i]));
 		
 		// sort strongest EV first
 		Collections.sort(sortedEV, new Comparator<Pair<float [], Float>>() {
@@ -288,6 +297,8 @@ public class NAP {
 			}
 		}
 		
+		K = null;
+		
 //		logger.info("ZK = ");
 //		for (float [] ii : ZK)
 //			logger.info(Arrays.toString(ii));
@@ -298,6 +309,7 @@ public class NAP {
 		// step 4: copy rank most principal EV
 		// use transposed access as Matrix uses [row][column] indexing
 		float [][] vh = eig.getV().getArray();
+		float [] ev = eig.getRealEigenvalues();
 		for (int i = 0; i < n; ++i) {
 			for (int j = i + 1; j < n; ++j) {
 				float h = vh[j][i];
@@ -306,10 +318,16 @@ public class NAP {
 			}
 		}
 		
+		// release the decomposition matrix to allow the GC to save space
+		eig = null;
+		ZK = null;
+		
+		System.gc();
+		
 		// sort by eigenvalue
 		LinkedList<Pair<float [], Float>> sortedEV = new LinkedList<Pair<float [], Float>>();
 		for (int i = 0; i < n; ++i)
-			sortedEV.add(new Pair<float [], Float>(vh[i], eig.getD().get(i, i)));
+			sortedEV.add(new Pair<float [], Float>(vh[i], ev[i]));
 		
 		// sort strongest EV first
 		Collections.sort(sortedEV, new Comparator<Pair<float [], Float>>() {
