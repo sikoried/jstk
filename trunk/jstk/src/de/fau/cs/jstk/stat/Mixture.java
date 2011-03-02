@@ -29,15 +29,16 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.Scanner;
 
+import de.fau.cs.jstk.app.MNAP;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.trans.NAP;
 import de.fau.cs.jstk.util.Pair;
 
 /**
@@ -442,10 +443,10 @@ public final class Mixture {
 		"    'p' includes priors, 'm' includes mean vectors, 'c' includes covariances. Use bin.Concat\n" +
 		"    to concatenate feature files.\n" +
 		"  t proj rank [in-out-list | [< in > out]]\n" +
-		"    Transform the means of the mixture density using the NAP projection matrix; use 0 for full\n" +
+		"    Transform the means of the mixture density using the MNAP projection matrix; use 0 for full\n" +
 		"    rank projection.";
 	
-	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, SV, NAP };
+	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, SV, MNAP };
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length < 1) {
@@ -468,7 +469,7 @@ public final class Mixture {
 		else if (smode.equals("s"))
 			mode = Mode.SV;
 		else if (smode.equals("t"))
-			mode = Mode.NAP;
+			mode = Mode.MNAP;
 		else {
 			System.err.println("MixtureDensity.main(): Unknown mode \"" + smode + "\"");
 			System.exit(1);
@@ -638,14 +639,15 @@ public final class Mixture {
 				
 			break;
 		}
-		case NAP: {
+		case MNAP: {
 			
 			if (args.length < 3) {
 				System.err.println(SYNOPSIS);
 				System.exit(1);
 			}
 			
-			de.fau.cs.jstk.trans.NAP nap = new de.fau.cs.jstk.trans.NAP(new ObjectInputStream(new FileInputStream(args[1])));
+			MNAP mnap = new MNAP(new FileInputStream(args[1]));
+			NAP [] naps = mnap.getTransformations();
 			int rank = Integer.parseInt(args[2]);
 			
 			LinkedList<Pair<String, String>> inout = new LinkedList<Pair<String, String>>();
@@ -663,22 +665,18 @@ public final class Mixture {
 					i++;
 				}
 			}
-			
-			double [] tmp = new double [nap.getDimension()];
-			
+						
 			while (inout.size() > 0) {
 				Pair<String, String> p = inout.remove();
-				Mixture md = Mixture.readFromFile(p.a == null ? null : new File(p.a));
+				Mixture md = new Mixture(p.a == null ? System.in : new FileInputStream(p.a));
+				
+				if (md.nd != naps.length)
+					throw new IOException("MNAP.naps.length != mixture.nd");
 				
 				for (int i = 0; i < md.nd; ++i)
-					System.arraycopy(md.components[i].mue, 0, tmp, i*md.fd, md.fd);
+					naps[i].project(md.components[i].mue, rank);
 				
-				nap.project(tmp, rank);
-				
-				for (int i = 0; i < md.nd; ++i)
-					System.arraycopy(tmp, i*md.fd, md.components[i].mue, 0, md.fd);
-				
-				md.writeToFile(new File(p.b));
+				md.write(p.b == null ? System.out : new FileOutputStream(p.b));
 			}
 			
 			break;

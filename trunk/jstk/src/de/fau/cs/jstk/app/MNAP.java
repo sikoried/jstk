@@ -105,6 +105,10 @@ public class MNAP implements FrameSource {
 			nap.save(os);
 	}
 	
+	public NAP [] getTransformations() {
+		return naps;
+	}
+	
 	public void compute(int rank, File filelf, File dirlf) throws IOException {
 		logger.info("MNAP.compute() caching data");
 		// cache all the data
