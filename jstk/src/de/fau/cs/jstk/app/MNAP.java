@@ -271,8 +271,7 @@ public class MNAP implements FrameSource {
 				apply(new File(args[i+1]), Integer.parseInt(args[i+2]), new File(args[i+3]), args[i+4], (i+5 < args.length ? args[i+5] : null));
 			} else if (args[i].equals("-v")) {
 				Logger.getLogger("de.fau.cs.jstk").setLevel(Level.INFO);
-			} else
-				throw new Exception("Invalid argument " + args[i]);
+			} 
 		}
 	}
 	

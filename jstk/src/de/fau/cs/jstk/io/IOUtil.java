@@ -58,7 +58,7 @@ public final class IOUtil {
 	 */
 	public static boolean readByte(InputStream is, byte [] buf) throws IOException {
 		int read = is.read(buf);
-		return read < buf.length;
+		return read == buf.length;
 	}
 	
 	/**
