@@ -22,6 +22,7 @@
 package de.fau.cs.jstk.trans;
 
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,8 +30,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.Arrays;
@@ -566,10 +565,11 @@ public class NAP {
 	public void load(InputStream is) throws IOException {
 		int r = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
 		int d = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
+		logger.info("reading NAP transformation " + r + "x" + d);
 		v = new float [r][d];
 		for (int i = 0; i < r; ++i)
 			if (!IOUtil.readFloat(is, v[i], ByteOrder.LITTLE_ENDIAN))
-				throw new IOException("Could not read NAP transformation");
+				throw new IOException("Could not read row " + i);
 	}
 	
 	public static final String SYNOPSIS =
@@ -794,12 +794,12 @@ public class NAP {
 			nap.computeV(a, w, rank);
 			
 			logger.info("NAP.main(): saving projection to " + outf);
-			ObjectOutputStream os = new ObjectOutputStream(new FileOutputStream(outf));
+			FileOutputStream os = new FileOutputStream(outf);
 			nap.save(os);
 			os.close();
 		} else if (mode == Mode.APPLY){
 			logger.info("NAP.main(): loading projection from " + outf);
-			ObjectInputStream is = new ObjectInputStream(new FileInputStream(outf));
+			InputStream is = new BufferedInputStream(new FileInputStream(outf), 10485760);
 			NAP nap = new NAP(is);
 			is.close();
 			
@@ -831,7 +831,7 @@ public class NAP {
 			}
 		} else if (mode == Mode.DISPLAY) {
 			logger.info("NAP.main(): loading projection from " + outf);
-			ObjectInputStream is = new ObjectInputStream(new FileInputStream(outf));
+			InputStream is = new BufferedInputStream(new FileInputStream(outf), 10485760);
 			NAP nap = new NAP(is);
 			is.close();
 			
