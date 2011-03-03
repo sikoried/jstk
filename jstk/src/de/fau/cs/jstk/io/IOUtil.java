@@ -68,7 +68,7 @@ public final class IOUtil {
 	 * @throws IOException
 	 */
 	public static void writeByte(OutputStream os, byte b) throws IOException {
-		os.write(new byte [] { b } );
+		os.write(new byte [] { b });
 	}
 	
 	/**
@@ -80,7 +80,7 @@ public final class IOUtil {
 	public static void writeByte(OutputStream os, byte [] buf) throws IOException {
 		os.write(buf);
 	}
-	
+
 	/**
 	 * Read a single short value from the given InputStream using given ByteOrder
 	 * @param is
