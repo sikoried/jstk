@@ -229,7 +229,7 @@ public final class AudioFileReader implements AudioSource {
 		if (streamClosed)
 			return -1;
 		
-		int ns = buf.length;
+		int ns = length;
 		
 		// memorize the buffer size, it's likely that it stays the same
 		if (this.byteBuf == null || this.byteBuf.length < ns*format.fs)

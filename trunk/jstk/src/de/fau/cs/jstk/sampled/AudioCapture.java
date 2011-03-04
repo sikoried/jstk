@@ -339,20 +339,24 @@ public class AudioCapture implements AudioSource {
 		if (this.byteBuf == null || this.byteBuf.length < ns*fs)
 			this.byteBuf = new byte [ns*fs];
 		
-		int read = ais.read(this.byteBuf, 0, ns * fs);
+		int readBytes = ais.read(this.byteBuf, 0, ns * fs);
 		
-		// anything read?
-		if (read < 1)
+		// anything read?		
+		if (readBytes < 0)
 			return -1;
+		else if (readBytes == 0)
+			return 0;
+		
+		int readFrames = readBytes / fs;
 		
 		// dc shift?
 		if (dc != null)
-			dc.removeDC(this.byteBuf, read);
+			dc.removeDC(this.byteBuf, readBytes);
 		
 		// conversion
 		if (br == 8) {
 			// 8bit: just copy; it's signed and little endian
-			for (int i = 0; i < read; ++i) {
+			for (int i = 0; i < readBytes; ++i) {
 				out[i] = scale * (new Byte(this.byteBuf[i]).doubleValue());
 				if (out[i] > 1.)
 					out[i] = 1.;
@@ -364,33 +368,32 @@ public class AudioCapture implements AudioSource {
 			ByteBuffer bb = ByteBuffer.wrap(this.byteBuf);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			int i;
-			for (i = 0; i < read / fs; ++i) {
+			for (i = 0; i < readFrames; ++i) {
 				if (br == 16) {
 					out[i] = scale * (double) bb.getShort();
 				} else if (br == 32) {
 					out[i] = scale * (double) bb.getInt();
 				} else
 					throw new IOException("unsupported bit rate");
-			}
-			read = i;
+			}			
 		}
 		
 		if (preemphasize) {
 			// set out-dated buffer elements to zero
-			if (read < ns) {
-				for (int i = read; i < ns; ++i)
+			if (readFrames < ns) {
+				for (int i = readFrames; i < ns; ++i)
 					buf[i] = 0.;
 			}
 			
 			// remember last signal value
-			double help = out[read-1];
+			double help = out[readFrames-1];
 			
 			AudioFileReader.preEmphasize(out, a, s0);
 			
 			s0 = help;
 		}
 		
-		return read;
+		return readFrames;
 	}
 
 	public static String [] getMixerList(AudioFormat af) {
@@ -598,11 +601,15 @@ public class AudioCapture implements AudioSource {
 		}
 		
 		// there's actually gonna be recording, init source!
+		/* ??? why restrict? - hoenig
 		if (!(sr == 16000 || sr == 8000)) {
 			System.err.println("unsupported sample rate; choose 16000 or 8000");
 			System.exit(1);
 		}		
+		*/
 		AudioSource as = new AudioCapture(mixer, br, sr, 0);
+		
+		as.setPreEmphasis(false, 1.0);
 		
 		System.err.println(as.toString());
 		
