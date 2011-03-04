@@ -41,20 +41,24 @@ import javax.sound.sampled.SourceDataLine;
 public class AudioPlay {
 	private SourceDataLine line;
 	
-	private int bs;
-	private double [] buf = null;
+	//private int bs;
+	private double [] doubleBuf = null;
+	private byte[] byteBuf = null;
+	int fs;
 	
 	private String mixerName = null;
 	private AudioSource source = null;
 	
 	/// output bit rate
-	public static final int BITRATE = 16;
+	public static final int BIT_DEPTH = 16;
 	
 	/// buffer length in msec
 	//public static final int BUFLENGTH = 200;
 	
 	
+	/// in seconds
 	private double desiredBufDur = 0;
+	/// in seconds
 	private double actualBufDur = 0;
 
 	private double scale = 1.;
@@ -95,17 +99,19 @@ public class AudioPlay {
 		this.desiredBufDur = desiredBufDur;
 
 		initialize();
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			public void run(){
-				System.err.println("calling tearDown...");
-				try {
-					tearDown();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		});
+//		 isn't called when applet window or browser is closed
+//		Runtime.getRuntime().addShutdownHook(new Thread(){
+//			public void run(){
+//				System.err.println("calling tearDown...");
+//				try {
+//					tearDown();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//		});
+//		
 	}
 
 	
@@ -116,7 +122,7 @@ public class AudioPlay {
 	 */
 	private void initialize() throws IOException, LineUnavailableException {
 		// standard linear PCM at 16 bit and the available sample rate
-		AudioFormat af = new AudioFormat(source.getSampleRate(), BITRATE, 1, true, false);
+		AudioFormat af = new AudioFormat(source.getSampleRate(), BIT_DEPTH, 1, true, false);
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class, af);
 		
 		// No mixer specified, use default mixer
@@ -133,6 +139,14 @@ public class AudioPlay {
 			// If no target, fall back to default line
 			if (target != null)
 				line = (SourceDataLine) AudioSystem.getMixer(target).getLine(info);
+			else{
+				System.err.println("mixer not found: " + mixerName + ". Available mixers:");
+
+								
+				for (Mixer.Info m : availableMixers)
+					System.err.println(m.getName());
+				line = (SourceDataLine) AudioSystem.getLine(info);
+			}
 		}
 		
 		if (desiredBufDur != 0){
@@ -152,12 +166,21 @@ public class AudioPlay {
 		
 		// init the buffer		
 		//bs = (int) (BUFLENGTH * af.getSampleRate() / 1000);
-		bs = line.getBufferSize();
-		buf = new double [bs];
+		int bytes = line.getBufferSize();
+		byteBuf = new byte [bytes];
+		doubleBuf = new double [bytes / af.getFrameSize()];
+		fs = af.getFrameSize();
 		
-		actualBufDur = bs / af.getFrameSize() / af.getFrameRate();
+		actualBufDur = bytes / af.getFrameSize() / af.getFrameRate();
 		
-		scale = Math.pow(2, BITRATE - 1);
+		System.err.println(String.format("bytes = %d, samples = %d\n", byteBuf.length, doubleBuf.length));
+		
+		/* -1 because of the assymetry of two's complement.
+		 * Example: for 16 bit depth, we need a scale of 32767, not 32768, because otherwise
+		 * we cannot represent the double value -1.0.
+		 */
+		scale = Math.pow(2, BIT_DEPTH - 1) - 1;
+		System.err.println("scale = " + scale);		
 	}
 	
 	public double getActualBufDur(){
@@ -192,31 +215,43 @@ public class AudioPlay {
 	 * @return number of bytes played(written to audioSource) or -1 if audiobuffer is empty
 	 * @throws IOException
 	 */
-	public int write() throws IOException {
-		int count = source.read(buf);
+	public int write() throws IOException {		
+		int bytes;
 		
-		if (count <= 0) {
+		//bytes = line.available();
+		//if (bytes > byteBuf.length)
+		//	throw new Error("argh!");
+		bytes = byteBuf.length;		
+		
+
+		int frames = bytes / fs;		
+		
+		int readFrames = source.read(doubleBuf, frames);
+		
+		if (readFrames < 0) {
 			tearDown();
-			return 0;
+			return -1;
 		}
 		
 		// set rest to zero
-		if (count < bs)
-			for (int i = count; i < bs; ++i)
-				buf[i] = 0;
+		if (readFrames < frames)
+			for (int i = readFrames; i < frames; ++i)
+				doubleBuf[i] = 0;
 		
 		// double -> short conversion
-		ByteBuffer bb = ByteBuffer.allocate(bs * Short.SIZE/8);
+		ByteBuffer bb = ByteBuffer.wrap(byteBuf);
 		bb.order(ByteOrder.LITTLE_ENDIAN);
+ 
+		int i;
+		for (i = 0; i < frames; i++)					 
+			bb.putShort((short)(doubleBuf[i] * scale));		
 		
-		// FIXME: -1 will be mapped to -32768 which is not a short! 
-		for (double d : buf) 
-			bb.putShort((short)(d * scale));
+		System.out.println("that would be available, now that we have fetched the data: " + line.available());
+		readFrames = line.write(byteBuf, 0, bytes);
 		
-		byte [] outgoing = bb.array();
-		count = line.write(outgoing, 0, outgoing.length);
 		
-		return count;
+		
+		return readFrames;
 	}
 
 	protected void finalize() throws Throwable {
@@ -243,8 +278,9 @@ public class AudioPlay {
 		
 		// scan for arguments
 		for (int i = 0; i < args.length; ++i) {
-			if (args[i].equals("-m"))
+			if (args[i].equals("-m")){
 				mixer = args[++i];
+			}
 			else if (args[i].equals("-f"))
 				format = args[++i];
 		}
@@ -252,9 +288,15 @@ public class AudioPlay {
 		// process files
 		for (int i = (mixer == null ? 0 : 2) + (format == null ? 0 : 2); i < args.length; ++i) {
 			System.err.println("Now playing " + args[i]);
-			AudioPlay play = (format == null ? 
-				new AudioPlay(mixer, new AudioFileReader(args[i], true)) :
-				new AudioPlay(mixer, new AudioFileReader(args[i], RawAudioFormat.create(format), true)));
+			AudioFileReader reader;
+			if (format == null)
+				reader = new AudioFileReader(args[i], true);
+			else
+				reader = new AudioFileReader(args[i], RawAudioFormat.create(format), true);
+			
+			reader.setPreEmphasis(false, 1);
+			
+			AudioPlay play = new AudioPlay(mixer, reader);
 			
 			// play whole file
 			while (play.write() > 0)

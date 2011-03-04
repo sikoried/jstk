@@ -222,6 +222,16 @@ public class ThreadedPlayer implements Runnable {
 		
 	}
 	
+	public void tearDown() throws IOException {
+		if (player == null){
+			System.err.println("player is null - no need to tearDown");
+		}
+		else{
+			System.err.println("player.tearDown()...");
+			player.tearDown();
+		}
+	}
+	
 	public boolean isPlaying() {
 		return thread != null && !finished;
 	}

@@ -128,6 +128,7 @@ public class VisualizerSpectrum extends VisualComponent {
 
 		audiosource.setReadIndex(sample);
 		int count = audiosource.read(buf, windowSize);
+		// TODO: if (count < 0)... hoenig
 		for (int i = count; i < blockSize; i++) {
 			buf[i] = 0;
 		}

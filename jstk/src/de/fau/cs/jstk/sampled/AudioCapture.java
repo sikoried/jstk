@@ -152,19 +152,20 @@ public class AudioCapture implements AudioSource {
 		this.desiredBufDur = desiredBufDur;
 		initialize();
 		
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			public void run(){
-				System.err.println("calling tearDown...");
-				try {
-					tearDown();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-		
+//		 isn't called when applet window or browser is closed
+//		Runtime.getRuntime().addShutdownHook(new Thread(){
+//			public void run(){
+//				System.err.println("calling tearDown...");
+//				try {
+//					tearDown();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//			}
+//		});
+//		
+	}		
 	
 	/**
 	 * Create an AudioCapture object reading from the specified mixer using 
@@ -303,52 +304,56 @@ public class AudioCapture implements AudioSource {
 		
 
 	/** the private reading buffer; will be allocated dynamically */
-	private byte [] buf = null;
+	private byte [] byteBuf = null;
 
+
+	public int read(double[] buf) throws IOException{
+		return read(buf, 
+				buf == null ? internalBuffer.length : buf.length);
+	}
+	
 	/**
-	 * Read the next buf.length samples (blocking). Samples are normalized to 
+	 * Read the next length samples (blocking). Samples are normalized to 
 	 * [-1;1]
 	 * 
-	 * @param buf double buffer; will try to read as many samples as fit in the 
-	 * buffer. If buf is null, the internal buffer will be used (call enableInternalBuffer
+	 * @param buf double buffer; will try to read length samples. 
+	 * If buf is null, the internal buffer will be used (call enableInternalBuffer
 	 * in advance!)
 	 * 
 	 * @return number of samples actually read
 	 * 
 	 * @see AudioFileReader.read
 	 */
-	public int read(double[] buf) 
+	public int read(double[] buf, int length) 
 		throws IOException {
 		
-		double [] out = (buf == null ? internalBuffer : buf);
-			
+		double [] out = (buf == null ? internalBuffer : buf);			
 		
 		/* sikoried: I'm not sure how long the OS buffers the data, so the 
 		 * processing better be fast ;)
 		 */
 		
-		int ns = out.length;
+		int ns = length;
 		
 		// memorize buffer size
-		if (this.buf == null || this.buf.length != ns*fs)
-			this.buf = new byte [ns*fs];
+		if (this.byteBuf == null || this.byteBuf.length < ns*fs)
+			this.byteBuf = new byte [ns*fs];
 		
-
-		int read = ais.read(this.buf);
+		int read = ais.read(this.byteBuf, 0, ns * fs);
 		
 		// anything read?
 		if (read < 1)
-			return 0;
+			return -1;
 		
 		// dc shift?
 		if (dc != null)
-			dc.removeDC(this.buf, read);
+			dc.removeDC(this.byteBuf, read);
 		
 		// conversion
 		if (br == 8) {
 			// 8bit: just copy; it's signed and little endian
 			for (int i = 0; i < read; ++i) {
-				out[i] = scale * (new Byte(this.buf[i]).doubleValue());
+				out[i] = scale * (new Byte(this.byteBuf[i]).doubleValue());
 				if (out[i] > 1.)
 					out[i] = 1.;
 				if (buf[i] < -1.)
@@ -356,7 +361,7 @@ public class AudioCapture implements AudioSource {
 			}			
 		} else {
 			// > 8bit
-			ByteBuffer bb = ByteBuffer.wrap(this.buf);
+			ByteBuffer bb = ByteBuffer.wrap(this.byteBuf);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 			int i;
 			for (i = 0; i < read / fs; ++i) {
@@ -372,8 +377,8 @@ public class AudioCapture implements AudioSource {
 		
 		if (preemphasize) {
 			// set out-dated buffer elements to zero
-			if (read < out.length) {
-				for (int i = read; i < out.length; ++i)
+			if (read < ns) {
+				for (int i = read; i < ns; ++i)
 					buf[i] = 0.;
 			}
 			
@@ -387,8 +392,6 @@ public class AudioCapture implements AudioSource {
 		
 		return read;
 	}
-	
-
 
 	public static String [] getMixerList(AudioFormat af) {
 		return getMixerList(af, true);
@@ -469,7 +472,7 @@ public class AudioCapture implements AudioSource {
 	 * Return the raw buffer; mind 8/16 bit and signed/unsigned conversion!
 	 */
 	public byte [] getRawBuffer() {
-		return this.buf;
+		return this.byteBuf;
 	}
 	
 	/**

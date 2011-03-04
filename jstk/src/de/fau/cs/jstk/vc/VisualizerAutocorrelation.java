@@ -154,6 +154,7 @@ public class VisualizerAutocorrelation extends VisualComponent {
 
 		audiosource.setReadIndex(sample);
 		int count = audiosource.read(autocorrelation, windowSize);
+		// TODO: if (count < 0)... hoenig
 		for (int i = count; i < blockSize; i++) {
 			autocorrelation[i] = 0;
 		}

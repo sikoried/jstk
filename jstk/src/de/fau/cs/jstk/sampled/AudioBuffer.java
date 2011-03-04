@@ -50,18 +50,21 @@ public class AudioBuffer implements AudioSource {
 	}
 
 	public int read(double[] buf) throws IOException {
-		
+		return read(buf, buf.length);
+	}
+	
+	public int read(double[] buf, int length) throws IOException {			
 		if (audioData == null)
-			return 0;
+			return -1;
 		
 		int samplesLeft = audioData.length - pos;
 		
 		int numCopy;
 		
-		if (samplesLeft < buf.length)
+		if (samplesLeft < length)
 			numCopy = samplesLeft;
 		else 
-			numCopy = buf.length;
+			numCopy = length;
 
 		System.arraycopy(audioData, pos, buf, 0, numCopy);
 		pos += numCopy;

@@ -117,20 +117,25 @@ public abstract class Synthesizer implements AudioSource {
 	
 	private boolean end_of_stream = false;
 	
+
+	public int read(double[] buf) throws IOException {
+		return read(buf, buf.length);
+	}
+	
 	/**
 	 * This function handles the memory i/o and length of the stream (if
 	 * applicable). Calls the virtual synthesize method.
 	 * 
 	 * @see synthesize
 	 */
-	public int read(double[] buf) throws IOException {
+	public int read(double[] buf, int length) throws IOException {
 		if (end_of_stream)
-			return 0;
+			return -1;
 		
-		int read = buf.length;
+		int read = length;
 		
 		// check for end of stream
-		if (duration != 0 && samples + buf.length > duration) {
+		if (duration != 0 && samples + length > duration) {
 			end_of_stream = true;
 			read = (int)(duration - samples);
 		}
@@ -153,7 +158,7 @@ public abstract class Synthesizer implements AudioSource {
 			
 			// blocking source? compute the remaining sleep time
 			if (blockingSource) {
-				sleep = msPerSample*buf.length - (System.currentTimeMillis() - ts);
+				sleep = msPerSample*length - (System.currentTimeMillis() - ts);
 			}
 			
 			if (sleep > 0) 

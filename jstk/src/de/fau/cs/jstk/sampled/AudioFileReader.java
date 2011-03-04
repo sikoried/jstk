@@ -64,8 +64,11 @@ public final class AudioFileReader implements AudioSource {
 	/** did we close the stream yet? */
 	private boolean streamClosed = false;
 	
-	/** scale factor (dependent on the bit rate) */
+	/** scale factor (dependent on the bit rate)
+	 * e.g. 1/32767 for 16-bit samples 
+	 * */	
 	private double scale = 0;
+	/// scale_help = minimal signed value, e.g. -32768 for 16-bit samples 
 	private double scale_help = 0;
 	
 	/**
@@ -160,13 +163,17 @@ public final class AudioFileReader implements AudioSource {
 			is = new BufferedInputStream(is);
 		}
 		
-		// compute scaling factor
+		/* compute scaling factor
+		 * -1 because of the assymetry of two's complement.
+		 * Example: for 16 bit depth, we need a scale of 32767, not 32768, because otherwise
+		 * we cannot represent the double value -1.0.
+		 */
 		if (format.alaw || format.ulaw) {
-			scale = 1. / Math.pow(2, 15);
+			scale = 1. / (Math.pow(2, 15) - 1);
 			scale_help = Math.pow(2, 15);
 		} else {
-			scale = 1. / Math.pow(2, format.br-1);
-			scale_help = Math.pow(2, format.br-1);
+			scale = 1. / (Math.pow(2, format.br-1) - 1);
+			scale_help = Math.pow(2, format.br-1);			
 		}
 	}
 	
@@ -188,10 +195,10 @@ public final class AudioFileReader implements AudioSource {
 		
 		// compute scaling factor
 		if (format.alaw || format.ulaw) {
-			scale = 1. / Math.pow(2, 15);
+			scale = 1. / (Math.pow(2, 15) - 1);
 			scale_help = Math.pow(2, 15);
 		} else {
-			scale = 1. / Math.pow(2, format.br-1);
+			scale = 1. / (Math.pow(2, format.br-1) - 1);
 			scale_help = Math.pow(2, format.br-1);
 		}
 	}
@@ -201,8 +208,13 @@ public final class AudioFileReader implements AudioSource {
 	}
 
 	/** the private reading buffer; will be allocated dynamically */
-	private byte [] buf = null;
+	private byte [] byteBuf = null;
 
+	
+	public int read(double [] buf) throws IOException{
+		return read(buf, buf.length);		
+	}
+	
 	/**
 	 * Read a number of samples from the audio file and save it to the given
 	 * buffer. Takes care of signedness and endianess. Samples are 
@@ -212,25 +224,29 @@ public final class AudioFileReader implements AudioSource {
 	 * @return number of samples actually read
 	 * @throws IOException
 	 */
-	public int read(double [] buf) 
+	public int read(double [] buf, int length) 
 		throws IOException {
 		if (streamClosed)
-			return 0;
+			return -1;
 		
 		int ns = buf.length;
 		
 		// memorize the buffer size, it's likely that it stays the same
-		if (this.buf == null || this.buf.length != ns*format.fs)
-			this.buf = new byte [ns*format.fs];
+		if (this.byteBuf == null || this.byteBuf.length < ns*format.fs)
+			this.byteBuf = new byte [ns*format.fs];
 		
 		// read requested frames
-		int read = is.read(this.buf);
+		int bytesRead = is.read(this.byteBuf, 0, ns * format.fs);
+		int framesRead = bytesRead / format.fs;
+		
+		System.err.println("AudioFileReader: bytesRead = " + bytesRead);
 		
 		// if nothing was read, close the file!
-		if (read < 1) {
+		if (bytesRead < 1) {
+			System.err.println("AudioFileReader:read: file is ended");
 			is.close();
 			streamClosed = true;
-			return 0;
+			return -1;
 		}
 		
 		// For unsigned I/O check for example: http://darksleep.com/player/JavaAndUnsignedTypes.html
@@ -241,33 +257,33 @@ public final class AudioFileReader implements AudioSource {
 			// 8bit: raw or compressed?
 			if (format.alaw) {
 				// a-law decoding?
-				for (int i = 0; i < read; ++i) {
-					int displacement = this.buf[i] < 0 ? 256 + this.buf[i] : this.buf[i];
+				for (int i = 0; i < bytesRead; ++i) {
+					int displacement = this.byteBuf[i] < 0 ? 256 + this.byteBuf[i] : this.byteBuf[i];
 					buf[i] = (double) ALAW_DECOMPRESSION[displacement];
 				}
 			} else if (format.ulaw) {
 				// u-law decoding?
-				for (int i = 0; i < read; ++i) {
-					int displacement = this.buf[i] < 0 ? 256 + this.buf[i] : this.buf[i];
+				for (int i = 0; i < bytesRead; ++i) {
+					int displacement = this.byteBuf[i] < 0 ? 256 + this.byteBuf[i] : this.byteBuf[i];
 					buf[i] = (double) ULAW_DECOMPRESSION[displacement];
 				}
 			} else {
 				// 8bit raw, just convert...
 				if (format.signed) {
 					// signed is the "common" java thing
-					for (int i = 0; i < read; ++i)
-						buf[i] = new Byte(this.buf[i]).doubleValue();
+					for (int i = 0; i < bytesRead; ++i)
+						buf[i] = new Byte(this.byteBuf[i]).doubleValue();
 				} else {
 					// conversion required
-					for (int i = 0; i < read; ++i) 
-						buf[i] = (double) (0xFF & ((int) this.buf[i]));
+					for (int i = 0; i < bytesRead; ++i) 
+						buf[i] = (double) (0xFF & ((int) this.byteBuf[i]));
 				}
 			}
 		} else {
 			// > 8bit, we need build up the number; check for signedness and endianess!
 			if (format.signed) {
 				// signed is the "common" java thing
-				ByteBuffer bb = ByteBuffer.wrap(this.buf);
+				ByteBuffer bb = ByteBuffer.wrap(this.byteBuf);
 				
 				// default is big endian
 				if (format.littleEndian)
@@ -275,7 +291,7 @@ public final class AudioFileReader implements AudioSource {
 				
 				// decode the byte stream
 				int i;
-				for (i = 0; i < read / format.fs; ++i) {
+				for (i = 0; i < framesRead; ++i) {
 					if (format.br == 16)
 						buf[i] = (double) bb.getShort();
 					else if (format.br == 32)
@@ -283,61 +299,71 @@ public final class AudioFileReader implements AudioSource {
 					else
 						throw new IOException("unsupported bit rate");
 				}
-				read = i;
 			} else {
 				// conversion required for unsigned
 				int i;
-				for (i = 0; i < read / format.fs; ++i) {
+				for (i = 0; i < framesRead; ++i) {
 					long val = 0;
 					if (format.littleEndian) {
 						// MSB last
 						for (int j = 0; j < format.fs; ++j) {
-							val |=  (long) ( (0xFF & ((int) this.buf[i*format.fs + j])) << j*8); // mind the offset
+							val |=  (long) ( (0xFF & ((int) this.byteBuf[i*format.fs + j])) << j*8); // mind the offset
 						}
 					} else {
 						// MSB first
 						for (int j = 0; j < format.fs; ++j) {
-							val |=  (long) ( (0xFF & ((int) this.buf[i*format.fs + j])) << (format.fs - j - 1)*8);
+							val |=  (long) ( (0xFF & ((int) this.byteBuf[i*format.fs + j])) << (format.fs - j - 1)*8);
 						}
 					}
 					buf[i] = (double) (0xFFFFFFFFL & val);
 				}
-				read = i;
 			}
 		}
 		
 		// normalize to -1...1, ensure proper values
 		if (format.signed) {
-			for (int i = 0; i < buf.length; ++i) {
+			for (int i = 0; i < ns; ++i) {
 				if (Double.isNaN(buf[i])) {
 					System.err.println("AudioFileReader.read(): Fixed NaN!");
 					buf[i] = 0.;
 				}
-
+				 
 				buf[i] *= scale;
+				
+				if (!(buf[i] < 1.0))
+					buf[i] = 1.0;
+				// can happen if signed integer signal is e.g. -32768 for 16 bit 
+				else if (!(buf[i] > -1.0))
+					buf[i] = -1.0;
 			}
 		} else {
-			for (int i = 0; i < buf.length; ++i) {
+			for (int i = 0; i < ns; ++i) {
 				// do not allow 0.0 or NaN for numerical stability
 				if (Double.isNaN(buf[i])) {
 					System.err.println("AudioFileReader.read(): Fixed NaN!");
 					buf[i] = 0;
-				}
+				}				
 				
 				// unsigned requires the shift first
-				buf[i] = scale * (buf[i] - scale_help);
+				buf[i] = scale * (buf[i] - scale_help);				
+				
+				if (!(buf[i] < 1.0))
+					buf[i] = 1.0;
+				// can happen if unsigned integer signal is e.g. 0 for 16 bit
+				else if (!(buf[i] > -1.0))
+					buf[i] = -1.0;
 			}
 		}
 		
 		if (preemphasize) {
 			// set out-dated buffer elements to zero
-			if (read < buf.length) {
-				for (int i = read; i < buf.length; ++i)
+			if (framesRead < ns) {
+				for (int i = framesRead; i < ns; ++i)
 					buf[i] = 0.;
 			}
 			
 			// remember last signal value
-			double help = buf[read-1];
+			double help = buf[framesRead-1];
 			
 			AudioFileReader.preEmphasize(buf, a, s0);
 			
@@ -345,13 +371,13 @@ public final class AudioFileReader implements AudioSource {
 		}
 		
 		// if we couldn't read enough, end of file was reached!
-		if (read < buf.length) {
+		if (framesRead < ns) {
 			is.close();
 			streamClosed = true;
 		}
 		
 		// return number of read samples
-		return read;
+		return framesRead;
 	}
 	
 	public void tearDown() {
@@ -462,12 +488,15 @@ public final class AudioFileReader implements AudioSource {
 	 * @param a pre-emphasis factor 
 	 * @param s0 value to use for first element
 	 */
-	public static void preEmphasize(double [] buf, double a, double s0) {
+	public static void preEmphasize(double [] buf, int length, double a, double s0) {
 		// in-place transformation, so begin at the end
-		for (int i = buf.length-1; i < 0; --i)
+		for (int i = length-1; i < 0; --i)
 			buf[i] -= a * buf[i-1];
 		// first element
 		buf[0] -= a * s0;
+	}
+	public static void preEmphasize(double [] buf, double a, double s0) {
+		preEmphasize(buf, buf.length, a, s0);		
 	}
 	
 	public static String synopsis = 
@@ -495,12 +524,14 @@ public final class AudioFileReader implements AudioSource {
 		else
 			afr = new AudioFileReader(file, RawAudioFormat.create(format), true);
 		
+		afr.setPreEmphasis(false, 0.0);
+		
 		System.err.println(afr);
 		
 		double [] buf = new double [1];
 		
 		while (afr.read(buf) > 0) {
-			System.out.println(buf[0]);
+			System.out.println(String.format("%f",buf[0]));
 		}
 	}
 }
