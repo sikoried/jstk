@@ -180,7 +180,7 @@ public class AudioPlay {
 		 * we cannot represent the double value -1.0.
 		 */
 		scale = Math.pow(2, BIT_DEPTH - 1) - 1;
-		System.err.println("scale = " + scale);		
+		System.err.println("scale = " + scale);
 	}
 	
 	public double getActualBufDur(){
@@ -223,10 +223,11 @@ public class AudioPlay {
 		//	throw new Error("argh!");
 		bytes = byteBuf.length;		
 		
-
-		int frames = bytes / fs;		
+		int frames = bytes / fs / 2;
 		
 		int readFrames = source.read(doubleBuf, frames);
+		
+		int readBytes = readFrames * fs;
 		
 		if (readFrames < 0) {
 			tearDown();
@@ -247,9 +248,7 @@ public class AudioPlay {
 			bb.putShort((short)(doubleBuf[i] * scale));		
 		
 		System.out.println("that would be available, now that we have fetched the data: " + line.available());
-		readFrames = line.write(byteBuf, 0, bytes);
-		
-		
+		readFrames = line.write(byteBuf, 0, readBytes);		
 		
 		return readFrames;
 	}

@@ -149,6 +149,7 @@ public class ThreadedPlayer implements Runnable {
 	/** 
 	 * (un)pause the recording; on pause, the recording continues, but is not
 	 * saved to the file.
+	 *
 	 */
 	public void pause() {
 		if (!paused)	
@@ -190,6 +191,8 @@ public class ThreadedPlayer implements Runnable {
 	public void run() {
 		try {
 			finished = false;
+			// LineListeners should be used here: they fire a Start event at the actual
+			// time playback starts - hoenig
 			notifyStart();
 			
 			while (!stopRequested) {
