@@ -115,22 +115,25 @@ public class AudioFileListReader implements AudioSource {
 	public String toString() {
 		return "AudioFileListReader: " + fileList + " (" + list.size() + " valid files\n" + format.toString();
 	}
-	
+
 	public int read(double[] buf) throws IOException {
+		return read(buf, buf.length);
+	}
+	
+	public int read(double[] buf, int length) throws IOException {
 		if (current == null)
 			return 0;
 		
-		int read = current.read(buf);
+		int read = current.read(buf, length);		
 		
-		
-		if (read == buf.length) {
+		if (read == length) {
 			// enough samples read
 			return read;
 		}
-		else if (read == 0) {
+		else if (read < 0) {
 			// no samples read, load next file if possible
 			if (list.size() == 0)
-				return 0;
+				return -1;
 			
 			// load next file
 			current.tearDown();
@@ -141,7 +144,7 @@ public class AudioFileListReader implements AudioSource {
 			return current.read(buf);
 		} else {
 			// early EOF, pad with zeros, load next file
-			for (int i = read; i < buf.length; ++i)
+			for (int i = read; i < length; ++i)
 				buf[i] = 0.;
 			
 			if (list.size() > 0) {
@@ -149,7 +152,7 @@ public class AudioFileListReader implements AudioSource {
 				current.setPreEmphasis(preemphasize, a);
 			}
 			
-			return buf.length;
+			return length;
 		}
 	}
 	

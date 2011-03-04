@@ -138,16 +138,20 @@ public class BufferedAudioSource implements AudioSource {
 		return audioSource.getSampleRate();
 	}
 
-	@Override
 	public int read(double[] buf) throws IOException {
+		return read(buf, buf.length);
+	}
+	
+	@Override
+	public int read(double[] buf, int length) throws IOException {
 		int read = 0;
 		if (buffer == null) {
-			return 0;
+			return -1;
 		}
 		// all values are available in buffer, simply read on (copy them from
 		// there to buf)
 		for (; lastRead < buffer.length; lastRead++) {
-			if (read >= buf.length) {
+			if (read >= length) {
 				break;
 			}
 			buf[read] = buffer[lastRead];

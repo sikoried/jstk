@@ -37,12 +37,15 @@ import java.io.IOException;
  *
  */
 public interface AudioSource {
-	/**
-	 * Read buf.length samples from the AudioSource.
-	 * @param buf Previously allocated buffer to store the read audio samples.
-	 * @return Number of actually read audio samples.
-	 */
+
 	public int read(double [] buf) throws IOException;
+	
+	/**
+	 * Read length samples from the AudioSource.
+	 * @param buf Previously allocated buffer to store the read audio samples.
+	 * @return Number of actually read audio samples. -1 means that the source has ended.
+	 */
+	public int read(double [] buf, int length) throws IOException;
 	
 	/**
 	 * Get the frame rate
