@@ -27,4 +27,6 @@ public interface VisualizationListener {
 			int highlightedSectionEndSample, boolean isHighlighted,
 			int selectedSectionStartSample, int selectedSectionEndSample,
 			boolean isSelected, double markedX, boolean isMarked);
+	
+	public void mouseMoved(Object sender, int sample);
 }
