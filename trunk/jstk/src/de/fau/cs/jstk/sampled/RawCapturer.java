@@ -17,14 +17,14 @@ import javax.sound.sampled.TargetDataLine;
 
 public class RawCapturer implements Runnable, LineListener{
 	
-	public interface EventListener {
+	public interface CaptureEventListener {
 		// actual recording starts
 		public void captureStarted(RawCapturer instance);
 		// actual recording stops (was actively stopped)
 		public void captureStopped(RawCapturer instance);		
 	}	
 
-	private Set<EventListener> dependents = new HashSet<EventListener>();
+	private Set<CaptureEventListener> dependents = new HashSet<CaptureEventListener>();
 	
 	Thread thread;
 	
@@ -79,20 +79,20 @@ public class RawCapturer implements Runnable, LineListener{
 		}
 	}
 	
-	public void addStateListener(EventListener client) {
+	public void addStateListener(CaptureEventListener client) {
 		dependents.add(client);
 	}
-	public void removeStateListener(EventListener client) {
+	public void removeStateListener(CaptureEventListener client) {
 		dependents.remove(client);
 	}
 	private void notifyStart() {
 		System.err.println("notifyStart...");
-		for (EventListener s : dependents)
+		for (CaptureEventListener s : dependents)
 			s.captureStarted(this);
 	}
 	private void notifyStop() {
 		System.err.println("notifyStop...");
-		for (EventListener s : dependents)
+		for (CaptureEventListener s : dependents)
 			s.captureStopped(this);
 	}
 

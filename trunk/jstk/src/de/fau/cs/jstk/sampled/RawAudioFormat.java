@@ -71,9 +71,9 @@ public class RawAudioFormat {
 	public int getSampleRate() { return sr; }
 	
 	/** bit rate (def: 16) */
-	int br = DEFAULT_BIT_RATE;
+	int bd = DEFAULT_BIT_RATE;
 	
-	public int getBitRate() { return br; }
+	public int getBitRate() { return bd; }
 	
 	/** frame size in byte (def: 2)*/
 	int fs = DEFAULT_FRAME_SIZE;
@@ -103,8 +103,8 @@ public class RawAudioFormat {
 	 */
 	public RawAudioFormat(AudioFormat af) throws IOException {
 		sr = (int) af.getFrameRate();
-		br = af.getSampleSizeInBits();
-		fs = br / 8;
+		bd = af.getSampleSizeInBits();
+		fs = bd / 8;
 		
 		if (af.getChannels() > 1)
 			throw new IOException("multi-channel files are not supported");
@@ -126,17 +126,17 @@ public class RawAudioFormat {
 	
 	/** 
 	 * Construct a RawAudioFormat according to the given arguments.
-	 * @param bitRate
+	 * @param bitDepth
 	 * @param frameRate
 	 * @param signed
 	 * @param littleEndian
 	 * @param headerSize Usually 0 for raw files, WAV_HEADER_SIZE for WAV files.
 	 */
-	public RawAudioFormat(int bitRate, int frameRate, boolean signed, boolean littleEndian, int headerSize) {
+	public RawAudioFormat(int bitDepth, int frameRate, boolean signed, boolean littleEndian, int headerSize) {
 		sr = frameRate;
-		br = bitRate;
+		bd = bitDepth;
 		hs = headerSize;
-		fs = bitRate / 8;
+		fs = bitDepth / 8;
 		this.signed = signed;
 		this.littleEndian = littleEndian;
 	}
@@ -150,7 +150,7 @@ public class RawAudioFormat {
 	public RawAudioFormat(int frameRate, boolean alawInsteadUlaw, int headerSize) {
 		sr = frameRate;
 		hs = headerSize;
-		br = 8;
+		bd = 8;
 		fs = 1;
 		signed = true;
 		if (alawInsteadUlaw) {
@@ -186,7 +186,7 @@ public class RawAudioFormat {
 	public String toString() {
 		return "RawAudioFormat: " 
 			+ sr + "Hz " 
-			+ br + "bit "
+			+ bd + "bit "
 			+ (alaw ? "a-law " : "") 
 			+ (ulaw ? "u-law " : "") 
 			+ (signed ? "signed " : "unsigned ")
@@ -302,9 +302,9 @@ public class RawAudioFormat {
 					fmt.sr = Integer.parseInt(p[2]);					
 				} else if (p[0].equals("sample_coding")) {
 					if (p[2].equals("pcm") || p[2].equals("pcm-2")) {
-						fmt.br = 16; fmt.fs = 2;
+						fmt.bd = 16; fmt.fs = 2;
 					} else if (p[2].equals("pcm-1")) {
-						fmt.br = 8; fmt.fs = 1;
+						fmt.bd = 8; fmt.fs = 1;
 					} else if (p[2].equals("ulaw")) {
 						fmt.ulaw = true; fmt.alaw = false;
 					} else if (p[2].equals("ulaw,embedded-shorten-v2.00")) {
@@ -323,7 +323,7 @@ public class RawAudioFormat {
 						throw new UnsupportedAudioFileException("SPHERE: unsupported sample byte format");
 				} else if (p[0].equals("sample_n_bytes")) {
 					fmt.fs =  Integer.parseInt(p[2]);
-					fmt.br = fmt.fs * 8;
+					fmt.bd = fmt.fs * 8;
 				}
 				
 				// ignore other parameters

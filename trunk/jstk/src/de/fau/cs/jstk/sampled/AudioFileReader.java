@@ -172,8 +172,8 @@ public final class AudioFileReader implements AudioSource {
 			scale = 1. / (Math.pow(2, 15) - 1);
 			scale_help = Math.pow(2, 15);
 		} else {
-			scale = 1. / (Math.pow(2, format.br-1) - 1);
-			scale_help = Math.pow(2, format.br-1);			
+			scale = 1. / (Math.pow(2, format.bd-1) - 1);
+			scale_help = Math.pow(2, format.bd-1);			
 		}
 	}
 	
@@ -198,8 +198,8 @@ public final class AudioFileReader implements AudioSource {
 			scale = 1. / (Math.pow(2, 15) - 1);
 			scale_help = Math.pow(2, 15);
 		} else {
-			scale = 1. / (Math.pow(2, format.br-1) - 1);
-			scale_help = Math.pow(2, format.br-1);
+			scale = 1. / (Math.pow(2, format.bd-1) - 1);
+			scale_help = Math.pow(2, format.bd-1);
 		}
 	}
 	
@@ -239,7 +239,7 @@ public final class AudioFileReader implements AudioSource {
 		int bytesRead = is.read(this.byteBuf, 0, ns * format.fs);
 		int framesRead = bytesRead / format.fs;
 		
-		System.err.println("AudioFileReader: bytesRead = " + bytesRead);
+		//System.err.println("AudioFileReader: bytesRead = " + bytesRead);
 		
 		// if nothing was read, close the file!
 		if (bytesRead < 1) {
@@ -253,7 +253,7 @@ public final class AudioFileReader implements AudioSource {
 		// For u-law/a-law decompression check for example: http://hazelware.luggle.com/tutorials/mulawcompression.html
 		
 		// decode the numbers
-		if (format.br == 8) {
+		if (format.bd == 8) {
 			// 8bit: raw or compressed?
 			if (format.alaw) {
 				// a-law decoding?
@@ -292,9 +292,9 @@ public final class AudioFileReader implements AudioSource {
 				// decode the byte stream
 				int i;
 				for (i = 0; i < framesRead; ++i) {
-					if (format.br == 16)
+					if (format.bd == 16)
 						buf[i] = (double) bb.getShort();
-					else if (format.br == 32)
+					else if (format.bd == 32)
 						buf[i] = (double) bb.getInt();
 					else
 						throw new IOException("unsupported bit rate");
