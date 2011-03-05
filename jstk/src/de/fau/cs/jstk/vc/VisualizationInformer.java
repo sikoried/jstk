@@ -17,7 +17,7 @@
 
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 package de.fau.cs.jstk.vc;
 
 import java.util.ListIterator;
@@ -83,6 +83,19 @@ public class VisualizationInformer implements VisualizationListener {
 						highlightedSectionEndSample, isHighlighted,
 						selectedSectionStartSample, selectedSectionEndSample,
 						isSelected, markedX, isMarked);
+			}
+		}
+
+	}
+
+	@Override
+	public void mouseMoved(Object sender, int sample) {
+		ListIterator<VisualizationListener> iterator = visualizationListeners
+				.listIterator();
+		while (iterator.hasNext()) {
+			VisualizationListener listener = iterator.next();
+			if (sender != listener) {
+				listener.mouseMoved(sender, sample);
 			}
 		}
 
