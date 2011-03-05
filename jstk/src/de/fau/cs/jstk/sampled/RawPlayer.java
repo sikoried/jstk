@@ -17,14 +17,14 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class RawPlayer implements Runnable, LineListener{
 	
-	public interface EventListener {
+	public interface PlayEventListener {
 		// actual playback starts
 		public void playbackStarted(RawPlayer instance);
 		// actual playback stops (was actively stopped or ais is at its and, and has been playback stops now)
 		public void playbackStopped(RawPlayer instance);		
 	}	
 
-	private Set<EventListener> dependents = new HashSet<EventListener>();
+	private Set<PlayEventListener> dependents = new HashSet<PlayEventListener>();
 	
 	Thread thread;
 	
@@ -78,20 +78,20 @@ public class RawPlayer implements Runnable, LineListener{
 		}
 	}
 	
-	public void addStateListener(EventListener client) {
+	public void addStateListener(PlayEventListener client) {
 		dependents.add(client);
 	}
-	public void removeStateListener(EventListener client) {
+	public void removeStateListener(PlayEventListener client) {
 		dependents.remove(client);
 	}
 	private void notifyStart() {
 		System.err.println("notifyStart...");
-		for (EventListener s : dependents)
+		for (PlayEventListener s : dependents)
 			s.playbackStarted(this);
 	}
 	private void notifyStop() {
 		System.err.println("notifyStop...");
-		for (EventListener s : dependents)
+		for (PlayEventListener s : dependents)
 			s.playbackStopped(this);
 	}
 
@@ -213,9 +213,12 @@ public class RawPlayer implements Runnable, LineListener{
 		line.stop();
 		if (stopped) 
 			line.flush();
-		line.close();	
+		line.close();
 		
-		dependents.clear();		
+		stopped = true;
+		
+		dependents.clear();
+		
 	}
 	
 	@Override
@@ -230,6 +233,10 @@ public class RawPlayer implements Runnable, LineListener{
 		else if (le.getType() == LineEvent.Type.STOP)
 			notifyStop();						
 	}	
+	
+	public boolean hasStopped(){
+		return stopped;
+	}
 	
 	public static void main(String [] args){
 		Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();

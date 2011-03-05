@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.sound.sampled.*;
+import javax.sound.sampled.Line.Info;
 
 
 
@@ -402,6 +403,7 @@ public class AudioCapture implements AudioSource {
 	
 	/**
 	 * Return a list of Strings matching the mixer names.
+	 * @param af if not null, try to actually open lines and just return mixer that work with af. 
 	 * @return
 	 */
 	public static String [] getMixerList(AudioFormat af, boolean forRecording) {
@@ -444,11 +446,30 @@ public class AudioCapture implements AudioSource {
 			return working.toArray(dummy);
 		}
 		else{
-			Mixer.Info [] list = AudioSystem.getMixerInfo();
-			String [] mixers = new String [list.length];
-			for (int i = 0; i < list.length; ++i)
-				mixers[i] = list[i].getName();
-			return mixers;
+			Mixer.Info [] list = AudioSystem.getMixerInfo();			
+			
+			List<String> rightTypes = new LinkedList<String>();
+			
+			for (Mixer.Info i : list) {
+				Mixer mixer = AudioSystem.getMixer(i);
+				if (mixer.isLineSupported(
+						forRecording ? 
+								new Info(TargetDataLine.class) :
+									new Info(SourceDataLine.class))){
+					System.out.println(mixer.getMixerInfo().toString() + " is suited for " + 
+							(forRecording ? "recording" : "playback"));
+					rightTypes.add(i.getName());
+				}
+				else{
+					System.out.println(mixer.getMixerInfo().toString() + " is NOT suited for " + 
+							(forRecording ? "recording" : "playback"));
+					
+				}
+				
+			}
+
+			String [] dummy = new String[0];
+			return rightTypes.toArray(dummy);			
 		}
 	}
 	

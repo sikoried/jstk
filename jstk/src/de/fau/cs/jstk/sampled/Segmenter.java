@@ -56,13 +56,9 @@ public class Segmenter {
 	
 	double signalSum = 0.0;
 	int signalsProcessed = 0;
-	
-
 
 	private double baseEnergy;
 	private double maxEnergy;
-	
-
 	
 	/**
 	 * 
