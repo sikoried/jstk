@@ -67,6 +67,4 @@ public class VisualizerPower extends FileVisualizer {
 	public String toString() {
 		return "VisualizerPower '" + name + "'";
 	}
-
-
 }
