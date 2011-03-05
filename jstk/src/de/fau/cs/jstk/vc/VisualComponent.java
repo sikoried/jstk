@@ -17,7 +17,7 @@
 
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 package de.fau.cs.jstk.vc;
 
 import java.awt.Color;
@@ -244,7 +244,7 @@ public abstract class VisualComponent extends JComponent implements
 	 *            Graphics object
 	 */
 	protected void clear(Graphics g) {
-		if (enabled ) {
+		if (enabled) {
 			g.setColor(colorBackground);
 			g.fillRect(0, 0, getWidth(), getHeight());
 		} else {
@@ -343,6 +343,13 @@ public abstract class VisualComponent extends JComponent implements
 		}
 	}
 
+	protected void drawCursor(Graphics g, int x) {
+		g.setColor(colorCursor);
+		if ((x >= border_left) && (x <= getWidth() - border_right)) {
+			g.drawLine(x, border_top, x, getHeight() - border_bottom);
+		}
+	}
+
 	/**
 	 * Rounds the given integer number up to the next position
 	 * 
@@ -408,7 +415,7 @@ public abstract class VisualComponent extends JComponent implements
 		return yMax - (yMax - yMin) * (py - border_top)
 				/ (getHeight() - border_top - border_bottom);
 	}
-	
+
 	@Override
 	public void mouseEntered(MouseEvent arg0) {
 	}
@@ -420,13 +427,13 @@ public abstract class VisualComponent extends JComponent implements
 	@Override
 	public void mouseClicked(MouseEvent arg0) {
 	}
-	
+
 	@Override
 	public void mousePressed(MouseEvent arg0) {
 		startDraggingX = arg0.getX();
 		startDraggingY = arg0.getY();
 	}
-	
+
 	@Override
 	public void mouseReleased(MouseEvent arg0) {
 	}
@@ -460,8 +467,6 @@ public abstract class VisualComponent extends JComponent implements
 			}
 		}
 	}
-	
-
 
 	/**
 	 * Informs all registered MouseMotionVisualizationListeners that that mouse
@@ -491,5 +496,5 @@ public abstract class VisualComponent extends JComponent implements
 			MouseMotionVisualizationListener listener) {
 		mouseMotionListeners.addElement(listener);
 	}
-	
+
 }
