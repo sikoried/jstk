@@ -492,6 +492,18 @@ public abstract class FileVisualizer extends VisualComponent implements
 	}
 
 	/**
+	 * Informs all registered VisualizationListeners about a mouse movement
+	 */
+	public void informVisualizationListenersAboutMouseMovement(int sample) {
+		ListIterator<VisualizationListener> iterator = visualizationListeners
+				.listIterator();
+		while (iterator.hasNext()) {
+			VisualizationListener listener = iterator.next();
+			listener.mouseMoved(this, sample);
+		}
+	}
+
+	/**
 	 * Informs all registered SampleSelectedListeners that a sample has been
 	 * selected
 	 * 
@@ -727,6 +739,44 @@ public abstract class FileVisualizer extends VisualComponent implements
 		dragged = true;
 	}
 
+	@Override
+	public void mouseMoved(MouseEvent arg0) {
+		if (!enabled) {
+			return;
+		}
+		super.mouseMoved(arg0);
+
+		if ((mode == VALUE_MODE) || (mode == SELECTION_MODE)) {
+			if (showCursorX) {
+				int px = arg0.getX();
+				int py = arg0.getY();
+				if ((px >= border_left) && (px <= getWidth() - border_right)
+						&& (py >= border_top)
+						&& (py <= getHeight() - border_bottom)) {
+					int x = (int) convertPXtoX(px);
+					informVisualizationListenersAboutMouseMovement(x);
+				} else {
+					informVisualizationListenersAboutMouseMovement(-1);					
+				}
+			}
+		}
+	}
+
+	@Override
+	public void mouseExited(MouseEvent arg0) {
+		super.mouseExited(arg0);
+
+		Graphics g = imgMouse.getGraphics();
+		g.drawImage(img, 0, 0, null);
+		repaint();
+
+		if ((mode == VALUE_MODE) || (mode == SELECTION_MODE)) {
+			if (showCursorX) {
+				informVisualizationListenersAboutMouseMovement(-1);				
+			}
+		}
+	}
+
 	public void VisualizationChanged(Object sender, double samplesPerPixel,
 			double minSample, int highlightedSectionStartSample,
 			int highlightedSectionEndSample, boolean isHighlighted,
@@ -751,6 +801,15 @@ public abstract class FileVisualizer extends VisualComponent implements
 			recalculate();
 		}
 		draw();
+		repaint();
+	}
+	
+	public void mouseMoved(Object sender, int sample) {
+		Graphics g = imgMouse.getGraphics();
+		g.drawImage(img, 0, 0, null);
+		if (sample >= 0) {
+			drawCursor(g, convertXtoPX(sample));
+		}
 		repaint();
 	}
 
