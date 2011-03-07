@@ -28,8 +28,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.apache.log4j.Logger;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
+import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.stat.Trainer;
@@ -133,6 +135,13 @@ public class MVN implements FrameSource {
 		sigmas = null;
 	}
 	
+	public void extendStatistics1(List<double []> data) throws IOException {
+		if (data.size() < 1)
+			return;
+		Density stat = Trainer.ml1(data, true);
+		extendStatistics(stat, data.size());
+	}
+	
 	/**
 	 * Add samples from the given list to the normalization statistics. Initialize
 	 * the parameters if necessary.
@@ -140,13 +149,17 @@ public class MVN implements FrameSource {
 	public void extendStatistics(List<Sample> data) throws IOException {
 		if (data.size() < 1)
 			return;
-		
-		// step 1: accumulate new statistics
 		Density stat = Trainer.ml(data, true);
+		extendStatistics(stat, data.size());
+	}
+	
+	private void extendStatistics(Density stat, int size) throws IOException {
+		if (size < 1)
+			return;
 		
 		if (means == null) {
 			// step 2a: set the new statistics
-			samples = data.size();
+			samples = size;
 			means = stat.mue;
 			variances = stat.cov;
 		} else {
@@ -154,7 +167,6 @@ public class MVN implements FrameSource {
 			if (means.length != stat.fd)
 				throw new IOException("frame dimensions do not match: means.length = " + means.length + " input_fs = " + stat.fd);
 			
-			long size = data.size();
 			for (int i = 0; i < stat.fd; ++i) {
 				// merge with the new statistics
 				double mean_old = means[i];
@@ -201,23 +213,32 @@ public class MVN implements FrameSource {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public void loadFromFile(String fileName) throws IOException, ClassNotFoundException {
-		ObjectInputStream ois = new ObjectInputStream(new FileInputStream(new File(fileName)));
+	public void loadFromFile(String fileName) throws IOException {
+		InputStream is = new FileInputStream(fileName);
+		read(is);
+		is.close();
+	}
+	
+	/**
+	 * Read the normalization parameters from the given InputStream
+	 * @param is
+	 * @throws IOException
+	 */
+	public void read(InputStream is) throws IOException {
+		samples = IOUtil.readLong(is, ByteOrder.LITTLE_ENDIAN);
 		
-		// read magic
-		String magic = (String) ois.readObject();
-		if (!magic.equals("MVNParameters"))
-			throw new IOException("Error reading parameter file: Wrong file format! (magic = " + magic + ")");
+		int fd = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
 		
-		samples = ois.readLong();
-		means = (double []) ois.readObject();
-		variances = (double []) ois.readObject();
+		means = new double [fd];
+		variances = new double [fd];
+		sigmas = new double [fd];
 		
-		sigmas = new double [variances.length];
-		for (int i = 0; i < variances.length; ++i)
-			sigmas[i] = Math.sqrt(variances[i]);
-		
-		ois.close();
+		if (!IOUtil.readDouble(is, means, ByteOrder.LITTLE_ENDIAN))
+			throw new IOException("Could not read mean values");
+		if (!IOUtil.readDouble(is, variances, ByteOrder.LITTLE_ENDIAN))
+			throw new IOException("Could not read mean variances");
+		if (!IOUtil.readDouble(is, sigmas, ByteOrder.LITTLE_ENDIAN))
+			throw new IOException("Could not read mean sigmas");
 	}
 	
 	/**
@@ -226,16 +247,22 @@ public class MVN implements FrameSource {
 	 * @throws IOException
 	 */
 	public void saveToFile(String fileName) throws IOException {
-		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(new File(fileName)));
-		
-		// write magic
-		oos.writeObject("MVNParameters");
-		
-		oos.writeLong(samples);
-		oos.writeObject(means);
-		oos.writeObject(variances);
-		
-		oos.close();
+		OutputStream os = new FileOutputStream(new File(fileName));
+		write(os);		
+		os.close();
+	}
+	
+	/**
+	 * Save the normalization parameters to the given OutputStream
+	 * @param os
+	 * @throws IOException
+	 */
+	public void write(OutputStream os) throws IOException {
+		IOUtil.writeLong(os, samples, ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeInt(os, means.length, ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeDouble(os, means, ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeDouble(os, variances, ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeDouble(os, sigmas, ByteOrder.LITTLE_ENDIAN);
 	}
 	
 	/**

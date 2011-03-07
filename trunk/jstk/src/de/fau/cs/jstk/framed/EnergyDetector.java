@@ -29,9 +29,12 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.sound.sampled.UnsupportedAudioFileException;
+
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
+import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
 import de.fau.cs.jstk.exceptions.TrainingException;
 import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
@@ -193,6 +196,40 @@ public class EnergyDetector implements FrameSource {
 		}
 		
 		return x[0];
+	}
+	
+	public static double comptueThresholdFromFile(String fileName, String sFormat, String sWindow, ThresholdStrategy strat) {
+		double thres = 0.;
+		
+		try {
+			AudioSource as = new AudioFileReader(fileName, RawAudioFormat.create(sFormat), true);
+			Window wnd = Window.create(as, sWindow);
+			
+			double [] buf = new double [wnd.getFrameSize()];
+			
+			LinkedList<Sample> list = new LinkedList<Sample>();
+			
+			while (wnd.read(buf))
+				list.add(new Sample((short) 0, new double [] { Window.energy(buf) }));
+		
+			if (list.size() == 0){
+				System.err.println("No frames in file " + fileName);
+				return -1.;
+			}
+			
+			thres = estimateThreshold(list, strat);
+		} catch (IOException e) {
+			System.err.println(e.toString());
+			thres = -1.;
+		} catch (MalformedParameterStringException e) {
+			System.err.println(e.toString());
+			thres = -2.;
+		} catch (UnsupportedAudioFileException e) {
+			System.err.println(e.toString());
+			thres = -3.;
+		}
+		
+		return thres;
 	}
 	
 	public static final String SYNOPSIS = 
