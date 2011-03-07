@@ -212,7 +212,7 @@ public final class Mixture {
 	 */
 	public int classify(double [] x, boolean withPriors) {
 		// evaluate all densities
-		components[0].evaluate(x);
+		evaluate(x);
 		
 		// find the maximum one 
 		double max = components[0].score;
