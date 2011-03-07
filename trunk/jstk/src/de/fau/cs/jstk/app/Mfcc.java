@@ -145,7 +145,6 @@ public class Mfcc implements FrameSource {
 	 * @param inFile file name to open
 	 * @param pAudio Audio format parameter string, e.g. t:ssg/16
 	 * @param pWindow Window function to use, e.g. hamm,25,10
-	 * @param energyDetect Energy threshold to filter out non-speech (non-activity) frames
 	 * @param pFilterbank Mel filter bank parameters, e.g. 0,8000,-1,.5
 	 * @param noDCT Flag if the cepstrum computation should be EXCLUDED
 	 * @param doShortTimeEnergy Flag to include the short time band energy (instead of the 0th coefficient)
@@ -184,7 +183,6 @@ public class Mfcc implements FrameSource {
 	 * @param inFile file name to open
 	 * @param pAudio Audio format parameter string, e.g. t:ssg/16
 	 * @param pWindow Window function to use, e.g. hamm,25,10
-	 * @param energyDetect Energy threshold to filter out non-speech (non-activity) frames
 	 * @param pFilterbank Mel filter bank parameters, e.g. 0,8000,-1,.5
 	 * @param noDCT Flag if the cepstrum computation should be EXCLUDED
 	 * @param doShortTimeEnergy Flag to include the short time band energy (instead of the 0th coefficient)
