@@ -29,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -388,9 +387,9 @@ public class ParallelUbmGmm {
 		"  Use <num-threads> CPUs for faster processing. This will increase the memory\n" +
 		"  overhead as each thread needs to have it's own model cache. Per default all\n" +
 		"  available CPU are used.\n" +
-		"-t proj-base rank\n" +
-		"  Specify a MNAP projection base and reduction rank. Expects \"proj-base\".DENS files\n" +
-		"  where DENS starts at 1.\n" +
+		"-t mnap-file rank\n" +
+		"  Specify a MNAP projection and reduction rank. Note that the models need to be\n" +
+		"  MNAP transformed as well!\n" +
 		"--model-dir <dir>\n" +
 		"  Append <dir> before speaker model names in trial file\n" +
 		"--silent\n" +
@@ -462,16 +461,12 @@ public class ParallelUbmGmm {
 			NAP [] nap = null;
 			Mixture ubm = Mixture.readFromFile(new File(parsedArgs[0]));
 			if (napBase != null) {
-				nap = new NAP [ubm.nd];
-				for (int k = 0; k < nap.length; ++k) {
-					ObjectInputStream ois = new ObjectInputStream(new FileInputStream(napBase + "." + (k+1)));
-					nap[k] = new NAP(ois);
-					ois.close();
-				}
+				MNAP mnap = new MNAP(new FileInputStream(napBase));
+				nap = mnap.getTransformations();
 			}
 			e.execute(new Worker(ubm, d, fastScoring, latch, nap, rank));
 		}
-			
+
 		// wait for all jobs to be done
 		latch.await();
 		
