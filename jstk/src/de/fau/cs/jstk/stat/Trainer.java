@@ -48,6 +48,54 @@ public abstract class Trainer {
 	 * @return
 	 * @throws TrainingException
 	 */
+	public static Density ml1(List<double []> data, boolean diagonalCovariances) {
+		int fd = data.get(0).length;
+		double scale = 1. / data.size();
+
+		Density d = (diagonalCovariances ? new DensityDiagonal(fd) : new DensityFull(fd));
+		
+		// accumulate...
+		for (double [] s : data) {
+			for (int i = 0; i < fd; ++i) {
+				d.mue[i] += s[i] * scale;
+				
+				if (diagonalCovariances)
+					d.cov[i] += s[i] * s[i] * scale;
+				else {
+					int l = 0;
+					for (int j = 0; j < fd; ++j)
+						for (int k = 0; k <= j; ++k)
+							d.cov[l++] += s[j] * s[k] * scale;
+				}
+			}
+		}
+		
+		// normalize...
+		if (diagonalCovariances) {
+			for (int i = 0; i < fd; ++i)
+				d.cov[i] -= (d.mue[i] * d.mue[i]);
+		} else {
+			int k = 0;
+			for (int i = 0; i < fd; ++i)
+				for (int j = 0; j <= i; ++j)
+					d.cov[k++] -= (d.mue[i] * d.mue[j]);
+		}
+		
+		// update internal stats 
+		d.update();
+
+		return d;
+	}
+	
+	/**
+	 * Standard (single-core) maximum likelihood estimation for a single 
+	 * Gaussian density
+	 * 
+	 * @param data
+	 * @param diagonalCovariances 
+	 * @return
+	 * @throws TrainingException
+	 */
 	public static Density ml(List<Sample> data, boolean diagonalCovariances) {
 		int fd = data.get(0).x.length;
 		double scale = 1. / data.size();

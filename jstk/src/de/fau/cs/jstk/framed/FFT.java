@@ -68,7 +68,7 @@ public class FFT extends SpectralTransformation implements FrameSource {
 	 * @param source FrameSource to read from
 	 */
 	public FFT(FrameSource source) {
-		this(source, true, true, 1, MINIMUM_FFT_COEFFICIENTS);
+		this(source, true, true, 0, MINIMUM_FFT_COEFFICIENTS);
 	}
 	
 	/**

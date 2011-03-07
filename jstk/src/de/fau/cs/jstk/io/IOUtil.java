@@ -243,6 +243,87 @@ public final class IOUtil {
 	}
 
 	/**
+	 * Read a single long from the InputStream using given ByteOrder
+	 * pointer respectively.
+	 * @param is
+	 * @param bo
+	 * @return
+	 * @throws IOException
+	 */
+	public static long readLong(InputStream is, ByteOrder bo) 
+		throws IOException {
+		byte [] bbuf = new byte [Long.SIZE / 8];
+		int read = is.read(bbuf);
+
+		if (read < bbuf.length)
+			throw new IOException ("could not read required bytes");
+
+		ByteBuffer bb = ByteBuffer.wrap(bbuf);
+		bb.order(bo);
+
+		return bb.getLong();
+	}
+	
+	/**
+	 * Read a long array from the InputStream using given ByteOrder
+	 * pointer respectively.
+	 * @param is
+	 * @param buf
+	 * @param bo
+	 * @return false if frame could not be filled
+	 * @throws IOException
+	 */
+	public static boolean readLong(InputStream is, long [] buf,  ByteOrder bo) 
+		throws IOException {
+		byte [] bbuf = new byte [buf.length * Long.SIZE/8];
+		int read = is.read(bbuf);
+
+		if (read < bbuf.length)
+			return false;
+
+		ByteBuffer bb = ByteBuffer.wrap(bbuf);
+		bb.order(bo);
+		
+		for (int i = 0; i < buf.length; ++i)
+			buf[i] = bb.getLong();
+		
+		return true;
+	}
+	
+	/**
+	 * Write an int to the OutputStream and advance the stream
+	 * pointer respectively.
+	 * @param os
+	 * @param val
+	 * @param bo
+	 * @return
+	 * @throws IOException
+	 */
+	public static void writeLong(OutputStream os, long val, ByteOrder bo) 
+		throws IOException {
+		ByteBuffer bb = ByteBuffer.allocate(Long.SIZE/8);
+		bb.order(bo);
+		bb.putLong(val);
+		os.write(bb.array());
+	}
+	
+	/**
+	 * Write the given long array to the OutputStream using given ByteOrder
+	 * @param os
+	 * @param buf
+	 * @param bo
+	 * @throws IOException
+	 */
+	public static void writeLong(OutputStream os, long [] buf, ByteOrder bo) 
+		throws IOException {
+		ByteBuffer bb = ByteBuffer.allocate(buf.length * Long.SIZE/8);
+		bb.order(bo);
+		for (long d : buf) 
+			bb.putLong(d);
+		os.write(bb.array());
+	}
+	
+	/**
 	 * Read a single Float from the InputStream using given ByteOrder
 	 * @param is
 	 * @param bo
