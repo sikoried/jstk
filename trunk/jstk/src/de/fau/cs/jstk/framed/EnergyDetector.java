@@ -165,7 +165,7 @@ public class EnergyDetector implements FrameSource {
 		
 		if (strategy == ThresholdStrategy.EM5)
 			m = Trainer.em(m, data, 4);
-		
+
 		return decisionBoundary(m);
 	}
 	
