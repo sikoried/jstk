@@ -490,7 +490,7 @@ public final class AudioFileReader implements AudioSource {
 	 */
 	public static void preEmphasize(double [] buf, int length, double a, double s0) {
 		// in-place transformation, so begin at the end
-		for (int i = length-1; i < 0; --i)
+		for (int i = length-1; i > 0; --i)
 			buf[i] -= a * buf[i-1];
 		// first element
 		buf[0] -= a * s0;
@@ -524,7 +524,7 @@ public final class AudioFileReader implements AudioSource {
 		else
 			afr = new AudioFileReader(file, RawAudioFormat.create(format), true);
 		
-		afr.setPreEmphasis(false, 0.0);
+		//afr.setPreEmphasis(false, 0.0);
 		
 		System.err.println(afr);
 		

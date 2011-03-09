@@ -31,6 +31,7 @@ import java.util.List;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
@@ -152,8 +153,10 @@ public class EnergyDetector implements FrameSource {
 			m = Initialization.hierarchicalGaussianClustering(data, 2, true, DensityRankingMethod.COVARIANCE);
 			
 			// we need to have exactly 2 clusters, also for small data sets
-			if (m.nd != 2)
+			if (m.nd != 2) {
+				logger.info("re-initializing with kMeans");
 				m = Initialization.kMeansClustering(data, 2, true);
+			}
 		} else
 			throw new RuntimeException("EnergyDetector.estimateThreshold(): Invalid strategy!");
 		
@@ -245,6 +248,8 @@ public class EnergyDetector implements FrameSource {
 		"  em5     : decision boundary after 5 EM iterations\n";
 	
 	public static void main(String [] args) throws Exception {
+		BasicConfigurator.configure();
+		
 		if (args.length < 3 || args.length > 4) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
