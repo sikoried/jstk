@@ -22,13 +22,14 @@
 package de.fau.cs.jstk.agmt;
 
 import java.io.FileReader;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import de.fau.cs.jstk.io.SampleReader;
+import de.fau.cs.jstk.io.FrameReader;
 import de.fau.cs.jstk.stat.Density;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.stat.Trainer;
@@ -47,7 +48,11 @@ public class MueSigma {
 		Logger.getLogger("de.fau.cs.jstk").setLevel(Level.FATAL);
 		for (int i = 0; i < args.length; ++i) {
 			try {
-				List<Sample> samples = SampleReader.readFile(new FileReader(args[i]));
+				List<Sample> samples = new LinkedList<Sample>();
+				FrameReader fr = new FrameReader(new FileReader(args[i]));
+				double [] buf = new double [fr.getFrameSize()];
+				while (fr.read(buf))
+					samples.add(new Sample((short) 0, buf));
 				Density d = Trainer.ml(samples, true);
 				System.out.print(args[i] + ": mue = [");
 				for (double dd : d.mue)
