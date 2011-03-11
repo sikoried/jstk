@@ -420,6 +420,35 @@ public final class Mixture {
 		return md;
 	}
 	
+	/**
+	 * Compute the approximate Kullback-Leibler statistics using this mixture as
+	 * a background model for priors and variance.
+	 * @param ma mean vectors of density a
+	 * @param mb mean vectors of density b
+	 * @return
+	 */
+	public double akl(double [] ma, double [] mb) {
+		double dist = 0.;
+		
+		for (int i = 0; i < nd; ++i) {
+			double p = components[i].apr;
+			double [] c = components[i].cov;
+			int ci = 0;
+			for (int j = 0; j < fd; ++j) {
+				double d = ma[i*fd + j] - mb[i*fd + j];
+				dist += p * d * d / c[ci];
+				
+				// mind the lower triangular matrix for full covariance
+				if (diagonal)
+					ci++;
+				else
+					ci += (j + 1);
+			}
+		}
+		
+		return dist;
+	}
+	
 	public static final String SYNOPSIS = 
 		"sikoried, 2/16/2010\n" +
 		"Use this tool to (d)display, (c)onstruct and (e)valuate Gaussian mixture densities.\n" +
