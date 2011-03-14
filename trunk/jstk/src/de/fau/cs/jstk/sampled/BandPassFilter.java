@@ -1,13 +1,13 @@
 package de.fau.cs.jstk.sampled;
 
 import java.io.IOException;
-import de.fau.cs.jstk.framed.TriangularWindow;
+import de.fau.cs.jstk.framed.*;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 public class BandPassFilter implements AudioSource {
 
 	private AudioSource source;
-	private TriangularWindow window;
+	private Window window;
 	private double[] buffer;
 	private double[] input1;
 	private double[] input2;
@@ -16,7 +16,7 @@ public class BandPassFilter implements AudioSource {
 	private DoubleFFT_1D fft;
 	private int index;
 	private int eof;
-	boolean finishedReading = false;
+	private boolean finishedReading = false;
 	private int total;
 
 	public BandPassFilter(AudioSource source, double f1, double f2,
@@ -49,12 +49,6 @@ public class BandPassFilter implements AudioSource {
 		}
 	}
 
-	private void swap(double[] p1, double[] p2) {
-		double[] h = p1;
-		p1 = p2;
-		p2 = h;
-	}
-
 	private void initializeBuffer() throws IOException {
 		int size = window.getFrameSize();
 		input1 = new double[size / 2];
@@ -68,20 +62,24 @@ public class BandPassFilter implements AudioSource {
 		System.arraycopy(input1, 0, frame, size / 2, size / 2);
 		applyFilter(frame);
 		System.arraycopy(frame, size / 2, buffer, 0, size / 2);
-		if (count < size/2) {
+		if (count < size / 2) {
 			eof = count;
 		} else {
 			count = source.read(input2);
+
 			System.arraycopy(input1, 0, frame, 0, size / 2);
 			System.arraycopy(input2, 0, frame, size / 2, size / 2);
-			swap(input1, input2);
+			double[] h = input1;
+			input1 = input2;
+			input2 = h;
+
 			applyFilter(frame);
 			for (int i = 0; i < size / 2; i++) {
 				buffer[i] += frame[i];
 			}
 			System.arraycopy(frame, size / 2, buffer, size / 2, size / 2);
-			if (count < size/2) {
-				eof = count + size/2;
+			if (count < size / 2) {
+				eof = count + size / 2;
 			}
 		}
 
@@ -98,62 +96,67 @@ public class BandPassFilter implements AudioSource {
 	}
 
 	private void applyFilter(double[] buf) {
-		//print(buf);
 		window.applyWindowToFrame(buf);
-		//print(buf);
+
 		fft.realForward(buf);
-		//print(buf);
 
 		for (int i = 0; i < buf.length; i++) {
 			buf[i] *= filter[i];
 		}
 
-		//print(buf);
 		fft.realInverse(buf, true);
-		//print(buf);
 	}
 
 	@Override
-	public int read(double[] buf) throws IOException {		
+	public int read(double[] buf) throws IOException {
+		return read(buf, buf.length);
+	}
+
+	@Override
+	public int read(double[] buf, int length) throws IOException {
+
 		int size = frame.length;
 		int numCopied = 0;
 
 		if (finishedReading) {
-			System.err.println("finished: " + total);
 			return 0;
 		}
 
-		while (numCopied < buf.length) {
+		while (numCopied < length) {
 
 			int numAvailable = size / 2 - index;
 
-			if (numAvailable > buf.length - numCopied) {
-				numAvailable = buf.length - numCopied;
+			if (numAvailable > length - numCopied) {
+				numAvailable = length - numCopied;
 			}
 
 			if ((eof != -1) && (numAvailable > eof)) {
 				numAvailable = eof;
 				finishedReading = true;
-				total += numAvailable;
-				numCopied += numAvailable;
-				System.arraycopy(buffer, index, buf, numCopied, numAvailable);				
-				System.err.println("read call: " + numCopied);				
-				return numAvailable;
 			}
 
 			System.arraycopy(buffer, index, buf, numCopied, numAvailable);
 			total += numAvailable;
 			numCopied += numAvailable;
 			index += numAvailable;
-			
+
+			if (finishedReading) {
+				return numCopied;
+			}
+
 			if (index == size / 2) {
 				int count = source.read(input2);
+				if (count < 0) {
+					count = 0;
+				}
 				for (int i = count; i < input2.length; i++) {
 					input2[i] = 0;
 				}
 				System.arraycopy(input1, 0, frame, 0, size / 2);
 				System.arraycopy(input2, 0, frame, size / 2, size / 2);
-				swap(input1, input2);
+				double[] h = input1;
+				input1 = input2;
+				input2 = h;
 				applyFilter(frame);
 				for (int i = 0; i < size / 2; i++) {
 					buffer[i] = frame[i] + buffer[i + size / 2];
@@ -163,13 +166,12 @@ public class BandPassFilter implements AudioSource {
 
 				if (eof != -1) {
 					eof -= size / 2;
-				} else if (count < size/2) {
-					eof = size/2 + count;
+				} else if (count < size / 2) {
+					eof = size / 2 + count;
 				}
 			}
 		}
 
-		System.err.println("read call: " + numCopied);				
 		return numCopied;
 	}
 
