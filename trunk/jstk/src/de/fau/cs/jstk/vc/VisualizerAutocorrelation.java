@@ -24,7 +24,6 @@ import java.awt.Graphics;
 
 
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
-import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.framed.*;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedAudioSourceReader;
@@ -59,7 +58,7 @@ public class VisualizerAutocorrelation extends VisualComponent {
 		if (source != null) {
 			samplerate = source.getSampleRate();
 			audiosource = source.getReader();
-			window = createWindow(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10);
 			enabled = true;
 		}
 
@@ -76,24 +75,11 @@ public class VisualizerAutocorrelation extends VisualComponent {
 		if (source != null) {
 			samplerate = source.getSampleRate();
 			audiosource = source.getReader();
-			window = createWindow(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10);
 			enabled = true;
 		}
 		draw();
 		repaint();
-	}
-
-	private Window createWindow(AudioSource source, int windowType,
-			int windowLength, int shift) {
-		switch (windowType) {
-		case Window.RECTANGULAR_WINDOW:
-			return new RectangularWindow(source, windowLength, shift);
-		case Window.HANN_WINDOW:
-			return new HannWindow(source, windowLength, shift);
-		case Window.HAMMING_WINDOW:
-		default:
-			return new HammingWindow(source, windowLength, shift);
-		}
 	}
 
 	public void setParameters(int windowLength, int minBlockSize, int windowType) {
@@ -103,7 +89,7 @@ public class VisualizerAutocorrelation extends VisualComponent {
 			this.windowLength = windowLength;
 			this.windowType = windowType;
 			if (audiosource != null) {
-				window = createWindow(audiosource, windowType, windowLength, 10);
+				window = Window.create(audiosource, windowType, windowLength, 10);
 			}
 			changed = true;
 		}
