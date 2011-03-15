@@ -475,7 +475,7 @@ public final class Mixture {
 		"    Transform the means of the mixture density using the MNAP projection matrix; use 0 for full\n" +
 		"    rank projection.";
 	
-	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, SV, MNAP };
+	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, SV, MNAP, AKL, AKL2 };
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length < 1) {
@@ -499,6 +499,10 @@ public final class Mixture {
 			mode = Mode.SV;
 		else if (smode.equals("t"))
 			mode = Mode.MNAP;
+		else if (smode.equals("a"))
+			mode = Mode.AKL;
+		else if (smode.equals("A"))
+			mode = Mode.AKL2;
 		else {
 			System.err.println("MixtureDensity.main(): Unknown mode \"" + smode + "\"");
 			System.exit(1);
@@ -666,6 +670,25 @@ public final class Mixture {
 					fw.close();
 			}
 				
+			break;
+		}
+		case AKL: {
+			Mixture ubm = new Mixture(new FileInputStream(args[1]));
+			Mixture m1 = new Mixture(new FileInputStream(args[2]));
+			Mixture m2 = new Mixture(new FileInputStream(args[3]));
+			System.out.println(ubm.akl(m1.superVector(false, true, false), m2.superVector(false, true, false)));
+			break;
+		}
+		case AKL2: {
+			Mixture ubm = new Mixture(new FileInputStream(args[1]));
+			FrameInputStream fis1 = new FrameInputStream(new File(args[2]));
+			FrameInputStream fis2 = new FrameInputStream(new File(args[3]));
+			double [] m1 = new double [fis1.getFrameSize()];
+			double [] m2 = new double [fis2.getFrameSize()];
+			if (fis1.read(m1) && fis2.read(m2) && m1.length == m2.length && m1.length == ubm.fd * ubm.nd)
+				System.out.println(ubm.akl(m1, m2));
+			else
+				System.out.println("incompatible data");
 			break;
 		}
 		case MNAP: {
