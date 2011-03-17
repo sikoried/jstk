@@ -39,6 +39,7 @@ import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.trans.NAP;
+import de.fau.cs.jstk.util.Arithmetics;
 import de.fau.cs.jstk.util.Pair;
 
 /**
@@ -437,7 +438,35 @@ public final class Mixture {
 			for (int j = 0; j < fd; ++j) {
 				double d = ma[i*fd + j] - mb[i*fd + j];
 				dist += p * d * d / c[ci];
-				
+								
+				// mind the lower triangular matrix for full covariance
+				if (diagonal)
+					ci++;
+				else
+					ci += (j + 1);
+			}
+		}
+		
+		return dist;
+	}
+	
+	/**
+	 * Compute the approximate Kullback-Leibler statistics using this mixture as
+	 * a background model for priors and variance.
+	 * @param ma mean vectors of density a
+	 * @param mb mean vectors of density b
+	 * @return
+	 */
+	public double aklkernel(double [] ma, double [] mb) {
+		double dist = 0.;
+		
+		for (int i = 0; i < nd; ++i) {
+			double p = components[i].apr;
+			double [] c = components[i].cov;
+			int ci = 0;
+			for (int j = 0; j < fd; ++j) {
+				dist += p * ma[i*fd + j] * mb[i*fd + j] / c[ci];
+								
 				// mind the lower triangular matrix for full covariance
 				if (diagonal)
 					ci++;
@@ -676,7 +705,12 @@ public final class Mixture {
 			Mixture ubm = new Mixture(new FileInputStream(args[1]));
 			Mixture m1 = new Mixture(new FileInputStream(args[2]));
 			Mixture m2 = new Mixture(new FileInputStream(args[3]));
-			System.out.println(ubm.akl(m1.superVector(false, true, false), m2.superVector(false, true, false)));
+			double [] mm1 = m1.superVector(false, true, false);
+			double [] mm2 = m2.superVector(false, true, false);
+			System.out.println("dotp()       = " + Arithmetics.dotp(mm1, mm2));
+			System.out.println("akl-kernel() = " + ubm.aklkernel(mm1, mm2));
+			System.out.println("akl()        = " + ubm.akl(mm1, mm2));
+			
 			break;
 		}
 		case AKL2: {
@@ -685,9 +719,11 @@ public final class Mixture {
 			FrameInputStream fis2 = new FrameInputStream(new File(args[3]));
 			double [] m1 = new double [fis1.getFrameSize()];
 			double [] m2 = new double [fis2.getFrameSize()];
-			if (fis1.read(m1) && fis2.read(m2) && m1.length == m2.length && m1.length == ubm.fd * ubm.nd)
-				System.out.println(ubm.akl(m1, m2));
-			else
+			if (fis1.read(m1) && fis2.read(m2) && m1.length == m2.length && m1.length == ubm.fd * ubm.nd) {
+				System.out.println("dotp()       = " + Arithmetics.dotp(m1, m2));
+				System.out.println("akl-kernel() = " + ubm.aklkernel(m1, m2));
+				System.out.println("akl()        = " + ubm.akl(m1, m2));
+			} else
 				System.out.println("incompatible data");
 			break;
 		}

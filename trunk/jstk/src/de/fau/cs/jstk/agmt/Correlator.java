@@ -21,9 +21,13 @@
 */
 package de.fau.cs.jstk.agmt;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 
 /**
  * Correlate two random variables (double arrays). Available 
@@ -153,15 +157,16 @@ public final class Correlator {
 	}
 
 	public final static String SYNOPSIS = 
-		"usage: Correlator datafile1 datafile2 <datafile2 ...>";
+		"usage: Correlator datafile1 <datafile2 ...>";
 
 	public static void main(String[] args) throws Exception {
-		if (args.length < 2) {
+		if (args.length < 1) {
 			System.out.println(Correlator.SYNOPSIS);
 			System.exit(0);
 		}
 
-		double[][] data = new double[args.length][];
+		LinkedList<String> names = new LinkedList<String>();
+		LinkedList<double []> data = new LinkedList<double []>();
 
 		// read in data:
 		for (int i = 0; i < args.length; ++i) {
@@ -172,15 +177,31 @@ public final class Correlator {
 					args[i] = "STDIN";
 				} else
 					in = new BufferedReader(new FileReader(args[i]));
-				ArrayList<Double> vals = new ArrayList<Double>();
+				LinkedList<LinkedList<Double>> vals = new LinkedList<LinkedList<Double>>();
+				
 				String l;
-				while ((l = in.readLine()) != null)
-					vals.add(new Double(l));
+				int ln = 0;
+				while ((l = in.readLine()) != null) {
+					String [] split = l.split("\\s+");
+					if (ln == 0) {
+						for (int j = 0; j < split.length; ++j) {
+							names.add(args[i] + ":" + j);
+							vals.add(new LinkedList<Double>());
+						}
+					} else if (vals.size() != split.length)
+						throw new IOException("Incomplete data at " + args[i] + ":" + ln);
+					ln++;
+					for (int j = 0; j < split.length; ++j)
+						vals.get(j).add(new Double(split[j]));
+				}
 				in.close();
 
-				data[i] = new double[vals.size()];
-				for (int j = 0; j < vals.size(); ++j)
-					data[i][j] = vals.get(j).doubleValue();
+				for (LinkedList<Double> lld : vals) {
+					double [] hlp = new double [lld.size()];
+					for (int j = 0; j < lld.size(); ++j)
+						hlp[j] = lld.get(j).doubleValue();
+					data.add(hlp);
+				}
 			} catch (Exception e) {
 				System.out.println(e);
 				e.printStackTrace();
@@ -188,12 +209,12 @@ public final class Correlator {
 		}
 
 		// compute each correlation
-		for (int i = 0; i < data.length; ++i) {
-			for (int j = i + 1; j < data.length; ++j) {
-				System.out.println(args[i] + "<>" + args[j] + ": r   = "
-						+ pearsonCorrelation(data[i], data[j]));
-				System.out.println(args[i] + "<>" + args[j] + ": rho = "
-						+ spearmanCorrelation(data[i], data[j]));
+		for (int i = 0; i < data.size(); ++i) {
+			for (int j = i + 1; j < data.size(); ++j) {
+				System.out.println(names.get(i) + "<>" + names.get(j) + ": r   = "
+						+ pearsonCorrelation(data.get(i), data.get(j)));
+				System.out.println(names.get(i) + "<>" + names.get(j) + ": rho = "
+						+ spearmanCorrelation(data.get(i), data.get(j)));
 			}
 		}
 	}
