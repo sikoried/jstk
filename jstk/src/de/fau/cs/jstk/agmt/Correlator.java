@@ -174,7 +174,7 @@ public final class Correlator {
 				BufferedReader in = null;
 				if (args[i].equals("-")) {
 					in = new BufferedReader(new InputStreamReader(System.in));
-					args[i] = "STDIN";
+					args[i] = "stdin";
 				} else
 					in = new BufferedReader(new FileReader(args[i]));
 				LinkedList<LinkedList<Double>> vals = new LinkedList<LinkedList<Double>>();
@@ -209,12 +209,18 @@ public final class Correlator {
 		}
 
 		// compute each correlation
+		System.err.println("row1~row2 r rho");
 		for (int i = 0; i < data.size(); ++i) {
 			for (int j = i + 1; j < data.size(); ++j) {
-				System.out.println(names.get(i) + "<>" + names.get(j) + ": r   = "
-						+ pearsonCorrelation(data.get(i), data.get(j)));
-				System.out.println(names.get(i) + "<>" + names.get(j) + ": rho = "
-						+ spearmanCorrelation(data.get(i), data.get(j)));
+				String field1 = String.format("%.2f ", pearsonCorrelation(data.get(i), data.get(j)));
+				String field2 = String.format("%.2f ", spearmanCorrelation(data.get(i), data.get(j)));
+				System.out.print(names.get(i) + "~" + names.get(j) + " ");
+				if (!field1.startsWith("-"))
+					System.out.print(" ");
+				System.out.print(field1 + " ");
+				if (!field2.startsWith("-"))
+					System.out.print(" ");
+				System.out.println(field2);
 			}
 		}
 	}
