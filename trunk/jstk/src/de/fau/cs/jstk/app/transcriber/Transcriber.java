@@ -104,7 +104,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 	public Transcriber(String title) throws Exception {
 		super(title, "mainWindow");
 
-		preferences = new Preferences("transcriber.ini");
+		preferences = new TranscriberPreferences("transcriber.ini");
 		setPreferences(preferences);
 		transcriptionFile = preferences.getString("transcriptionFile");
 
