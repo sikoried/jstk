@@ -132,7 +132,7 @@ public class FFT extends SpectralTransformation implements FrameSource {
 	}
 		
 	/**
-	 * Read the next frame and apply FFT. The output data size is (in/2 + in%2).
+	 * Read the next frame and apply FFT, and compute the squared spectral magnitude. The output data size is (in/2 + in%2).
 	 */
 	public boolean read(double[] buf) 
 		throws IOException {
