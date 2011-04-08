@@ -36,7 +36,7 @@ public interface FrameSource {
 	/**
 	 * Extract the next frame from the the source stream using a window function
 	 * @param buf buffer to save the frame; implementing objects may depend
-	 * on a constant dimensionduring subsequent calls
+	 * on a constant dimension during subsequent calls
 	 * @return true on success, false if the stream terminated before the window was filled
 	 */
 	public boolean read(double [] buf) throws IOException;

@@ -56,9 +56,9 @@ public class SyllableNucleiDetector implements FrameSource {
 	private static final double FEX_VERSION = 0.1;
 
 	private FrameSource median = null;
-	private static Logger logger = Logger.getLogger(SyllableNucleiDetector.class);
+	private static Logger logger = Logger
+			.getLogger(SyllableNucleiDetector.class);
 
-	
 	private int index_offset = 0;
 	private double[] buf = null;
 	private SyllableNucleus[] nuclei = null;
@@ -84,6 +84,7 @@ public class SyllableNucleiDetector implements FrameSource {
 	protected int framesize = 0;
 
 	private double frames_to_milliseconds = 0.;
+	/* what's this? real_*time*_mode? is it used? */
 	private boolean real_mode = true;
 	private boolean with_absolute_syllable_data = false;
 	private boolean without_duration = false;
@@ -325,29 +326,23 @@ public class SyllableNucleiDetector implements FrameSource {
 	 *            with_positions: add position (in milliseconds) of left
 	 *            syllable * border, left syllable nucleus border, syllable
 	 *            nucleus maximum, right syllable nucleus border, right syllable
-	 *            border right after the frequency 
-	 *            buf++ = pos of left syl border 
-	 *            buf++ = pos of left syl nuc border 
-	 *            buf++ = syll nuc maximum 
-	 *            buf++ = right sym nuc border 
-	 *            buf++ = right syll border
+	 *            border right after the frequency buf++ = pos of left syl
+	 *            border buf++ = pos of left syl nuc border buf++ = syll nuc
+	 *            maximum buf++ = right sym nuc border buf++ = right syll border
 	 * 
 	 * @param with_absolute_syllable_data
 	 *            Add absolute data of each syllable nucleus to the feature
-	 *            frame. if true, each feature frame begins with 
-	 *            buf++ = absolute length of syllable nucleus in ms 
-	 *            buf++ = maximum energy of syllable nucleus 
-	 *            buf++ = energy integral syl nucleus
+	 *            frame. if true, each feature frame begins with buf++ =
+	 *            absolute length of syllable nucleus in ms buf++ = maximum
+	 *            energy of syllable nucleus buf++ = energy integral syl nucleus
 	 * @param without_duration
 	 *            If true, omit duration feature (next in line after absolute
-	 *            syllable data per feature frame 
-	 *            buf++ = duration
+	 *            syllable data per feature frame buf++ = duration
 	 * @param without_loudness
 	 *            If true, omit loudness features (maximum energy and sum of all
 	 *            energies per syllable nucleus, related to neighboring nuclei,
-	 *            next in line after duration feature per feature frame) 
-	 *            buf++ = maximum energy 
-	 *            buf++ = sum of all energies per syllable
+	 *            next in line after duration feature per feature frame) buf++ =
+	 *            maximum energy buf++ = sum of all energies per syllable
 	 *            nucleus
 	 */
 	public SyllableNucleiDetector(String inFile, String pAudio, String pWindow,
@@ -369,7 +364,6 @@ public class SyllableNucleiDetector implements FrameSource {
 
 		String inFileBaseName = new File(inFile).getName();
 
-		
 		if (outputLAB) {
 			labout = new PrintStream(new File(inFileBaseName + ".lab"));
 		}
