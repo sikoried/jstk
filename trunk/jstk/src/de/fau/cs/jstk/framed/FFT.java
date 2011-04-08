@@ -153,14 +153,15 @@ public class FFT extends SpectralTransformation implements FrameSource {
 		spectralEnergy = buf[0];
 		
 		for (int i = 1; i < (blockSize - (blockSize % 2))/2; ++i) {
-			buf[i] = Math.sqrt(buf_fft[2*i]*buf_fft[2*i] + buf_fft[2*i+1]*buf_fft[2*i+1]);
+			// buf[i] = Math.sqrt(buf_fft[2*i]*buf_fft[2*i] + buf_fft[2*i+1]*buf_fft[2*i+1]);
+			buf[i] = buf_fft[2*i]*buf_fft[2*i] + buf_fft[2*i+1]*buf_fft[2*i+1];
 			spectralEnergy += buf[i];
 		}
 		
 		if (blockSize % 2 == 0)
-			buf[blockSize/2] = Math.abs(buf_fft[1]);
+			buf[blockSize/2] = buf_fft[1] * buf_fft[1]; // Math.abs(buf_fft[1]);
 		else
-			buf[blockSize/2] = Math.sqrt(buf_fft[blockSize-1]*buf_fft[blockSize-1] + buf_fft[1]*buf_fft[1]);
+			buf[blockSize/2] = buf_fft[blockSize-1]*buf_fft[blockSize-1] + buf_fft[1]*buf_fft[1]; // Math.sqrt(buf_fft[blockSize-1]*buf_fft[blockSize-1] + buf_fft[1]*buf_fft[1]);
 		
 		spectralEnergy += buf[blockSize/2];
 		
