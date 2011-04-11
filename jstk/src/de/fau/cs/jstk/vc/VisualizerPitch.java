@@ -89,6 +89,11 @@ public class VisualizerPitch extends FileVisualizer {
 		repaint();
 	}
 
+	public void update() {
+		draw();
+		repaint();
+	}
+	
 	@Override
 	protected void recalculate() {
 	}
