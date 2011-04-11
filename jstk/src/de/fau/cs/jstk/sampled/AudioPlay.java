@@ -173,14 +173,14 @@ public class AudioPlay {
 		
 		actualBufDur = bytes / af.getFrameSize() / af.getFrameRate();
 		
-		System.err.println(String.format("bytes = %d, samples = %d\n", byteBuf.length, doubleBuf.length));
+		// System.err.println(String.format("bytes = %d, samples = %d\n", byteBuf.length, doubleBuf.length));
 		
 		/* -1 because of the assymetry of two's complement.
 		 * Example: for 16 bit depth, we need a scale of 32767, not 32768, because otherwise
 		 * we cannot represent the double value -1.0.
 		 */
 		scale = Math.pow(2, BIT_DEPTH - 1) - 1;
-		System.err.println("scale = " + scale);
+		// System.err.println("scale = " + scale);
 	}
 	
 	public double getActualBufDur(){
@@ -247,7 +247,7 @@ public class AudioPlay {
 		for (i = 0; i < frames; i++)					 
 			bb.putShort((short)(doubleBuf[i] * scale));		
 		
-		System.out.println("that would be available, now that we have fetched the data: " + line.available());
+		// System.out.println("that would be available, now that we have fetched the data: " + line.available());
 		readFrames = line.write(byteBuf, 0, readBytes);		
 		
 		return readFrames;
