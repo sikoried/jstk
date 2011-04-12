@@ -25,6 +25,9 @@ import java.awt.event.MouseEvent;
 import java.util.ListIterator;
 import java.util.Vector;
 
+import javax.swing.UIManager;
+import javax.swing.plaf.ColorUIResource;
+
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedFrameSource;
 import de.fau.cs.jstk.util.SplineInterpolation;
@@ -34,11 +37,13 @@ import de.fau.cs.jstk.vc.interfaces.F0PointsSelectedListener;
 public class VisualizerPitch extends FileVisualizer {
 
 	private static final long serialVersionUID = -2301943139572446782L;
-
+	
 	public int f0max = 600;
 	public int f0min = 50;
 	public int shift;
 	public Color colorSignal2 = Color.ORANGE;
+	public ColorUIResource colorToolTip = (ColorUIResource) UIManager.get("ToolTip.background");
+	public ColorUIResource colorToolTip2 = new ColorUIResource(colorSignal2);
 
 	private BufferedFrameSource pitchSource1;
 	private BufferedFrameSource pitchSource2;
@@ -47,6 +52,7 @@ public class VisualizerPitch extends FileVisualizer {
 	private int endDraggingY;
 	private boolean changed = false;
 	private Vector<F0PointsSelectedListener> f0PointsSelectedListeners;
+	private ColorUIResource currentColorToolTip;
 
 	public VisualizerPitch(String name, BufferedAudioSource audiosource,
 			BufferedFrameSource pitchSource1, BufferedFrameSource pitchSource2,
@@ -153,7 +159,7 @@ public class VisualizerPitch extends FileVisualizer {
 
 	}
 
-	private int pitchAt(int px, int py) {
+	private int pitchIndexAt(int px, int py) {
 		if ((px < border_left) || (px > getWidth() - border_right)) {
 			return -1;
 		}
@@ -187,6 +193,48 @@ public class VisualizerPitch extends FileVisualizer {
 		return -1;
 	}
 	
+	private F0Point pitchAt(int px, int py) {
+		if ((px < border_left) || (px > getWidth() - border_right)) {
+			return null;
+		}
+		double nshift = shift * samplerate / 1000;
+		int sample = (int) convertPXtoX(px);
+
+		if (sample > xMax) {
+			return null;
+		}
+
+		int index = (int) (sample / nshift);
+		double f0 = -1;
+
+		if (Math.abs(convertXtoPX((index + 0.5) * nshift) - px) > 3) {
+			return null;
+		}
+
+		if ((pitchSource2 != null) && (index < pitchSource2.getBufferSize())) {
+			f0 = pitchSource2.get(index)[0];
+			if (Math.abs(f0 - convertPYtoY(py)) < 20) {
+				boolean corrected = true;
+				
+				if ((pitchSource1 != null) && (Math.abs(pitchSource1.get(index)[0] - f0) < 0.001)) {
+					corrected = false;
+				}
+					
+				return new F0Point(index, f0, corrected);
+			}
+		} 
+		
+		if ((pitchSource1 != null) && (index < pitchSource1.getBufferSize())) {
+			f0 = pitchSource1.get(index)[0];
+			if (Math.abs(f0 - convertPYtoY(py)) < 20) {
+				return new F0Point(index, f0);
+			}
+		} 
+		
+
+		return null;
+	}
+
 	public void removeSelection() {
 		for (int i = 0; i < selected.length; i++) {
 			selected[i] = false;
@@ -201,7 +249,7 @@ public class VisualizerPitch extends FileVisualizer {
 			return;
 		}
 		if (arg0.getButton() == MouseEvent.BUTTON1) {
-			int idx = pitchAt(arg0.getX(), arg0.getY());
+			int idx = pitchIndexAt(arg0.getX(), arg0.getY());
 			if (idx != -1) {
 				if (arg0.isShiftDown()) {
 					if (!selected[idx]) {
@@ -317,11 +365,22 @@ public class VisualizerPitch extends FileVisualizer {
 	@Override
 	public void mouseMoved(MouseEvent arg0) {
 		super.mouseMoved(arg0);
-		int index = pitchAt(arg0.getX(), arg0.getY());
-		if (index == -1) {
+		F0Point p = pitchAt(arg0.getX(), arg0.getY());
+		if (p == null) {
 			setToolTipText(null);
 		} else {
-			double frequency = (int) (pitchSource2.get(index)[0] * 10) / 10.0;
+			if (p.corrected) {
+				if (currentColorToolTip != colorToolTip2) {
+					currentColorToolTip = colorToolTip2;
+					UIManager.put("ToolTip.background", colorToolTip2);
+				}
+			} else {
+				if (currentColorToolTip != colorToolTip) {
+					currentColorToolTip = colorToolTip;
+					UIManager.put("ToolTip.background", colorToolTip);
+				}
+			}
+			double frequency = (int) (p.f0 * 10) / 10.0;
 			setToolTipText(frequency + " Hz");			
 		}
 	}
@@ -480,7 +539,7 @@ public class VisualizerPitch extends FileVisualizer {
 				.listIterator();
 		while (iterator.hasNext()) {
 			F0PointsSelectedListener listener = iterator.next();
-			listener.f0PointsSelected(points);
+			listener.f0PointsSelected(this, points);
 		}
 
 	}
