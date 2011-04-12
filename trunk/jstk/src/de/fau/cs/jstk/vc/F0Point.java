@@ -24,10 +24,16 @@ public class F0Point {
 
 	public int frame;
 	public double f0;
+	public boolean corrected;
 	
 	public F0Point(int frame, double f0) {
+		this(frame, f0, false);
+	}
+
+	public F0Point(int frame, double f0, boolean corrected) {
 		this.frame = frame;
 		this.f0 = f0;
+		this.corrected = corrected;
 	}
 
 }
