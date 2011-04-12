@@ -21,8 +21,9 @@
 package de.fau.cs.jstk.vc.interfaces;
 
 import de.fau.cs.jstk.vc.F0Point;
+import de.fau.cs.jstk.vc.VisualizerPitch;
 
 public interface F0PointsSelectedListener {
 
-	public void f0PointsSelected(F0Point[] points);
+	public void f0PointsSelected(VisualizerPitch sender, F0Point[] points);
 }
