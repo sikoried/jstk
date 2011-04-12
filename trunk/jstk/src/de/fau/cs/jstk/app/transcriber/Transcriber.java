@@ -275,7 +275,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 				});
 		
 		pitchVisualizer.addF0PointsSelectedListener(new F0PointsSelectedListener() {
-			public void f0PointsSelected(F0Point[] points) {
+			public void f0PointsSelected(VisualizerPitch sender, F0Point[] points) {
 				int n = pitchVisualizer.getNumberOfSelectedFrames();
 				modifyPopUpMenu(n);
 			}
