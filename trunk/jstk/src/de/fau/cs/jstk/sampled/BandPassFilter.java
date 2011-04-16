@@ -86,6 +86,7 @@ public class BandPassFilter implements AudioSource {
 		index = 0;
 	}
 
+	/*
 	private void print(double[] buf) {
 		System.out.print(buf[0]);
 		for (int i = 1; i < buf.length; i++) {
@@ -94,6 +95,7 @@ public class BandPassFilter implements AudioSource {
 		}
 		System.out.println();
 	}
+	*/
 
 	private void applyFilter(double[] buf) {
 		window.applyWindowToFrame(buf);
