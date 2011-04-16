@@ -121,7 +121,6 @@ public class VisualizerSpectrum extends VisualComponent {
 		while (windowSize > blockSize) {
 			blockSize *= 2;
 		}
-
 		double buf[] = new double[blockSize];
 		DoubleFFT_1D fft = new DoubleFFT_1D(blockSize);
 		double[] spectrum = new double[blockSize / 2 + 1];
