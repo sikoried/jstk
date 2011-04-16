@@ -27,11 +27,14 @@ import java.io.IOException;
  * A Buffer for the complete audio data.
  * 
  */
-public class BufferedAudioSource implements AudioSource {
+public class BufferedAudioSource implements AudioSource, Runnable {
 
 	public static final int NO_INTERPOLATION = 0;
 	public static final int LINEAR_INTERPOLATION = 1;
 	public static final int SINC_INTERPOLATION = 2;
+
+	private static final int BUFFER_SIZE_EXP = 18;
+	private static final int BUFFER_SIZE = 2 << BUFFER_SIZE_EXP; // ca. 16 s bei 16kHz
 
 	/**
 	 * the source file to read from
@@ -39,24 +42,35 @@ public class BufferedAudioSource implements AudioSource {
 	private AudioSource audioSource;
 
 	/**
-	 * the last index that has not been read yet
+	 * the last position (buffer[bufferIndex][bufferPosition]) that has not been read yet; 
 	 */
-	private int lastRead;
+	private int bufferIndex = 0;
+	private int bufferPosition = 0;
+	
+	/**
+	 * Number of samples that have already been read
+	 */
+	private int samplesRead = 0;
 
 	/**
-	 * the values
+	 * total number of samples stored in this buffered audio source
 	 */
-	private double[] buffer;
+	private int numSamples = 0;
+	
+	/**
+	 * the values stored in a 2-dimensional array to avoid copying data while reading long files 
+	 */
+	private double[][] buffer = null;
 
 	/**
 	 * the maximum value that occurs in buffer (will be computed once only)
 	 */
-	private double maximum;
+	private double maximum = 0;
 
 	/**
 	 * the minimum value that occurs in buffer (will be computed only once)
 	 */
-	private double minimum;
+	private double minimum = 0;
 
 	/**
 	 * Gets a new Buffer for the AudioSource file that provides all its values.
@@ -77,11 +91,19 @@ public class BufferedAudioSource implements AudioSource {
 					"The AudioSourceBuffer will not work for streams.");
 		}
 		audioSource = source;
-		lastRead = 0;
-		buffer = null;
-		maximum = 0;
-		minimum = 0;
-		fillBuffer();
+		Thread t = new Thread(this);
+		long start = System.currentTimeMillis();
+		t.start();
+		try {
+			while (t.isAlive()) {
+				Thread.sleep(100);
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		long end =  System.currentTimeMillis();
+		long duration = (end - start) / 1000;
+		System.err.println(duration + " seconds");
 	}
 
 	/**
@@ -89,10 +111,11 @@ public class BufferedAudioSource implements AudioSource {
 	 * and closes the file reader.
 	 */
 	private void fillBuffer() {
+		double[] newValues = new double[BUFFER_SIZE]; 
+		buffer = new double[128][];
 		int more = 1;
-		double[] newValues = new double[32768]; // 32768 = 2 ^ 15, ca 2 sec at
-		// 16000 kHz
-		buffer = new double[0];
+		int index = 0;
+
 		while (more > 0) {
 			try {
 				more = audioSource.read(newValues);
@@ -100,14 +123,20 @@ public class BufferedAudioSource implements AudioSource {
 				break;
 			}
 			if (more > 0) {
-				double[] save = buffer;
-				buffer = new double[buffer.length + more];
-
-				// copy old values
-				System.arraycopy(save, 0, buffer, 0, save.length); // takes time
-
-				// add new values
-				System.arraycopy(newValues, 0, buffer, save.length, more);
+				if (buffer[index] == null) {
+					buffer[index] = newValues;
+					index++;
+					newValues = new double[BUFFER_SIZE];
+				} else {
+					System.err.println("this case is not handled properly and should not have happened");
+				}
+				numSamples += more;
+			} 
+			
+			if (index == buffer.length) {
+				double[][] save = buffer;
+				buffer = new double[buffer.length + 128][];
+				System.arraycopy(save, 0, buffer, 0, save.length);
 			}
 		}
 		try {
@@ -117,15 +146,12 @@ public class BufferedAudioSource implements AudioSource {
 	}
 
 	/**
-	 * Returns the number of values that are available in the buffer.
+	 * Returns the number of samples that are available in the buffer.
 	 * 
-	 * @return the size of the buffer, or 0 if it is not yet filled.
+	 * @return the number of samples, or 0 if it is not yet filled.
 	 */
 	public int getBufferSize() {
-		if (buffer == null) {
-			return 0;
-		}
-		return buffer.length;
+		return numSamples;
 	}
 
 	@Override
@@ -144,20 +170,46 @@ public class BufferedAudioSource implements AudioSource {
 	
 	@Override
 	public int read(double[] buf, int length) throws IOException {
-		int read = 0;
-		if (buffer == null) {
+		if ((numSamples == 0) || (samplesRead >= numSamples)) {
 			return -1;
 		}
-		// all values are available in buffer, simply read on (copy them from
-		// there to buf)
-		for (; lastRead < buffer.length; lastRead++) {
-			if (read >= length) {
-				break;
-			}
-			buf[read] = buffer[lastRead];
-			read++;
+		
+		// Do not read more samples than are available
+		if (samplesRead + length > numSamples) {
+			length = numSamples - samplesRead;
 		}
-		return read;
+		
+		if (bufferPosition + length <= BUFFER_SIZE) {
+			System.arraycopy(buffer[bufferIndex], bufferPosition, buf, 0, length);
+			bufferPosition += length;
+
+			if (bufferPosition == BUFFER_SIZE) {
+				bufferIndex++;
+				bufferPosition = 0;
+			}
+		} else {
+			int missing = length;
+			int pos = 0;
+			while (missing > 0) {
+				int copy = BUFFER_SIZE - bufferPosition;
+				if (copy > missing) {
+					copy = missing;
+				}
+				System.arraycopy(buffer[bufferIndex], bufferPosition, buf, pos, copy);
+				bufferPosition += copy;
+
+				if (bufferPosition == BUFFER_SIZE) {
+					bufferIndex++;
+					bufferPosition = 0;
+				}
+				
+				pos += copy;
+				missing -= copy;
+			}
+		}
+				
+		samplesRead += length;
+		return length;
 	}
 
 	/**
@@ -206,10 +258,14 @@ public class BufferedAudioSource implements AudioSource {
 	 * @return the sample value at index
 	 */
 	public double get(int index) {
-		if ((index < 0) || (index >= buffer.length)) {
+		if ((index < 0) || (index >= numSamples)) {
 			return 0;
 		}
-		return buffer[index];
+		
+		int bufIdx = index >> (BUFFER_SIZE_EXP+1);
+		int bufPos = index & (BUFFER_SIZE - 1);
+		
+		return buffer[bufIdx][bufPos];
 	}
 
 	/**
@@ -224,7 +280,7 @@ public class BufferedAudioSource implements AudioSource {
 	 * @return interpolated value
 	 */
 	public double get(double index, int interpolation) {
-		if ((index < 0) || (index >= buffer.length)) {
+		if ((index < 0) || (index >= numSamples)) {
 			return 0;
 		}
 		switch (interpolation) {
@@ -234,10 +290,21 @@ public class BufferedAudioSource implements AudioSource {
 			if (i1 < 0) {
 				i1 = 0;
 			}
-			if (i2 >= buffer.length) {
-				i2 = buffer.length - 1;
+			
+			int bufIdx1 = i1 >> (BUFFER_SIZE_EXP + 1);
+			int bufPos1 = i1 & (BUFFER_SIZE - 1);
+			int bufIdx2 = bufIdx1;
+			int bufPos2 = bufPos1 + 1;
+			if (bufPos2 >= BUFFER_SIZE) {
+				bufPos2 = 0;
+				bufIdx2++;
 			}
-			double v = (index - i1) * buffer[i2] + (i2 - index) * buffer[i1];
+
+			if (i2 >= numSamples) {
+				return buffer[bufIdx1][bufPos1]; 
+			}
+			
+			double v = (index - i1) * buffer[bufIdx1][bufPos1] + (i2 - index) * buffer[bufIdx2][bufPos2];
 			return v;
 		case SINC_INTERPOLATION:
 			i1 = (int) index - 500;
@@ -251,15 +318,19 @@ public class BufferedAudioSource implements AudioSource {
 			v = 0;
 			for (int i = i1; i <= i2; i++) {
 				double h = Math.PI * (index - i);
+				int bufIdx = i >> (BUFFER_SIZE_EXP + 1);
+				int bufPos = i & (BUFFER_SIZE - 1);
 				if (h == 0) {
-					v += buffer[i];
+					v += buffer[bufIdx][bufPos];
 				} else {
-					v += buffer[i] * Math.sin(h) / h;
+					v += buffer[bufIdx][bufPos] * Math.sin(h) / h;
 				}
 			}
 			return v;
 		default:
-			return buffer[(int) index];
+			int bufIdx = ((int) index) >> (BUFFER_SIZE_EXP + 1);
+			int bufPos = ((int) index) & (BUFFER_SIZE - 1);
+			return buffer[bufIdx][bufPos];
 		}
 	}
 
@@ -271,13 +342,21 @@ public class BufferedAudioSource implements AudioSource {
 	 */
 	public double getMax() {
 		if (maximum == 0) {
-			if (buffer == null || buffer.length < 1) {
+			if (buffer == null || numSamples < 1) {
 				return 0;
 			}
-			double max = buffer[0];
-			for (int i = 1; i < buffer.length; i++) {
-				if (buffer[i] > max) {
-					max = buffer[i];
+			double max = buffer[0][0];
+			int c = 0;
+			loop:
+			for (int i = 0; i < buffer.length; i++) {
+				for (int j = 0; j < buffer[i].length; j++) {
+					c++;
+					if (c > numSamples) {
+						break loop;
+					}
+					if (buffer[i][j] > max) {
+						max = buffer[i][j];
+					}
 				}
 			}
 			maximum = max;
@@ -294,13 +373,21 @@ public class BufferedAudioSource implements AudioSource {
 	 */
 	public double getMin() {
 		if (minimum == 0) {
-			if (buffer == null || buffer.length < 1) {
+			if (buffer == null || numSamples < 1) {
 				return 0;
 			}
-			double min = buffer[0];
-			for (int i = 1; i < buffer.length; i++) {
-				if (buffer[i] < min) {
-					min = buffer[i];
+			double min = buffer[0][0];
+			int c = 0;
+			loop:
+			for (int i = 0; i < buffer.length; i++) {
+				for (int j = 0; j < buffer[i].length; j++) {
+					c++;
+					if (c > numSamples) {
+						break loop;
+					}
+					if (buffer[i][j] > min) {
+						min = buffer[i][j];
+					}
 				}
 			}
 			minimum = min;
@@ -332,6 +419,13 @@ public class BufferedAudioSource implements AudioSource {
 		double rate = milliseconds
 				/ (double) getBufferIndexAsMilliseconds(buffer.length);
 		return (int) (rate * (double) buffer.length);
+	}
+
+	@Override
+	public void run() {
+		System.err.println("Thread started: reading file");
+		fillBuffer();
+		System.err.println("reading file finished");
 	}
 
 	/*
