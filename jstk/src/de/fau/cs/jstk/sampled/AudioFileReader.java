@@ -243,7 +243,7 @@ public final class AudioFileReader implements AudioSource {
 		
 		// if nothing was read, close the file!
 		if (bytesRead < 1) {
-			System.err.println("AudioFileReader:read: file is ended");
+			// System.err.println("AudioFileReader:read: file is ended");
 			is.close();
 			streamClosed = true;
 			return -1;
