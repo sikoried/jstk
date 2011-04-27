@@ -23,9 +23,11 @@ package de.fau.cs.jstk.framed;
 
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioSource;
+import de.fau.cs.jstk.sampled.RawAudioFormat;
 
 /**
  * Extract the first n Formants from the given LPC spectrum, 
@@ -94,28 +96,43 @@ public class Formants implements FrameSource {
 		
 		int j = 0;
 		for (int i = 1; i < fs - 1 && j < n; ++i) {
-			if (this.buf[i-1] <= this.buf[i] && this.buf[i+1] <= this.buf[i])
+			if (this.buf[i-1] <= this.buf[i] && this.buf[i] >= this.buf[i+1])
 				buf[j++] = i * toFreq;
 		}
 		
 		return true;
 	}
 	
+	public static final String SYNOPSIS = 
+		"framed.Formants [format-string] file num-formants > frame-output";
+	
 	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
-			System.out.println("usage: framed.Formants file num-formants");
+		if (args.length < 2) {
+			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
 		
-		AudioSource as = new AudioFileReader(args[0], true);
-		Formants fs =  new Formants(new LPCSpectrum(new AutoCorrelation(new HammingWindow(as, 25, 10))), as.getSampleRate(), Integer.parseInt(args[1]));
+		AudioSource as = new AudioFileReader(args[0], 
+				RawAudioFormat.create(args.length > 2 ? args[1] : "f:" + args[0]), 
+				true);
+		
+		Window wnd = new HammingWindow(as, 25, 10);
+		AutoCorrelation acf = new FastACF(wnd);
+		LPCSpectrum lpc = new LPCSpectrum(acf);
+		Formants fs = new Formants(lpc, as.getSampleRate(), Integer.parseInt(args[args.length == 3 ? 2 : 1]));
+
+		System.err.println(as);
+		System.err.println(wnd);
+		System.err.println(acf);
+		System.err.println(lpc);
+		System.err.println(fs);
 		
 		double [] buf = new double [fs.getFrameSize()];
-		while (fs.read(buf)) {
-			for (double d : buf)
-				System.out.print(d + " ");
-			System.out.println();
-		}
+		FrameOutputStream fos = new FrameOutputStream(buf.length);
+		
+		while (fs.read(buf))
+			fos.write(buf);
+		
+		fos.close();
 	}
-
 }
