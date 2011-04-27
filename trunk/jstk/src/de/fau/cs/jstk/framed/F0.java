@@ -24,6 +24,7 @@ package de.fau.cs.jstk.framed;
 import java.io.IOException;
 import java.util.Arrays;
 
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioSource;
@@ -173,23 +174,34 @@ public class F0 implements FrameSource {
 		return true;
 	}
 	
-	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
-			System.out.println("usage: framed.F0 file num-candidates");
+	public static final String SYNOPSIS = 
+		"framed.F0 [format-string] file num-cand > frame-output";
+	
+	public static void main(String [] args) throws Exception {
+		if (args.length < 2) {
+			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
 		
-		AudioSource as = new AudioFileReader(args[0], RawAudioFormat.create("t:ssg/16"), true);
+		AudioSource as = new AudioFileReader(args[0], 
+				RawAudioFormat.create(args.length > 2 ? args[1] : "f:" + args[0]), 
+				true);
+		
 		Window w = new HammingWindow(as, 25, 10);
-		AutoCorrelation ac = new AutoCorrelation(w);
-		F0 f0 =  new F0(ac, as.getSampleRate(), Integer.parseInt(args[1]));
+		AutoCorrelation ac = new FastACF(w);
+		F0 f0 = new F0(ac, as.getSampleRate(), Integer.parseInt(args[1]));
+		
+		System.err.println(as);
+		System.err.println(w);
+		System.err.println(ac);
 		System.err.println(f0);
 		
 		double [] buf = new double [f0.getFrameSize()];
-		while (f0.read(buf)) {
-			for (double d : buf)
-				System.out.print(d + " ");
-			System.out.println();
-		}
+		FrameOutputStream fos = new FrameOutputStream(buf.length);
+		
+		while (f0.read(buf))
+			fos.write(buf);
+		
+		fos.close();
 	}
 }

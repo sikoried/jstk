@@ -24,6 +24,7 @@ package de.fau.cs.jstk.framed;
 import java.io.IOException;
 
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.*;
 
@@ -221,6 +222,14 @@ public abstract class Window implements FrameSource {
 		}
 	}
 
+	/**
+	 * Return a copy of the window weights
+	 * @return
+	 */
+	public double [] getWeights() {
+		return w.clone();
+	}
+	
 	public String toString() {
 		return "length=" + wl + "ms (" + nsw + " samples) shift=" + ws + "ms ("
 				+ nss + " samples)";
@@ -293,8 +302,15 @@ public abstract class Window implements FrameSource {
 		}
 	}
 
+	public static final String SYNOPSIS = 
+		"framed.AutoCorrelation [format-string] file > frame-output";
 
 	public static void main(String[] args) throws Exception {
+		if (args.length < 1) {
+			System.err.println(SYNOPSIS);
+			System.exit(1);
+		}
+		
 		AudioSource as = new de.fau.cs.jstk.sampled.AudioFileReader(args[0],
 				RawAudioFormat.create(args.length > 1 ? args[1] : "f:"
 						+ args[0]), true);
@@ -303,13 +319,13 @@ public abstract class Window implements FrameSource {
 		System.err.println(as);
 		System.err.println(window);
 
-		double[] buf = new double[window.getFrameSize()];
+		double [] buf = new double[window.getFrameSize()];
 
-		while (window.read(buf)) {
-			int i = 0;
-			for (; i < buf.length - 1; ++i)
-				System.out.print(buf[i] + " ");
-			System.out.println(buf[i]);
-		}
+		FrameOutputStream fos = new FrameOutputStream(buf.length);
+		
+		while (window.read(buf))
+			fos.write(buf);
+		
+		fos.close();
 	}
 }

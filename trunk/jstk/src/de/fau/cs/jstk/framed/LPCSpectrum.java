@@ -23,9 +23,11 @@ package de.fau.cs.jstk.framed;
 
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
+import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioSource;
-
+import de.fau.cs.jstk.sampled.RawAudioFormat;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 /**
@@ -203,28 +205,35 @@ public class LPCSpectrum implements FrameSource {
 		return true;
 	}
 
-	public String toString() {
-		return "lpc: fs_in=" + fs_in + " fs_fft=" + fs_fft + " fs_out="
-				+ fs_out + " order=" + order;
-	}
-
+	public static final String SYNOPSIS = 
+		"framed.LPCSpectrum [format-string] file order > frame-output";
+	
 	public static void main(String[] args) throws Exception {
-		AudioSource as = new de.fau.cs.jstk.sampled.AudioFileReader(args[0], true);
-		System.err.println(as);
-
+		if (args.length < 2) {
+			System.err.println(SYNOPSIS);
+			System.exit(1);
+		}
+		
+		AudioSource as = new AudioFileReader(args[0], 
+				RawAudioFormat.create(args.length > 2 ? args[1] : "f:" + args[0]), 
+				true);
+		
 		Window w = new HammingWindow(as, 25, 10);
+		AutoCorrelation acf = new FastACF(w);
+		FrameSource lpc = new LPCSpectrum(acf, Integer.parseInt(args[args.length == 3 ? 2 : 1]));
+		
+		System.err.println(as);
 		System.err.println(w);
-
-		FrameSource lpc = new LPCSpectrum(new AutoCorrelation(w));
+		System.err.println(acf);
 		System.err.println(lpc);
 
 		double[] buf = new double[lpc.getFrameSize()];
 
-		while (lpc.read(buf)) {
-			int i = 0;
-			for (; i < buf.length - 1; ++i)
-				System.out.print(buf[i] + " ");
-			System.out.println(buf[i]);
-		}
+		FrameOutputStream fos = new FrameOutputStream(buf.length);
+		
+		while (lpc.read(buf))
+			fos.write(buf);
+		
+		fos.close();
 	}
 }
