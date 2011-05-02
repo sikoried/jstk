@@ -28,14 +28,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 import java.util.InputMismatchException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
 import de.fau.cs.jstk.io.IOUtil;
-
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 /**
