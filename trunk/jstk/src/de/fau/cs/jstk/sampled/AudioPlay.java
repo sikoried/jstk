@@ -277,15 +277,14 @@ public class AudioPlay {
 		
 		// scan for arguments
 		for (int i = 0; i < args.length; ++i) {
-			if (args[i].equals("-m")){
+			if (args[i].equals("-m"))
 				mixer = args[++i];
-			}
 			else if (args[i].equals("-f"))
 				format = args[++i];
 		}
 		
 		// process files
-		for (int i = (mixer == null ? 0 : 2) + (format == null ? 0 : 2); i < args.length; ++i) {
+		for (int i = 0 + (mixer == null ? 0 : 2) + (format == null ? 0 : 2); i < args.length; ++i) {
 			System.err.println("Now playing " + args[i]);
 			AudioFileReader reader;
 			if (format == null)

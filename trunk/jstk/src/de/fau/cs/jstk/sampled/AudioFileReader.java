@@ -48,7 +48,7 @@ public final class AudioFileReader implements AudioSource {
 	private String fileName = null;
 	
 	/** apply pre-emphasis? */
-	private boolean preemphasize = true;
+	private boolean preemphasize = false;
 	
 	/** value required for first frame of pre-emphasis */
 	private double s0 = 0.;
