@@ -62,6 +62,19 @@ public final class IOUtil {
 	}
 	
 	/**
+	 * Read len bytes from the InputStream
+	 * @param is
+	 * @param buf
+	 * @param len
+	 * @return false if less bytes read than requested
+	 * @throws IOException
+	 */
+	public static boolean readByte(InputStream is, byte [] buf, int len) throws IOException {
+		int read = is.read(buf, 0, len);
+		return read == len;
+	}
+	
+	/**
 	 * Write a single byte to the OutputStream
 	 * @param os
 	 * @param b
@@ -81,6 +94,17 @@ public final class IOUtil {
 		os.write(buf);
 	}
 
+	/**
+	 * Write len bytes to the OutputStream
+	 * @param os
+	 * @param buf
+	 * @param len
+	 * @throws IOException
+	 */
+	public static void writeByte(OutputStream os, byte [] buf, int len) throws IOException {
+		os.write(buf, 0, len);
+	}
+	
 	/**
 	 * Read a single short value from the given InputStream using given ByteOrder
 	 * @param is
