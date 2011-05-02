@@ -240,7 +240,7 @@ public abstract class Window implements FrameSource {
 	 * 
 	 * @return the weights according to the window function
 	 */
-	protected abstract double[] initWeights();
+	protected abstract double [] initWeights();
 
 	/**
 	 * Compute the window energy (current implementation is a sum over absolute

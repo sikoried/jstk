@@ -39,12 +39,16 @@ public class RectangularWindow extends Window {
 	}
 
 	protected double [] initWeights() {
-		double [] w = new double [nsw];
-		for (int i = 0; i < nsw; ++i)
+		return weights(nsw);
+	}
+
+	public static double [] weights(int size) {
+		double [] w = new double [size];
+		for (int i = 0; i < size; ++i)
 			w[i] = 1.;
 		return w;
 	}
-
+	
 	public String toString() {
 		return "framed.RectangularWindow " + super.toString();
 	}

@@ -39,9 +39,13 @@ public class HammingWindow extends Window {
 	}
 	
 	protected double [] initWeights() {
-		double [] w = new double [nsw];
-		for (int i = 0; i < nsw; ++i)
-			w[i] = 0.54 - 0.46 * Math.cos(2. * i * Math.PI / (nsw - 1));
+		return weights(nsw);
+	}
+	
+	public static double [] weights(int size) {
+		double [] w = new double [size];
+		for (int i = 0; i < size; ++i)
+			w[i] = 0.54 - 0.46 * Math.cos(2. * i * Math.PI / (size - 1));
 		return w;
 	}
 	
