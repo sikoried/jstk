@@ -19,7 +19,7 @@
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
 */
-package de.fau.cs.jstk.app;
+package de.fau.cs.jstk.framed;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +27,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.LinkedList;
 
-import de.fau.cs.jstk.framed.MVN;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
@@ -149,7 +148,7 @@ public class Traps implements FrameSource {
 	public static final String SYNOPSIS =
 		"sikoried, 1/27/2011\n" +
 		"(Raw) TRAPS computation (long context temporal structure features).\n\n" +
-		"usage: app.Traps [parameters]\n" +
+		"usage: framed.Traps [parameters]\n" +
 		"  -c num\n" +
 		"    Construct the temporal context from <num> frames\n" +
 		"  -l list out-dir [in-dir]\n" +
