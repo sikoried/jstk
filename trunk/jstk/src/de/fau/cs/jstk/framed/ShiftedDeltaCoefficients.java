@@ -87,7 +87,7 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 	 * @param d spread (typically 1)
 	 * @param p gap size (typically 3)
 	 * @param k number of deltas to extract
-	 * @param copy copy the original input data to the output vector?
+	 * @param copy copy the central frame of the input context to the output vector?
 	 */
 	public ShiftedDeltaCoefficients(FrameSource source, int d, int p, int k, boolean copy) {
 		this.source = source;
@@ -109,7 +109,7 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 	 * Note that using SDC implicates loosing border frames as there is no
 	 * padding! Also: We use a slightly different definition of spread: d is the
 	 * number of interleaved frames, it may thus be zero for neighbouring frames!
-	 * The input vector is copied and placed first in the output vector
+	 * The (central) input vector is copied and placed first in the output vector
 	 * @param source FrameSource to read from (indirectly specifies SDC parameter n)
 	 * @param d spread (typically 1)
 	 * @param p gap size (typically 3)
@@ -135,7 +135,7 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 		// copy original?
 		int offset = 0;
 		if (copy) {
-			System.arraycopy(ringbuf[pr], 0, buf, 0, fs_in);
+			System.arraycopy(ringbuf[(pr + (ringbuf.length - 1)/2) % ringbuf.length], 0, buf, 0, fs_in);
 			offset = 1;
 		}
 			
