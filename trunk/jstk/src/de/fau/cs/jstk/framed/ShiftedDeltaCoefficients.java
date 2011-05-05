@@ -74,6 +74,9 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 	/** write index */
 	private int pw;
 	
+	/** copy the original input data */
+	private boolean copy;
+	
 	/**
 	 * Extract shifted delta coefficients (SDC) from the given FrameSource, 
 	 * extracted as sdc(t) = ((c(t+d+1)-c(t), c(t+p+d+1)-c(t+p), c(t+2p+d+1)-c(t+2p)-, ...). <br/>
@@ -84,18 +87,36 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 	 * @param d spread (typically 1)
 	 * @param p gap size (typically 3)
 	 * @param k number of deltas to extract
+	 * @param copy copy the original input data to the output vector?
 	 */
-	public ShiftedDeltaCoefficients(FrameSource source, int d, int p, int k) {
+	public ShiftedDeltaCoefficients(FrameSource source, int d, int p, int k, boolean copy) {
 		this.source = source;
 		this.d = d;
 		this.p = p;
 		this.k = k;
 		
 		this.fs_in = source.getFrameSize();
+		this.copy = copy;
 		
 		ringbuf = new double [(k-1)*p + d + 2][fs_in];
 		
 		pr = pw = 0;
+	}
+	
+	/**
+	 * Extract shifted delta coefficients (SDC) from the given FrameSource, 
+	 * extracted as sdc(t) = ((c(t+d+1)-c(t), c(t+p+d+1)-c(t+p), c(t+2p+d+1)-c(t+2p)-, ...). <br/>
+	 * Note that using SDC implicates loosing border frames as there is no
+	 * padding! Also: We use a slightly different definition of spread: d is the
+	 * number of interleaved frames, it may thus be zero for neighbouring frames!
+	 * The input vector is copied and placed first in the output vector
+	 * @param source FrameSource to read from (indirectly specifies SDC parameter n)
+	 * @param d spread (typically 1)
+	 * @param p gap size (typically 3)
+	 * @param k number of deltas to extract
+	 */
+	public ShiftedDeltaCoefficients(FrameSource source, int d, int p, int k) {
+		this(source, d, p, k, true);
 	}
 
 	public boolean read(double [] buf) throws IOException {
@@ -110,6 +131,13 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 		// regular read
 		if (!source.read(ringbuf[pw]))
 			return false;
+		
+		// copy original?
+		int offset = 0;
+		if (copy) {
+			System.arraycopy(ringbuf[pr], 0, buf, 0, fs_in);
+			offset = 1;
+		}
 			
 		// construct SDCs
 		for (int i = 0; i < k; ++i) {
@@ -119,7 +147,7 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 			double [] v1 = ringbuf[ndx1];
 			double [] v2 = ringbuf[ndx2];
 			for (int j = 0; j < fs_in; ++j)
-				buf[i*fs_in + j] = v1[j] - v2[j];
+				buf[(i+offset)*fs_in + j] = v1[j] - v2[j];
 		}
 		
 		// advance read and write position
@@ -130,7 +158,7 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 	}
 
 	public int getFrameSize() {
-		return fs_in * k;
+		return fs_in * k + (copy ? fs_in : 0);
 	}
 
 	public FrameSource getSource() {
@@ -148,7 +176,7 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 	}
 	
 	public String toString() {
-		return "framed.ShiftedDeltaCoefficients n=" + fs_in + " d=" + d + " p=" + p + " k=" + k + " ringbuf.length=" + ringbuf.length;
+		return "framed.ShiftedDeltaCoefficients n=" + fs_in + " d=" + d + " p=" + p + " k=" + k + " ringbuf.length=" + ringbuf.length + " copy=" + copy;
 	}
 	
 	public static final String SYNOPSIS = 
@@ -187,8 +215,6 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 			FrameSource fs = new FrameInputStream(new File(pp.a));
 			
 			ShiftedDeltaCoefficients sdc = new ShiftedDeltaCoefficients(fs, d, p, k);
-			
-			System.err.println(sdc.toString());
 			
 			FrameOutputStream fw = new FrameOutputStream(sdc.getFrameSize(), new File(pp.b));
 			double [] buf = new double [sdc.getFrameSize()];
