@@ -36,8 +36,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.log4j.BasicConfigurator;
+
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
+import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.SampleInputStream;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.util.Arithmetics;
@@ -72,7 +75,7 @@ public class LDA extends Projection {
 	 */
 	public void accumulate(List<Sample> list) {
 		for (Sample s : list)
-			accumulate(s);
+			accumulate(s.c, s.x);
 	}
 	
 	/**
@@ -80,15 +83,24 @@ public class LDA extends Projection {
 	 * @param s
 	 */
 	public void accumulate(Sample s) {
+		accumulate(s.c, s.x);
+	}
+	
+	/** 
+	 * Accumulate an observation for given class
+	 * @param c class
+	 * @param x observation
+	 */
+	public void accumulate(short c, double [] x) {
 		// build up global stats
-		global.accumulate(s.x);
+		global.accumulate(x);
 		
 		// make sure we have an accumulator
-		if (!stats.containsKey(s.c))
-			stats.put(s.c, new Accumulator(s.x.length));
+		if (!stats.containsKey(c))
+			stats.put(c, new Accumulator(x.length));
 		
 		// build up class dependent stats
-		stats.get(s.c).accumulate(s.x);
+		stats.get(c).accumulate(x);
 	}
 	
 	/**
@@ -209,36 +221,62 @@ public class LDA extends Projection {
 		"sikoried, 2/2/2011\n" +
 		"Compute LDA using (regularized) pseudo-inverse (SVD) and save the resulting\n" +
 		"transformation y = A * (x-m) to the given projection file.\n" +
-		"usage: transformations.LDA proj list [indir]\n" +
+		"usage: transformations.LDA proj list1 [list2 ...] indir\n" +
 		"  proj  : output file for projection (Frame format)\n" +
-		"  list  : file list (files need to be binary Sample format)\n" +
-		"  indir : (optional) directory where the input files are located\n";
+		"  list  : file list(s); in case of single list expecting binary sample format instead of frame.\n" +
+		"  indir : directory where the input files are located (use . for current dir)\n";
 	
 	public static void main(String[] args) throws IOException {
-		if (args.length < 2 || args.length > 3) {
+		BasicConfigurator.configure();
+		
+		if (args.length < 2) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
 		
 		String outf = args[0];
-		String listf = args[1];
-		String indir = args.length == 3 ? args[2] + System.getProperty("file.separator") : "";
+		String indir = args[args.length-1] + System.getProperty("file.separator");
+		
+		// copy list file(s)
+		String [] lifs = new String [args.length - 2];
+		System.arraycopy(args, 1, lifs, 0, lifs.length);
 		
 		LDA lda = null;
 		
-		BufferedReader br = new BufferedReader(new FileReader(listf));
-		String line;
-		while ((line = br.readLine()) != null) {
-			SampleInputStream sis = new SampleInputStream(new FileInputStream(indir + line));
-			Sample s;
-			while ((s = sis.read()) != null) {
-				if (lda == null)
-					lda = new LDA(s.x.length);
-				lda.accumulate(s);
+		if (lifs.length == 1) {
+			// only single list: assume binary frame format
+			BufferedReader br = new BufferedReader(new FileReader(lifs[0]));
+			String line;
+			while ((line = br.readLine()) != null) {
+				SampleInputStream sis = new SampleInputStream(new FileInputStream(indir + line));
+				Sample s;
+				while ((s = sis.read()) != null) {
+					if (lda == null)
+						lda = new LDA(s.x.length);
+					lda.accumulate(s);
+				}
+			}
+			
+			br.close();
+		} else {
+			// basic case: individual list file per class
+			for (int i = 0; i < lifs.length; ++i) {
+				BufferedReader br = new BufferedReader(new FileReader(lifs[i]));
+				String line;
+				while ((line = br.readLine()) != null) {
+					FrameInputStream fis = new FrameInputStream(new File(indir + line));
+					double [] buf = new double [fis.getFrameSize()];
+					
+					if (lda == null)
+						lda = new LDA(buf.length);
+					
+					while (fis.read(buf)) 				
+						lda.accumulate((short) i, buf);
+				}
+				
+				br.close();
 			}
 		}
-		
-		br.close();
 		
 		lda.estimate(null);
 		lda.save(new File(outf));
