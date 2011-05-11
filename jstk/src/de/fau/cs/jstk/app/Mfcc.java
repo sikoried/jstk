@@ -481,13 +481,11 @@ public class Mfcc implements FrameSource {
 					inlist.add(help[0]);
 					outlist.add(help[1]);
 				} else {
-					// input file. add the string to each audiofile in list
-					if(audioDir != null)
-						line = audioDir + System.getProperty("file.separator") + line;
-			
-					String [] help = line.split(System.getProperty("file.separator"));
-					inlist.add(line);
-					outlist.add(outDir + System.getProperty("file.separator") + help[help.length-1]);
+					String inf = (audioDir == null ? line : audioDir + System.getProperty("file.separator") + line);
+					String ouf = outDir + System.getProperty("file.separator") + line;
+					
+					inlist.add(inf);
+					outlist.add(ouf);
 				}
 				i++;
 			}

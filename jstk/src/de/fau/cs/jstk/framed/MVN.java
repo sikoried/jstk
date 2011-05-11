@@ -371,16 +371,14 @@ public class MVN implements FrameSource {
 				String line = null;
 				int lineCnt = 1;
 				while ((line = lr.readLine()) != null) {
-					if (inDir != null)
-						line = inDir + System.getProperty("file.separator") + line;
-					
-					String [] help = line.split("/");
+					String inf = (inDir == null ? line : inDir + System.getProperty("file.separator") + line);
+					String ouf = outDir + System.getProperty("file.separator") + line;
 					
 					// check file
-					if (!(new File(line)).canRead())
+					if (!(new File(inf)).canRead())
 						throw new IOException(args[i-1] + "(" + lineCnt + "): Cannot read input file " + line);
 						
-					iolist.add(new Pair<String, String>(line, outDir.getAbsolutePath() + "/" + help[help.length-1]));
+					iolist.add(new Pair<String, String>(line, ouf));
 					lineCnt++;
 				}
 			} else if (args[i].equals("--in-out-list")) {
