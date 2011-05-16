@@ -17,12 +17,9 @@ import org.xiph.speex.spi.SpeexAudioFileReader;
 import de.fau.cs.jstk.sampled.RawPlayer;
 
 public class SpeexPlayer {
-	
-
 	private static final int OGG_HEADERSIZE = 27;
 	private static final int SPEEX_HEADERSIZE = 80;
 	private static final int max_headersize = 3 * OGG_HEADERSIZE + SPEEX_HEADERSIZE + 256 + 256 + 2;
-
 	
 	public static AudioInputStream getAudioInputStream(InputStream is)
 	throws UnsupportedAudioFileException, IOException{
@@ -135,7 +132,7 @@ public class SpeexPlayer {
 		Runtime.getRuntime().addShutdownHook(new Thread(){
 			public void run() {
 				System.err.println("Inside Add Shutdown Hook");
-				player.stop();
+				player.stopPlaying();
 				System.err.println("player stopped");
 			}			
 		});		

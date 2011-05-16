@@ -39,24 +39,38 @@ public class Utterance implements Serializable{
 	/**
 	 * the utterance as displayed, with punctuation etc.
 	 */
-	public String orthography;
+	private String orthography;
 
 	/**
 	 * who is speaking this, e.g. "Prince Hamlet" as in Prince Hamlet:
 	 * "To be or not to be"
 	 */
-	public String speaker;
+	private String speaker;
 
 	/*
 	 * Word [] words;
 	 */
 
-	Boundary [] boundaries;
+	private Boundary [] boundaries;
+	
+	/**
+	 * possible subdivisions of this utterance. First subdivision starts at the first word, 
+	 * i.e. there is always at least one subdivision.
+	 */
+	private Subdivision [] subdivisions;
 
-	Utterance(String orthography, String speaker, Boundary [] boundaries) {
-		this.orthography = orthography;
-		this.speaker = speaker;
+	public Utterance(){
+		setOrthography(null);
+		setSpeaker(null);
+		boundaries = new Boundary[0];
+		setSubdivisions(new Subdivision[0]);
+	}
+	
+	public Utterance(String orthography, String speaker, Boundary [] boundaries, Subdivision [] subdivisions) {
+		this.setOrthography(orthography);
+		this.setSpeaker(speaker);
 		this.boundaries = boundaries;
+		this.setSubdivisions(subdivisions);
 	}
 
 	static Utterance read(Node node, String speaker) throws Exception{
@@ -68,10 +82,10 @@ public class Utterance implements Serializable{
 		String orthography = null;
 		
 		List<Boundary> boundaries = new LinkedList<Boundary>();
+		List<Subdivision> subdivisions = new LinkedList<Subdivision>();
 		
 		node = node.getFirstChild();
 		
-		Boundary [] boundaryDummy = new Boundary[0];
 		
 		while (node != null) {
 			nodeName = node.getNodeName();
@@ -86,6 +100,10 @@ public class Utterance implements Serializable{
 			else if (nodeName.equals("boundary")){				
 				boundaries.add(Boundary.read(node));
 			}
+
+			else if (nodeName.equals("subdivision")){				
+				subdivisions.add(Subdivision.read(node));
+			}
 			else{
 				throw new Exception("unexpected node name in utterance: " + nodeName);
 			}
@@ -93,17 +111,23 @@ public class Utterance implements Serializable{
 			node = node.getNextSibling();
 		}
 		//System.out.println("orthography = " + orthography + ", speaker = " + speaker);
-		return new Utterance(orthography, speaker, boundaries.toArray(boundaryDummy));
+		
+		Boundary [] boundaryDummy = new Boundary[0];
+		Subdivision[] subdivisionDummy = new Subdivision[0];
+				
+		return new Utterance(orthography, speaker, 
+				boundaries.toArray(boundaryDummy),
+				subdivisions.toArray(subdivisionDummy));
 	}
 	
 	/**
 	 * @return the number of main phrases, according to B3 boundaries,
 	 * (i.e. the number of B3 boundaries + 1)
 	 */
-	public int getNMainPhrases(){
+	public int getNMainPhrasess(){
 		int ret = 1;
 		for (Boundary b : boundaries){
-			if (b.type == BOUNDARIES.B3)
+			if (b.getType() == BOUNDARIES.B3)
 				ret++;			
 		}
 		return ret;		
@@ -114,11 +138,11 @@ public class Utterance implements Serializable{
 	 * @param i
 	 * @return the part of orthography that belongs to main phrase number i 
 	 */
-	public String getMainPhraseOrthography(int i){
+	public String getMainPhraseOrthographyy(int i){
 		int start, end;
 		
 		if (boundaries.length == 0)
-			return orthography;
+			return getOrthography();
 		
 		// find (B3) boundaries surrounding main phrase i
 		int nB3 = 0;
@@ -126,7 +150,7 @@ public class Utterance implements Serializable{
 		
 		int boundary;
 		for (boundary = 0; boundary < boundaries.length; boundary++) {
-			if (boundaries[boundary].type == BOUNDARIES.B3)
+			if (boundaries[boundary].getType() == BOUNDARIES.B3)
 				nB3++;
 			if (nB3 == i && 
 					// don't overwrite!
@@ -142,7 +166,7 @@ public class Utterance implements Serializable{
 		if (i == 0)
 			boundaryBefore = -1;
 		
-		if (i == getNMainPhrases() - 1)
+		if (i == subdivisions.length - 1)
 			boundaryAfter = boundaries.length;
 		
 		if (boundaryBefore == Integer.MIN_VALUE || boundaryAfter == Integer.MIN_VALUE)
@@ -158,20 +182,74 @@ public class Utterance implements Serializable{
 		if (boundaryBefore == -1)		
 			start = 0;
 		else
-			start = boundaries[boundaryBefore].beginsInOrthography;
+			start = boundaries[boundaryBefore].getBeginsInOrthography();
 		
 		if (boundaryAfter == boundaries.length)
-			end = orthography.length();
+			end = getOrthography().length();
 		else {	
-			end = boundaries[boundaryAfter].beginsInOrthography;
+			end = boundaries[boundaryAfter].getBeginsInOrthography();
 		}
 		
 		//System.out.println("-> " + orthography.substring(start, end));
 		
-		return orthography.substring(start, end);		
+		return getOrthography().substring(start, end);		
 		
 	}
+
+	public void setOrthography(String orthography) {
+		this.orthography = orthography;
+	}
+
+	public String getOrthography() {
+		return orthography;
+	}
+
+	public void setSpeaker(String speaker) {
+		this.speaker = speaker;
+	}
+
+	public String getSpeaker() {
+		return speaker;
+	}
 	
-	
+	// FIXME
+	public String toString(){
+		String ret = "subdivisions = ";
+		for (Subdivision s : getSubdivisions()){
+			ret += "" + s.getFirstWord() + "," + s.getFirstCharacterInOrthography() + "; ";
+			
+		}
+		ret += "\n";
+		return ret;
+		
+		
+	}
+
+	public String getSubdivisionOrthography(int i) {
+		int start, end;
+
+		start = getSubdivisions()[i].getFirstCharacterInOrthography();
+		if (i == getSubdivisions().length - 1)
+			end = getOrthography().length();
+		else
+			end = getSubdivisions()[i + 1].getFirstCharacterInOrthography();
+		/*
+		System.out.println("start = " + start);
+		System.out.println("end = " + end);
+		System.out.println("strlen = " + getOrthography().length());
+		*/		
+		
+		return getOrthography().substring(start, end);		
+
+	}
+
+	public void setSubdivisions(Subdivision [] subdivisions) {
+		this.subdivisions = subdivisions;
+	}
+
+	public Subdivision [] getSubdivisions() {
+		return subdivisions;
+	}
+
 }
 

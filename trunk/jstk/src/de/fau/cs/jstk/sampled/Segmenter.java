@@ -69,9 +69,7 @@ public class Segmenter {
 	 * @return 
 	 */
 	public Segmenter(int samplingRate, double desiredWindowDuration, double smoothingLength,
-			double minSNR
-			
-			){
+			double minSNR){
 		this.samplingRate = samplingRate;
 		
 		windowSamples = (int)Math.round(desiredWindowDuration * samplingRate);
@@ -93,6 +91,14 @@ public class Segmenter {
 	}
 	
 	/**
+	 * init with default values
+	 * @param samplingRate
+	 */
+	public Segmenter(int samplingRate){
+		this(samplingRate, 0.025, 0.2, 10.0);
+	}
+	
+	/**
 	 * @return size of analysis window in seconds
 	 */
 	public double getWindowDuration(){
@@ -103,7 +109,7 @@ public class Segmenter {
 	 * 
 	 * @return number of analysis windows
 	 */
-	public int getNWindows(){
+	public synchronized int getNWindows(){
 		return energy.size();
 	}
 	
@@ -136,6 +142,8 @@ public class Segmenter {
 	 * @return whether the latest analysis window contains speech
 	 */
 	public boolean isSpeechLately(){
+		if (getNWindows() == 0)
+			return false;
 		return isSpeech(getNWindows() - 1);		
 	}
 	/**
@@ -151,9 +159,13 @@ public class Segmenter {
 	 * @param start
 	 * @return whether the signal was saturated after start
 	 */
-	public boolean isSaturated(double start) {
+	public boolean hasSaturation(double start) {
+		if (getNWindows() == 0)
+			return false;
 		
 		int startFrame = (int)(start / windowDuration);
+		if (startFrame < 0)
+			startFrame = 0;
 		if (startFrame >= getNWindows())
 			startFrame = getNWindows() - 1;
 		int i;
@@ -163,6 +175,9 @@ public class Segmenter {
 		return false;
 	}
 	
+	public boolean hasSaturation(){
+		return hasSaturation(0.0);
+	}
 	
 
 	private boolean isSaturated(int frame) {
@@ -177,12 +192,20 @@ public class Segmenter {
 	public boolean hasSpeech(double start){
 		int i;
 		
+		if (getNWindows() == 0)
+			return false;		
+		
 		if (getSNR() < minSNR)
-			return false;
+			return false;		
 		
 		int startFrame = (int)(start / windowDuration);
-		if (startFrame >= getNWindows())
+		if (startFrame < 0)
+			startFrame = 0;
+		if (startFrame >= getNWindows()){
+			if (startFrame > getNWindows())
+				System.err.println("startFrame = " + startFrame + " is nonsense");
 			startFrame = getNWindows() - 1;
+		}
 		for (i = startFrame; i < getNWindows(); i++)
 			if (isSpeech(i))
 				return true;
@@ -190,6 +213,10 @@ public class Segmenter {
 		return false;		
 	}
 	
+	/**
+	 * whether any speech has been observed since start
+	 * @return
+	 */
 	public boolean hasSpeech(){
 		return hasSpeech(0.0);
 	}
@@ -198,7 +225,7 @@ public class Segmenter {
 	 * eat up any number of samples, update silence segmenting
 	 * @param samples
 	 */
-	public void processSamples(double [] samples){
+	public synchronized void processSamples(double [] samples){
 		if (leftOverSamples != null){
 			double [] tmp = new double[samples.length + leftOverSamples.length];
 			System.arraycopy(leftOverSamples, 0, tmp, 0,                      leftOverSamples.length);
@@ -229,7 +256,6 @@ public class Segmenter {
 		}
 		return max;
 	}
-
 
 	private double computeEnergy(double[] samples) {
 
@@ -276,6 +302,10 @@ public class Segmenter {
 		return energyToDB(speech) - energyToDB(silence);		
 	}
 	
+	public double getSpeechEnergy(){
+		return speech;
+	}
+	
 	public double getTerminalSilence(){
 		return getTerminalSilence(0.0);
 	}
@@ -292,6 +322,9 @@ public class Segmenter {
 		int i;
 		int n = 0;
 		int startFrame = (int)(start / windowDuration);
+		if (startFrame < 0)
+			startFrame = 0;
+
 		if (startFrame >= getNWindows())
 			startFrame = getNWindows() - 1;
 		for (i = getNWindows() - 1; i >= startFrame; i--){
@@ -303,7 +336,21 @@ public class Segmenter {
 	}
 
 	public double getEnergy() {
+
+		if (getNWindows() == 0)
+			return 0.0;		
 		return getEnergy((getNWindows() - 1) * windowDuration);
+	}
+	
+	public double getMaxEnergy() {
+		if (getNWindows() == 0)
+			return 0.0;		
+		double max = getEnergy(0);
+		int i;
+		for (i = 0; i < getNWindows(); i++)
+			if (energy.get(i) > max)
+				max = energy.get(i);
+		return max;
 	}
 	
 	/**
@@ -313,9 +360,11 @@ public class Segmenter {
 	 */
 	public double getEnergy(double time) {
 		int frame = (int)Math.round(time / windowDuration + 0.001);
+		if (frame < 0)
+			frame = 0;
+
 		return energy.get(frame) / maxEnergy;	
-	}
-	
+	}	
 
 	public double getMaxAmp() {
 		return getMaxAmp((getNWindows() - 1) * windowDuration);
@@ -328,6 +377,9 @@ public class Segmenter {
 	 */
 	public double getMaxAmp(double time) {
 		int frame = (int)Math.round(time / windowDuration + 0.001);
+		if (frame < 0)
+			frame = 0;
+
 		return maxAmp.get(frame);	
 	}
 	
@@ -371,6 +423,7 @@ public class Segmenter {
 		erosion(v, radius);
 	}
 	
+	// helper for dilation/erosion
 	private static void smearRight(boolean [] v, int radius, boolean smearTrue){
 		int i;
 		int num = -1;
@@ -385,6 +438,7 @@ public class Segmenter {
 		}
 	}
 	
+	// helper for dilation/erosion
 	private static void smearLeft(boolean [] v, int radius, boolean smearTrue){
 		int i;
 		int num = -1;
@@ -512,7 +566,6 @@ public class Segmenter {
 		System.out.print(segmenter);
 		System.err.println("snr = " + segmenter.getSNR());
 	}
-
 
 
 }

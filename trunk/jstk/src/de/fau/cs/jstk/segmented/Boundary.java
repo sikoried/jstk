@@ -35,6 +35,9 @@ public class Boundary implements Serializable{
 	private static final long serialVersionUID = -5380280871782636847L;
 	public enum BOUNDARIES{
 		NONE,
+		/**
+		 * smaller break
+		 */
 		B2, 
 		/**
 		 * larger break as after comma
@@ -42,28 +45,36 @@ public class Boundary implements Serializable{
 		B3;
 	}
 	
-	BOUNDARIES type;
+	private BOUNDARIES type;
 	
 	/**
 	 *  the number of the word before which this boundary is located;
 	 *  words are counted starting with zero.
 	 *  FIXME: currently not provided by libpronunciation/annotation-process --annotation-in-xml
 	 */
-	public int beforeWhichWord;
+	private int beforeWhichWord;
 	
 	/**
 	 * the number of the character before which this boundary is located
 	 * in Utterance.orthography
+	 * 
+	 * FIXME: currently not provided by libpronunciation/annotation-process --annotation-in-xml
 	 */
-	public int beginsInOrthography;
+	private int beginsInOrthography;
 	
-	Boundary(BOUNDARIES type, int beforeWhichWord, int beginsInOrthography){
-		this.type = type;
-		this.beforeWhichWord = beforeWhichWord;
-		this.beginsInOrthography = beginsInOrthography;
+	public Boundary(){
+		type = BOUNDARIES.NONE;
+		setBeforeWhichWord(0);
+		beginsInOrthography = 0;
 	}
 	
-	static Boundary read(Node node) throws Exception{
+	public Boundary(BOUNDARIES type, int beforeWhichWord, int beginsInOrthography){
+		this.setType(type);
+		this.setBeforeWhichWord(beforeWhichWord);
+		this.setBeginsInOrthography(beginsInOrthography);
+	}
+	
+	public static Boundary read(Node node) throws Exception{
 		String nodeName = node.getNodeName();
 		
 		if (!nodeName.equals("boundary"))
@@ -85,12 +96,33 @@ public class Boundary implements Serializable{
 		
 		/*
 		System.out.println("Boundary " + type.toString() + " beforeWhichWord " + beforeWhichWord +
-				" beforeOrthography " + beforeOrthography);*/			
+				" beforeOrthography " + beforeOrthography);*/				
 				
-				
-		return new Boundary(type, beforeWhichWord, beforeOrthography); 
-				
-				
+		return new Boundary(type, beforeWhichWord, beforeOrthography);				
+	}
+
+	public void setBeginsInOrthography(int beginsInOrthography) {
+		this.beginsInOrthography = beginsInOrthography;
+	}
+
+	public int getBeginsInOrthography() {
+		return beginsInOrthography;
+	}
+
+	public void setType(BOUNDARIES type) {
+		this.type = type;
+	}
+
+	public BOUNDARIES getType() {
+		return type;
+	}
+
+	public void setBeforeWhichWord(int beforeWhichWord) {
+		this.beforeWhichWord = beforeWhichWord;
+	}
+
+	public int getBeforeWhichWord() {
+		return beforeWhichWord;
 	}
 
 }

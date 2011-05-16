@@ -9,7 +9,11 @@ import javax.sound.sampled.AudioFileFormat;
 import org.xiph.speex.spi.Speex2PcmAudioInputStream;
 import org.xiph.speex.spi.SpeexAudioFileReader;
 
-
+/**
+ * currently unused. see SpeexPlayer.
+ * @author hoenig
+ *
+ */
 public class SpeexDecoder {
 	public static void main(String []args) throws Exception{
 		SpeexAudioFileReader reader = new SpeexAudioFileReader();

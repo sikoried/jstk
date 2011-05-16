@@ -23,9 +23,11 @@
 */
 package de.fau.cs.jstk.segmented;
 
+import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -39,10 +41,14 @@ import org.w3c.dom.Node;
 
 public class UtteranceCollection implements Serializable{
 	private static final long serialVersionUID = -2577602064537299436L;
-	public Utterance [] turns;
+	private Utterance [] turns;
 
-	UtteranceCollection(Utterance [] turns){
-		this.turns = turns;
+	public UtteranceCollection(){
+		turns = new Utterance[0];
+	}
+	
+	public UtteranceCollection(Utterance [] turns){
+		this.setTurns(turns);
 	}
 	
 	public static UtteranceCollection read(Node node) throws Exception {
@@ -124,19 +130,31 @@ public class UtteranceCollection implements Serializable{
 	
 	public int getNMainPhrases(){
 		int n = 0;
-		for (Utterance u : turns){
-			n += u.getNMainPhrases();			
+		for (Utterance u : getTurns()){
+			n += u.getSubdivisions().length;			
 		}
 		return n;
 	}
 	
 	public static void main(String[] args) {		
 		try {
-			UtteranceCollection session = UtteranceCollection.read(new BufferedInputStream(new FileInputStream("pronunciation/test/dialog.xml")));
+			UtteranceCollection session = UtteranceCollection.read(new BufferedInputStream(new FileInputStream(
+					//"pronunciation/test/dialog.xml")));
+			"/home/hoenig/ldisk/Stichproben/dod/dialogs/A2.1/dialog.xml")));
 			
 			int i;
-			for (i = 0; i < session.turns.length; i++)
-				System.out.println(i + ": " + session.turns[i].orthography);
+			for (i = 0; i < session.getTurns().length; i++){
+				System.out.println(i + ": " + session.getTurns()[i].getOrthography() + 
+						session.getTurns()[i]);				
+			}
+			
+			{
+				XMLEncoder e = new XMLEncoder(
+						new FileOutputStream("Test.xml"));
+				e.writeObject(session);
+				e.close();				
+			}
+			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -148,5 +166,13 @@ public class UtteranceCollection implements Serializable{
 			e.printStackTrace();
 		}
 
+	}
+
+	public void setTurns(Utterance [] turns) {
+		this.turns = turns;
+	}
+
+	public Utterance [] getTurns() {
+		return turns;
 	}
 }

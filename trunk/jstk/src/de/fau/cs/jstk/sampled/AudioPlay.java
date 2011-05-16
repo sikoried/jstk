@@ -59,7 +59,10 @@ public class AudioPlay {
 	/// in seconds
 	private double desiredBufDur = 0;
 	/// in seconds
-	private double actualBufDur = 0;
+	//private double actualBufDur = 0;
+	
+	AudioFormat af;
+	boolean lineOpened = false;
 
 	private double scale = 1.;
 			
@@ -122,7 +125,7 @@ public class AudioPlay {
 	 */
 	private void initialize() throws IOException, LineUnavailableException {
 		// standard linear PCM at 16 bit and the available sample rate
-		AudioFormat af = new AudioFormat(source.getSampleRate(), BIT_DEPTH, 1, true, false);
+		af = new AudioFormat(source.getSampleRate(), BIT_DEPTH, 1, true, false);
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class, af);
 		
 		// No mixer specified, use default mixer
@@ -149,6 +152,8 @@ public class AudioPlay {
 			}
 		}
 		
+		// open line later (see openLine) 
+		/*
 		if (desiredBufDur != 0){
 			int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
 				* af.getFrameSize();
@@ -173,6 +178,8 @@ public class AudioPlay {
 		
 		actualBufDur = bytes / af.getFrameSize() / af.getFrameRate();
 		
+		*/
+		
 		// System.err.println(String.format("bytes = %d, samples = %d\n", byteBuf.length, doubleBuf.length));
 		
 		/* -1 because of the assymetry of two's complement.
@@ -183,9 +190,42 @@ public class AudioPlay {
 		// System.err.println("scale = " + scale);
 	}
 	
+	private void openLine() throws LineUnavailableException{
+		lineOpened = true;
+		
+		if (desiredBufDur != 0){
+			int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
+				* af.getFrameSize();
+			line.open(af, desiredBufSize);
+			if (line.getBufferSize() != desiredBufSize){
+				System.out.println("could not set desiredBufDur = " + desiredBufDur + 
+						" which corresponds to a buffer size of " + desiredBufSize + ". Got bufSize = " + 
+						line.getBufferSize());
+			}
+		}
+		else
+			line.open(af);
+		//System.out.println("line.getBufferSize = " + line.getBufferSize());
+		line.start();
+		
+		// init the buffer		
+		//bs = (int) (BUFLENGTH * af.getSampleRate() / 1000);
+		int bytes = line.getBufferSize();
+		byteBuf = new byte [bytes];
+		doubleBuf = new double [bytes / af.getFrameSize()];
+		fs = af.getFrameSize();
+		
+		//actualBufDur = bytes / af.getFrameSize() / af.getFrameRate();
+		
+		
+		
+	}
+	
+	/* we do not know actualBufDur until we actually opened the line 
 	public double getActualBufDur(){
 		return actualBufDur;
 	}
+	*/
 	
 	/**
 	 * 
@@ -214,9 +254,14 @@ public class AudioPlay {
 	 * write one frame from data array to audioSource (playback)
 	 * @return number of bytes played(written to audioSource) or -1 if audiobuffer is empty
 	 * @throws IOException
+	 * @throws LineUnavailableException 
 	 */
-	public int write() throws IOException {		
+	public int write() throws IOException, LineUnavailableException {		
 		int bytes;
+		
+		// open only here, otherwise we block audio device all the time
+		if (!lineOpened)
+			openLine();
 		
 		//bytes = line.available();
 		//if (bytes > byteBuf.length)

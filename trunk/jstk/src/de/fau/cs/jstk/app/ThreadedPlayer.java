@@ -142,7 +142,9 @@ public class ThreadedPlayer implements Runnable {
 		} catch (LineUnavailableException e) {
 			throw new IOException("LineUnavailableException: " + e.toString());
 		}
-		return player.getActualBufDur();
+		//return player.getActualBufDur();
+		// FIXME
+		return desiredBufDur;
 	}
 	
 	
@@ -281,7 +283,7 @@ public class ThreadedPlayer implements Runnable {
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length < 2) {
-			System.err.println("usage: bin.ThreadedPlayer mixer-name <file1 ...>");
+			System.err.println("usage: app.ThreadedPlayer mixer-name <file1 ...>");
 			System.exit(1);
 		}
 		

@@ -45,6 +45,8 @@ public class RawCapturer implements Runnable, LineListener{
 	double activeSleepRatio;
 
 	private int factor_buffer_smaller = 16;
+
+	private Thread shutdownHook = null;
 	
 	RawCapturer(BufferedOutputStream os, AudioFormat format){
 		this(os, format, null, 0.0);		
@@ -79,6 +81,25 @@ public class RawCapturer implements Runnable, LineListener{
 		}
 	}
 	
+	public void dispose(){
+		stopCapturing();
+		
+		line.removeLineListener(this);
+		line = null;
+
+		dependents.clear();
+		dependents = null;
+		
+		thread = null;
+		os = null;
+		format = null;
+		
+		mixer = null;
+		if (shutdownHook != null)
+			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		shutdownHook = null;
+	}
+	
 	public void addStateListener(CaptureEventListener client) {
 		dependents.add(client);
 	}
@@ -111,6 +132,13 @@ public class RawCapturer implements Runnable, LineListener{
 	}
 	
 	public void start(){
+		Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread(){
+			public void run() {
+				System.err.println("Inside Shutdown Hook: stopping player...");
+				stopCapturing();
+				System.err.println("player stopped");
+			}			
+		});		
 		thread.start();		
 	}
 	
@@ -123,9 +151,9 @@ public class RawCapturer implements Runnable, LineListener{
 		}
 	}
 	
-	public void stop(){
+	public void stopCapturing(){
 		if (stopped)
-			return;		
+			return;
 		
 		stopped = true;
 		try {
@@ -133,9 +161,7 @@ public class RawCapturer implements Runnable, LineListener{
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		
-		// TODO: remove Listeners
+		}		
 	}
 
 	@Override
@@ -143,7 +169,7 @@ public class RawCapturer implements Runnable, LineListener{
 		DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
 		if (!AudioSystem.isLineSupported(info)) {
 			System.err.println("Not supported line: " + info);
-			stop();
+			stopCapturing();
 			return;
         }
 		 
@@ -154,20 +180,17 @@ public class RawCapturer implements Runnable, LineListener{
 				line.open(format, 
 						(int)Math.round(desiredBufSize * format.getFrameRate() * format.getFrameSize()));
 			else
-				line.open(format);
-				
-				
+				line.open(format);				
 			
 		} catch (LineUnavailableException e) {
 			e.printStackTrace();
-			stop();
+			stopCapturing();
 			return;
 		}		
 		System.err.println("Bufsize = " + line.getBufferSize());
 		
 		System.err.println(String.format("desired bufsize = %f, actual = %f",
-				desiredBufSize, line.getBufferSize() / format.getFrameRate() / format.getFrameSize()));
-				
+				desiredBufSize, line.getBufferSize() / format.getFrameRate() / format.getFrameSize()));				
 
 		/* read+write partial buffer (why? see http://download.oracle.com/javase/tutorial/sound/capturing.html)
 			 * also, stress testing has confirmed that scheme (see enableStressTest)
@@ -182,7 +205,7 @@ public class RawCapturer implements Runnable, LineListener{
 		while(!stopped){
 			int numBytesRead = 0;
 			
-			numBytesRead =  line.read(buffer, 0, buffer.length);												
+			numBytesRead = line.read(buffer, 0, buffer.length);												
 			
 			if (numBytesRead < 0)
 				break;
@@ -191,7 +214,7 @@ public class RawCapturer implements Runnable, LineListener{
 				os.write(buffer, 0, numBytesRead);
 			} catch (IOException e) {				
 				e.printStackTrace();				
-				stop();	
+				stopCapturing();	
 			}
 			if (stressTestEnabled){
 				long nanoSleep = (long) (activeSleepRatio * numBytesRead / format.getFrameRate() / format.getFrameSize() * 1000000000.0);
@@ -211,9 +234,9 @@ public class RawCapturer implements Runnable, LineListener{
 		line.stop();
 		if (stopped) 
 			line.flush();
-		line.close();	
-		
-		dependents.clear();		
+		line.close();		
+
+				
 	}
 	
 	@Override
@@ -253,13 +276,15 @@ public class RawCapturer implements Runnable, LineListener{
 		// And the latter from time to time refuses to put out anything
 		capturer.enableStressTest(0.99);
 		
+		/* outdated
 		Runtime.getRuntime().addShutdownHook(new Thread(){
 			public void run() {
 				System.err.println("Inside Add Shutdown Hook");
-				capturer.stop();
+				capturer.stopCapturing();
 				System.err.println("player stopped");
 			}			
-		});		
+		});
+		*/		
 		
 		capturer.start();		
 		
