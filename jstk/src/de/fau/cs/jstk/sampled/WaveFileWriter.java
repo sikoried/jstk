@@ -79,8 +79,13 @@ public class WaveFileWriter {
 		
 		AudioSystem.write(new AudioInputStream(new ByteArrayInputStream(
 					allData), format, allData.length),
-					AudioFileFormat.Type.WAVE, outFile);		
-		
+					AudioFileFormat.Type.WAVE, outFile);			
 	}	
-
+/* redundant nonsense:
+	public static void write(AudioInputStream source,  
+			int sampleRate, File outFile) throws IOException{		
+		AudioSystem.write(source, 
+					AudioFileFormat.Type.WAVE, outFile);		
+	}
+	*/		
 }

@@ -44,6 +44,8 @@ public class RawPlayer implements Runnable, LineListener{
 	double activeSleepRatio;
 	
 	private int factor_buffer_smaller = 16;
+
+	private Thread shutdownHook = null;
 	
 	RawPlayer(AudioInputStream ais){
 		this(ais, null, 0.0);		
@@ -51,6 +53,24 @@ public class RawPlayer implements Runnable, LineListener{
 
 	RawPlayer(AudioInputStream ais, String mixerName){
 		this(ais, mixerName, 0.0);
+	}
+	
+	public void dispose(){
+		stopPlaying();
+		
+		line.removeLineListener(this);
+		line = null;
+		
+		dependents.clear();		
+		dependents = null;
+		
+		thread = null;
+		ais = null;
+		
+		mixer = null;
+		if (shutdownHook != null)
+			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		shutdownHook = null;
 	}
 	
 	/**
@@ -81,20 +101,26 @@ public class RawPlayer implements Runnable, LineListener{
 	public void addStateListener(PlayEventListener client) {
 		dependents.add(client);
 	}
+	
 	public void removeStateListener(PlayEventListener client) {
 		dependents.remove(client);
 	}
+	
 	private void notifyStart() {
-		System.err.println("notifyStart...");
-		for (PlayEventListener s : dependents)
+		System.err.println("notifyStart for " + dependents.size());
+		for (PlayEventListener s : dependents){
+			System.err.println("notify " + s);
 			s.playbackStarted(this);
+		}
 	}
+	
 	private void notifyStop() {
-		System.err.println("notifyStop...");
-		for (PlayEventListener s : dependents)
+		System.err.println("notifyStop for " + dependents.size());
+		for (PlayEventListener s : dependents){
+			System.err.println("notify " + s);
 			s.playbackStopped(this);
+		}
 	}
-
 	
 	/**
 	 * stress-test this component: sleep (actively) *after* reading data from ais.
@@ -110,7 +136,14 @@ public class RawPlayer implements Runnable, LineListener{
 	}
 	
 	public void start(){
-		thread.start();		
+		Runtime.getRuntime().addShutdownHook(shutdownHook  = new Thread(){
+			public void run() {
+				System.err.println("Inside Shutdown Hook: stopping player...");
+				stopPlaying();
+				System.err.println("player stopped");
+			}			
+		});		
+		thread.start();
 	}
 	
 	public void join(){
@@ -122,9 +155,9 @@ public class RawPlayer implements Runnable, LineListener{
 		}
 	}
 	
-	public void stop(){
+	public void stopPlaying(){
 		if (stopped)
-			return;		
+			return;
 		
 		stopped = true;
 		try {
@@ -134,7 +167,7 @@ public class RawPlayer implements Runnable, LineListener{
 			e.printStackTrace();
 		}
 		
-		// TODO: remove Listeners
+		// TODO: remove Listeners?
 	}
 
 	@Override
@@ -142,7 +175,7 @@ public class RawPlayer implements Runnable, LineListener{
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class, ais.getFormat());
 		if (!AudioSystem.isLineSupported(info)) {
 			System.err.println("Not supported line: " + info);
-			stop();
+			stopPlaying();
 			return;
         }
 		 
@@ -153,13 +186,11 @@ public class RawPlayer implements Runnable, LineListener{
 				line.open(ais.getFormat(), 
 						(int)Math.round(desiredBufSize * ais.getFormat().getFrameRate() * ais.getFormat().getFrameSize()));
 			else
-				line.open(ais.getFormat());
-				
-				
+				line.open(ais.getFormat());				
 			
 		} catch (LineUnavailableException e) {
 			e.printStackTrace();
-			stop();
+			stopPlaying();
 			return;
 		}		
 		System.err.println("Bufsize = " + line.getBufferSize());
@@ -187,7 +218,7 @@ public class RawPlayer implements Runnable, LineListener{
 					
 			} catch (IOException e) {				
 				e.printStackTrace();
-				stop();				
+				stopPlaying();				
 			}			
 		
 			if (stressTestEnabled){
@@ -205,20 +236,21 @@ public class RawPlayer implements Runnable, LineListener{
 			if (numBytesRead < 0)
 				break;
 			//System.err.println("available = " + line.available());
-			line.write(buffer, 0, numBytesRead);		
+
+			line.write(buffer, 0, numBytesRead);	
+			
 		}
 		
 		if (!stopped)
 			line.drain();
 		line.stop();
-		if (stopped) 
-			line.flush();
+		if (stopped){ 
+			line.flush();			
+		}
 		line.close();
 		
-		stopped = true;
-		
-		dependents.clear();
-		
+		stopped = true;		
+				
 	}
 	
 	@Override
@@ -274,13 +306,15 @@ public class RawPlayer implements Runnable, LineListener{
 		// And the latter from time to time refuses to put out anything
 		//player.enableStressTest(0.98);
 		
+		/* outdated 
 		Runtime.getRuntime().addShutdownHook(new Thread(){
 			public void run() {
 				System.err.println("Inside Add Shutdown Hook");
-				player.stop();
+				player.stopPlaying();
 				System.err.println("player stopped");
 			}			
 		});		
+		*/
 		
 		player.start();		
 		
