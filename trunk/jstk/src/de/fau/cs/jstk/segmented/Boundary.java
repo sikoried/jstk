@@ -23,18 +23,14 @@
 */
 package de.fau.cs.jstk.segmented;
 
-
-
 import java.io.Serializable;
-
 import org.w3c.dom.Node;
-
 
 public class Boundary implements Serializable{
 	
 	private static final long serialVersionUID = -5380280871782636847L;
 	public enum BOUNDARIES{
-		NONE,
+		//NONE, outdated: implicitly given by non-existent boundaries
 		/**
 		 * smaller break
 		 */
@@ -48,11 +44,9 @@ public class Boundary implements Serializable{
 	private BOUNDARIES type;
 	
 	/**
-	 *  the number of the word before which this boundary is located;
-	 *  words are counted starting with zero.
-	 *  FIXME: currently not provided by libpronunciation/annotation-process --annotation-in-xml
+	 *  the index of the word *before* which this boundary is located;
 	 */
-	private int beforeWhichWord;
+	private int index;
 	
 	/**
 	 * the number of the character before which this boundary is located
@@ -60,18 +54,18 @@ public class Boundary implements Serializable{
 	 * 
 	 * FIXME: currently not provided by libpronunciation/annotation-process --annotation-in-xml
 	 */
-	private int beginsInOrthography;
+	//private int firstCharacterInOrthography;
 	
 	public Boundary(){
-		type = BOUNDARIES.NONE;
-		setBeforeWhichWord(0);
-		beginsInOrthography = 0;
+		type = null;
+		setIndex(0);
+		//setFirstCharacterInOrthography(0);
 	}
 	
-	public Boundary(BOUNDARIES type, int beforeWhichWord, int beginsInOrthography){
+	public Boundary(BOUNDARIES type, int index/*, int firstCharacterInOrthography*/){
 		this.setType(type);
-		this.setBeforeWhichWord(beforeWhichWord);
-		this.setBeginsInOrthography(beginsInOrthography);
+		this.setIndex(index);
+		//this.setFirstCharacterInOrthography(firstCharacterInOrthography);
 	}
 	
 	public static Boundary read(Node node) throws Exception{
@@ -80,34 +74,19 @@ public class Boundary implements Serializable{
 		if (!nodeName.equals("boundary"))
 			throw new Exception("Expecting node name boundary, got " + nodeName);
 		
-		String typeString = node.getTextContent();
-		BOUNDARIES type = BOUNDARIES.NONE;
-		
-		for (BOUNDARIES t : BOUNDARIES.values()){		
-			if (typeString.equals(t.toString()))
-				type = t;
-		}
-		if (type == BOUNDARIES.NONE){
-			throw new Exception("Unacceptable value for boundary type: " + typeString);
-		}		
+	
 		
 		int beforeWhichWord = Integer.parseInt(node.getAttributes().getNamedItem("beforeWord").getNodeValue());
-		int beforeOrthography = Integer.parseInt(node.getAttributes().getNamedItem("beforeOrthography").getNodeValue());
+		BOUNDARIES type = BOUNDARIES.valueOf(node.getAttributes().getNamedItem("type").getNodeValue());
 		
 		/*
 		System.out.println("Boundary " + type.toString() + " beforeWhichWord " + beforeWhichWord +
 				" beforeOrthography " + beforeOrthography);*/				
 				
-		return new Boundary(type, beforeWhichWord, beforeOrthography);				
+		return new Boundary(type, beforeWhichWord/*, beforeOrthography*/);				
 	}
 
-	public void setBeginsInOrthography(int beginsInOrthography) {
-		this.beginsInOrthography = beginsInOrthography;
-	}
 
-	public int getBeginsInOrthography() {
-		return beginsInOrthography;
-	}
 
 	public void setType(BOUNDARIES type) {
 		this.type = type;
@@ -117,12 +96,30 @@ public class Boundary implements Serializable{
 		return type;
 	}
 
-	public void setBeforeWhichWord(int beforeWhichWord) {
-		this.beforeWhichWord = beforeWhichWord;
+	// obsolete: see Utterance.getOrthographyIndex
+//	public void setFirstCharacterInOrthography(int firstCharacterInOrthography) {
+//		this.firstCharacterInOrthography = firstCharacterInOrthography;
+//	}
+//
+//	public int getFirstCharacterInOrthography() {
+//		return firstCharacterInOrthography;
+//	}
+
+	/**
+	 * set *before* which word this boundary is located
+	 */
+	public void setIndex(int index) {
+		this.index = index;
 	}
 
-	public int getBeforeWhichWord() {
-		return beforeWhichWord;
+	/**
+	 * 
+	 * @return *before* which word this boundary is located
+	 */
+	public int getIndex() {
+		return index;
 	}
+
+	
 
 }
