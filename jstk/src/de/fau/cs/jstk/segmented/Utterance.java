@@ -23,7 +23,6 @@
 */
 package de.fau.cs.jstk.segmented;
 
-
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +36,7 @@ public class Utterance implements Serializable{
 	private static final long serialVersionUID = 3535642214459508273L;
 
 	/**
-	 * the utterance as displayed, with punctuation etc.
+	 * The utterance as displayed to the user/learner: with capitalization, punctuation etc.
 	 */
 	private String orthography;
 
@@ -46,16 +45,25 @@ public class Utterance implements Serializable{
 	 * "To be or not to be"
 	 */
 	private String speaker;
-
-	/*
-	 * Word [] words;
+	
+	private Word [] words;
+	
+	/** 
+	 * phrase Boundaries (B2, B3 boundaries)
 	 */
-
 	private Boundary [] boundaries;
 	
 	/**
-	 * possible subdivisions of this utterance. First subdivision starts at the first word, 
-	 * i.e. there is always at least one subdivision.
+	 * phrase boundaries, primary or secondary ones, mainly.
+	 * usually, there should be exactly one primary accent per main phrase (see {@link getB3Boundaries})
+	 */
+	private PhraseAccent [] phraseAccents;
+	
+	/**
+	 * Possible subdivisions of this utterance, e.g. for a novice second language learner
+	 * when training this utterance. Often, but not always coincides with B3 boundaries;
+	 * sometimes coincides with B2 boundaries.
+	 * First subdivision starts at the first word, i.e. there is always at least one subdivision.
 	 */
 	private Subdivision [] subdivisions;
 
@@ -66,8 +74,11 @@ public class Utterance implements Serializable{
 		setSubdivisions(new Subdivision[0]);
 	}
 	
-	public Utterance(String orthography, String speaker, Boundary [] boundaries, Subdivision [] subdivisions) {
+	public Utterance(String orthography, String speaker,
+			Word [] words,
+			Boundary [] boundaries, Subdivision [] subdivisions) {
 		this.setOrthography(orthography);
+		this.words = words;
 		this.setSpeaker(speaker);
 		this.boundaries = boundaries;
 		this.setSubdivisions(subdivisions);
@@ -83,7 +94,7 @@ public class Utterance implements Serializable{
 		
 		List<Boundary> boundaries = new LinkedList<Boundary>();
 		List<Subdivision> subdivisions = new LinkedList<Subdivision>();
-		
+		List<Word> words = new LinkedList<Word>();
 		node = node.getFirstChild();
 		
 		
@@ -104,6 +115,9 @@ public class Utterance implements Serializable{
 			else if (nodeName.equals("subdivision")){				
 				subdivisions.add(Subdivision.read(node));
 			}
+			else if (nodeName.equals("word")){
+				words.add(Word.read(node));
+			}
 			else{
 				throw new Exception("unexpected node name in utterance: " + nodeName);
 			}
@@ -114,87 +128,79 @@ public class Utterance implements Serializable{
 		
 		Boundary [] boundaryDummy = new Boundary[0];
 		Subdivision[] subdivisionDummy = new Subdivision[0];
+		Word [] wordDummy = new Word[0];
 				
-		return new Utterance(orthography, speaker, 
+		return new Utterance(orthography, speaker,
+				words.toArray(wordDummy),
 				boundaries.toArray(boundaryDummy),
 				subdivisions.toArray(subdivisionDummy));
 	}
 	
-	/**
-	 * @return the number of main phrases, according to B3 boundaries,
-	 * (i.e. the number of B3 boundaries + 1)
-	 */
-	public int getNMainPhrasess(){
-		int ret = 1;
-		for (Boundary b : boundaries){
-			if (b.getType() == BOUNDARIES.B3)
-				ret++;			
-		}
-		return ret;		
-	}
-	
-	/**
-	 * 
-	 * @param i
-	 * @return the part of orthography that belongs to main phrase number i 
-	 */
-	public String getMainPhraseOrthographyy(int i){
-		int start, end;
-		
-		if (boundaries.length == 0)
-			return getOrthography();
-		
-		// find (B3) boundaries surrounding main phrase i
-		int nB3 = 0;
-		int boundaryBefore = Integer.MIN_VALUE, boundaryAfter = Integer.MIN_VALUE;
-		
-		int boundary;
-		for (boundary = 0; boundary < boundaries.length; boundary++) {
-			if (boundaries[boundary].getType() == BOUNDARIES.B3)
-				nB3++;
-			if (nB3 == i && 
-					// don't overwrite!
-					boundaryBefore == Integer.MIN_VALUE){
-				boundaryBefore = boundary;
-			}
-			if (nB3 == i + 1){
-				boundaryAfter = boundary;
-				break;
-			}			
-		}		
-				
-		if (i == 0)
-			boundaryBefore = -1;
-		
-		if (i == subdivisions.length - 1)
-			boundaryAfter = boundaries.length;
-		
-		if (boundaryBefore == Integer.MIN_VALUE || boundaryAfter == Integer.MIN_VALUE)
-			throw new Error("getMainPhraseOrthography: Implementation Error?");		
-		
-		
-		/*
-		System.out.println(orthography);
-		System.out.println("i = "  + i + ", boundaryBefore = " + boundaryBefore + ", boundaryAfter = " + boundaryAfter);
-		*/
-		
 
-		if (boundaryBefore == -1)		
-			start = 0;
-		else
-			start = boundaries[boundaryBefore].getBeginsInOrthography();
-		
-		if (boundaryAfter == boundaries.length)
-			end = getOrthography().length();
-		else {	
-			end = boundaries[boundaryAfter].getBeginsInOrthography();
-		}
-		
-		//System.out.println("-> " + orthography.substring(start, end));
-		
-		return getOrthography().substring(start, end);		
-		
-	}
+	
+//	/**
+//	 * 
+//	 * @param i
+//	 * @return the part of orthography that belongs to main phrase number i
+//	 * (according to getB3Boundaries()) 
+//	 */
+//	public String getMainPhraseOrthographyy(int i){
+//		int start, end;
+//		
+//		if (boundaries.length == 0)
+//			return getOrthography();
+//		
+//		// find (B3) boundaries surrounding main phrase i
+//		int nB3 = 0;
+//		int boundaryBefore = Integer.MIN_VALUE, boundaryAfter = Integer.MIN_VALUE;
+//		
+//		int boundary;
+//		for (boundary = 0; boundary < boundaries.length; boundary++) {
+//			if (boundaries[boundary].getType() == BOUNDARIES.B3)
+//				nB3++;
+//			if (nB3 == i && 
+//					// don't overwrite!
+//					boundaryBefore == Integer.MIN_VALUE){
+//				boundaryBefore = boundary;
+//			}
+//			if (nB3 == i + 1){
+//				boundaryAfter = boundary;
+//				break;
+//			}			
+//		}		
+//				
+//		if (i == 0)
+//			boundaryBefore = -1;
+//		
+//		if (i == subdivisions.length - 1)
+//			boundaryAfter = boundaries.length;
+//		
+//		if (boundaryBefore == Integer.MIN_VALUE || boundaryAfter == Integer.MIN_VALUE)
+//			throw new Error("getMainPhraseOrthography: Implementation Error?");		
+//		
+//		
+//		/*
+//		System.out.println(orthography);
+//		System.out.println("i = "  + i + ", boundaryBefore = " + boundaryBefore + ", boundaryAfter = " + boundaryAfter);
+//		*/
+//		
+//
+//		if (boundaryBefore == -1)		
+//			start = 0;
+//		else
+//			start = boundaries[boundaryBefore].getBeginsInOrthography();
+//		
+//		if (boundaryAfter == boundaries.length)
+//			end = getOrthography().length();
+//		else {	
+//			end = boundaries[boundaryAfter].getBeginsInOrthography();
+//		}
+//		
+//		//System.out.println("-> " + orthography.substring(start, end));
+//		
+//		return getOrthography().substring(start, end);		
+//		
+//	}
 
 	public void setOrthography(String orthography) {
 		this.orthography = orthography;
@@ -202,6 +208,60 @@ public class Utterance implements Serializable{
 
 	public String getOrthography() {
 		return orthography;
+	}
+	
+	/**
+	 * 
+	 * @param beginIndex
+	 * @param endIndex
+	 * @return the part of the orthographic transcription that belongs to the words 
+	 * beginIndex through endIndex - 1.
+	 * @throws Exception 
+	 */
+	public String getOrthography(int beginIndex, int endIndex) throws Exception{
+		return orthography.substring(getOrthographyIndex(beginIndex),
+				getOrthographyIndex(endIndex));		
+	}
+	
+	/**
+	 * estimate where a word begins in the orthographic transcription. 
+	 * Some heuristic assumptions are used, e.g. the words must be written as in their
+	 * graphemic transcription (except case). Quotation-marks and punctuation might not
+	 * be handled well.
+	 * @param i
+	 * @return the character index of the start of word i in the orthographic transcription. Special case: For i == getWords().length, getOrthography.length() is returned.
+	 * @throws Exception if graphemic transcriptions of words aren't found in orthography (ignoring case) 
+	 */
+	public int getOrthographyIndex(int word)throws Exception{
+		int position = 0, i;
+		String lcOrtho = orthography.toLowerCase();
+		
+		System.err.println("getOrthographyIndex for word " + word);
+		
+		// include any starting quotations marks
+		if (word == 0)
+			return 0;
+		// special case
+		else if (word == words.length)
+			return orthography.length();
+		// search for all words 0 to word - 1
+		else{
+			int thisPos;
+			for (i = 0; i <= word; i++){
+				String lcWord = words[i].getGraphemes().toLowerCase();
+				thisPos = lcOrtho.indexOf(lcWord, position);
+				if (thisPos == -1){
+					String msg = "Could not find \"" + lcWord + "\" in \"" + lcOrtho + "\"!";
+					System.err.println(msg);
+					throw new Exception(msg);
+				}
+				position = thisPos;
+				if (i < word)
+					position += lcWord.length() + 1;
+			}			
+		}		
+		System.err.println("position = " + position);
+		return position;
 	}
 
 	public void setSpeaker(String speaker) {
@@ -216,30 +276,32 @@ public class Utterance implements Serializable{
 	public String toString(){
 		String ret = "subdivisions = ";
 		for (Subdivision s : getSubdivisions()){
-			ret += "" + s.getFirstWord() + "," + s.getFirstCharacterInOrthography() + "; ";
+			ret += "" + s.getFirstWord() + "; ";
 			
 		}
 		ret += "\n";
-		return ret;
-		
+		return ret;		
 		
 	}
 
-	public String getSubdivisionOrthography(int i) {
-		int start, end;
+	public String getSubdivisionOrthography(int i) throws Exception {
+		int startIndex, endIndex;
 
-		start = getSubdivisions()[i].getFirstCharacterInOrthography();
-		if (i == getSubdivisions().length - 1)
-			end = getOrthography().length();
-		else
-			end = getSubdivisions()[i + 1].getFirstCharacterInOrthography();
-		/*
-		System.out.println("start = " + start);
-		System.out.println("end = " + end);
-		System.out.println("strlen = " + getOrthography().length());
-		*/		
+		System.err.println("getSubdivisionOrthography: subdivision " + i);
 		
-		return getOrthography().substring(start, end);		
+		startIndex = getSubdivisions()[i].getFirstWord();
+		if (i == getSubdivisions().length - 1)
+			endIndex = words.length;
+		else
+			endIndex = getSubdivisions()[i + 1].getFirstWord();
+		
+		System.err.println("startIndex = " + startIndex);
+		System.err.println("endIndex = " + endIndex);
+		System.err.println("strlen = " + getOrthography().length());
+				
+		
+		//return getOrthography().substring(start, end);
+		return getOrthography(startIndex, endIndex);
 
 	}
 
@@ -249,6 +311,58 @@ public class Utterance implements Serializable{
 
 	public Subdivision [] getSubdivisions() {
 		return subdivisions;
+	}
+
+	public void setWords(Word [] words) {
+		this.words = words;
+	}
+
+	public Word [] getWords() {
+		return words;
+	}
+
+	public Boundary[] getBoundaries() {
+		return boundaries;
+	}
+
+	public void setBoundaries(Boundary[] boundaries) {
+		this.boundaries = boundaries;
+	}
+	
+	/**
+	 * B3 boundaries divide the utterance into main phrases.
+	 * @return B3 boundaries
+	 */
+	public Boundary [] getB3Boundaries() {
+		List<Boundary> list = new LinkedList<Boundary>();
+		
+		for (Boundary b : boundaries)			
+			if (b.equals(BOUNDARIES.B3))
+				list.add(b);
+		
+		return (Boundary[]) list.toArray();		
+	}
+
+	/**
+	 * @return the number of main phrases, according to B3 boundaries,
+	 * (i.e. the number of B3 boundaries + 1)
+	 */
+	public int getNMainPhrases(){
+//		int ret = 1;
+//		for (Boundary b : boundaries){
+//			if (b.getType() == BOUNDARIES.B3)
+//				ret++;			
+//		}
+//		return ret;		
+		return getB3Boundaries().length + 1;
+	}
+	
+	public void setPhraseAccents(PhraseAccent [] phraseAccents) {
+		this.phraseAccents = phraseAccents;
+	}
+
+	public PhraseAccent [] getPhraseAccents() {
+		return phraseAccents;
 	}
 
 }
