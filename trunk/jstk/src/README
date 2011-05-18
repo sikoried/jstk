@@ -13,7 +13,7 @@ The JSTK is licensed under GPLv3 and welcomes any contributions in terms of
 extensions, bugfixes, feature requests or comments. Note that code maintenance
 is (for now) only done at the speech group of Univ. Erlangen. Though this
 toolkit is intended to allow full-scale speech applications, special APIs such
-as the Google Android Speech API or Java Speech API are not implements (but may
+as the Google Android Speech API or Java Speech API are not implemented (but may
 however be implemented in the future).
 
 The toolkit makes use of the following third party libraries:
@@ -27,10 +27,15 @@ JAMA - http://math.nist.gov/javanumerics/jama/
 	The JAMA package provides linear algebra routines such as decompositions
 	(e.g. Eigen, LR, QR) and matrix operations (calculus, inversions).
 	A single precision copy is maintained at the Speech Group named FJAMA, and
-	a snapshot can be found in the Download section of this project.
+	a snapshot can be found in the download section of this project.
 
 log4j - http://logging.apache.org/log4j
 	log4j provides scalable logging capabilities, however, JSTK only uses the
 	very basic features of it -- for now. Currently, we use v 1.2.16
+
+jspeex - http://sourceforge.net/projects/jspeex/files/jspeex
+    jspeex is used for decoding speex-compressed (*.spx) files. speex is a lossy
+    codec comparable to MP3 or Ogg Vorbis, but optimized for speech, see http://www.speex.org.
+    Currently using version 0.9.7.
 
 sikoried, 3Feb2011
