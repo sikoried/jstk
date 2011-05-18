@@ -49,4 +49,17 @@ public class UtteranceCollectionTest {
 		Assert.assertEquals("ɑː", collection.getTurns()[2].getWords()[1].getPhonemes()[1].getSymbols());	
 	}
 
+//	@Test
+//	public void blaTest() throws Exception{
+//
+//
+//		URL url = new URL("file:///home/hoenig/disk/Stichproben/C-AuDiT/de/Annotation/Master/xml/panel-sorted.xml");
+//
+//		InputStream is = url.openStream();
+//		Assert.assertTrue(is != null);
+//
+//		UtteranceCollection collection = 
+//			UtteranceCollection.read(new BufferedInputStream(is));
+//	}
+
 }

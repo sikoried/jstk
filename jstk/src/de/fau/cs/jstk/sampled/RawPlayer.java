@@ -58,10 +58,12 @@ public class RawPlayer implements Runnable, LineListener{
 	public void dispose(){
 		stopPlaying();
 		
-		line.removeLineListener(this);
+		if (line != null)
+			line.removeLineListener(this);
 		line = null;
 		
-		dependents.clear();		
+		if (dependents != null)
+			dependents.clear();		
 		dependents = null;
 		
 		thread = null;
