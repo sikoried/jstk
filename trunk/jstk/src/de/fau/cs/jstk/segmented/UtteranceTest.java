@@ -54,4 +54,6 @@ public class UtteranceTest {
 		// the o in "not"
 		Assert.assertEquals("ɑː", u.getWords()[1].getPhonemes()[1].getSymbols());		
 	}
+	
+	
 }

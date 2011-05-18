@@ -54,8 +54,8 @@ public class Segmenter {
 	double speech;
 	double silence;
 	
-	double signalSum = 0.0;
-	int signalsProcessed = 0;
+	double samplesSum = 0.0;
+	int samplesProcessed = 0;
 
 	private double baseEnergy;
 	private double maxEnergy;
@@ -117,6 +117,13 @@ public class Segmenter {
 	 * @return duration of processed samples in seconds
 	 */
 	public double getDuration(){
+//		
+//		System.err.println("samplesProcessed = " + samplesProcessed + " = [sec] " +
+//				(double)samplesProcessed / samplingRate +
+//				", but returning windowDuration * getNWindows() = " + 
+//				windowDuration * getNWindows()
+//				);
+	
 		return windowDuration * getNWindows();		
 	}
 	
@@ -200,11 +207,13 @@ public class Segmenter {
 		
 		int startFrame = (int)(start / windowDuration);
 		if (startFrame < 0)
-			startFrame = 0;
+			throw new ArrayIndexOutOfBoundsException("startFrame = " + startFrame);
+			//startFrame = 0;
 		if (startFrame >= getNWindows()){
-			if (startFrame > getNWindows())
-				System.err.println("startFrame = " + startFrame + " is nonsense");
-			startFrame = getNWindows() - 1;
+			throw new ArrayIndexOutOfBoundsException("startFrame = " + startFrame + " >= getNWindows() = " + getNWindows());
+//			if (startFrame > getNWindows())
+//				System.err.println("startFrame = " + startFrame + " is nonsense");
+//			startFrame = getNWindows() - 1;
 		}
 		for (i = startFrame; i < getNWindows(); i++)
 			if (isSpeech(i))
@@ -276,10 +285,10 @@ public class Segmenter {
 		
 		// update mean (I know, not necessary if doPreemphasis and alpha = 1)
 		for (double d : samples){
-			signalSum += d;
-			signalsProcessed++;
+			samplesSum += d;
+			samplesProcessed++;
 		}
-		double mean = signalSum / signalsProcessed;
+		double mean = samplesSum / samplesProcessed;
 
 		// energy, after DC subtraction
 		

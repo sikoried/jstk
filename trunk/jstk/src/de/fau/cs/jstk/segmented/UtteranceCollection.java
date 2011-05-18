@@ -79,7 +79,10 @@ public class UtteranceCollection implements Serializable{
 				throw new Exception("expecting node textsegment, got "
 						+ nodeName);
 				
-			String speaker = textsegment.getAttributes().getNamedItem("speaker").getNodeValue();
+			Node speakerNode = textsegment.getAttributes().getNamedItem("speaker");
+			String speaker = null;
+			if (speakerNode != null)
+				speaker = speakerNode.getNodeValue();
 				
 			utterance = textsegment.getFirstChild();
 			nodeName = utterance.getNodeName();
