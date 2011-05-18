@@ -11,7 +11,7 @@ public class Phoneme implements Serializable {
 	 */
 	private String symbols = null;
 	
-	public Phoneme(){		
+	public Phoneme(){
 	}
 	
 	public Phoneme(String symbols){
