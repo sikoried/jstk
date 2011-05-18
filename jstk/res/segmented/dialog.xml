@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<recordingSessionAnnotation ID="0" NAME="recordingName" ANNOVERSION="0.1" ANNOFORMAT="XML" LASTEDITED="0">
+<textsegment speaker="Speaker 1" NR="-1" ID="-1" TRACK="sentence1" REV="-1">
+<utterance>
+<orthography>What should we do tonight?</orthography>
+<subdivision firstWord="0"></subdivision>
+<word graphemes="what" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="ɑː"/>
+<phoneme symbols="t"/>
+</word>
+<word graphemes="should" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="ʃ"/>
+<phoneme symbols="ʊ"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="we" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="iː"/>
+</word>
+<word graphemes="do" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="d"/>
+<phoneme symbols="uː"/>
+</word>
+<word graphemes="tonight" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<syllable position="2" nPhonemes="3" stress="PRIMARY"/>
+<phoneme symbols="t"/>
+<phoneme symbols="ə"/>
+<phoneme symbols="n"/>
+<phoneme symbols="aɪ"/>
+<phoneme symbols="t"/>
+</word>
+</utterance>
+</textsegment>
+<textsegment speaker="Speaker 2" NR="-1" ID="-1" TRACK="sentence2" REV="-1">
+<utterance>
+<orthography>We could go to an Indian restaurant.</orthography>
+<boundary beforeWord="3" type="B2"/>
+<subdivision firstWord="0"></subdivision>
+<word graphemes="we" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="iː"/>
+</word>
+<word graphemes="could" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="k"/>
+<phoneme symbols="ʊ"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="go" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="g"/>
+<phoneme symbols="oʊ"/>
+</word>
+<word graphemes="to" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="t"/>
+<phoneme symbols="uː"/>
+</word>
+<word graphemes="an" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="æ"/>
+<phoneme symbols="n"/>
+</word>
+<word graphemes="Indian" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="2" stress="PRIMARY"/>
+<syllable position="2" nPhonemes="2" stress="NONE"/>
+<syllable position="4" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="ɪ"/>
+<phoneme symbols="n"/>
+<phoneme symbols="d"/>
+<phoneme symbols="iː"/>
+<phoneme symbols="ɪ"/>
+<phoneme symbols="n"/>
+</word>
+<word graphemes="restaurant" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="4" stress="PRIMARY"/>
+<syllable position="4" nPhonemes="1" stress="NONE"/>
+<syllable position="5" nPhonemes="4" stress="NONE"/>
+<phoneme symbols="ɾ"/>
+<phoneme symbols="e"/>
+<phoneme symbols="s"/>
+<phoneme symbols="t"/>
+<phoneme symbols="ə"/>
+<phoneme symbols="ɾ"/>
+<phoneme symbols="ɑː"/>
+<phoneme symbols="n"/>
+<phoneme symbols="t"/>
+</word>
+</utterance>
+</textsegment>
+<textsegment speaker="Speaker 1" NR="-1" ID="-1" TRACK="sentence3" REV="-1">
+<utterance>
+<orthography>I'm not that hungry. Besides, I don't like curry.</orthography>
+<boundary beforeWord="4" type="B3"/>
+<boundary beforeWord="5" type="B3"/>
+<subdivision firstWord="0"></subdivision>
+<subdivision firstWord="4"></subdivision>
+<word graphemes="I'm" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="aɪ"/>
+<phoneme symbols="m"/>
+</word>
+<word graphemes="not" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="n"/>
+<phoneme symbols="ɑː"/>
+<phoneme symbols="t"/>
+</word>
+<word graphemes="that" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="æ"/>
+<phoneme symbols="t"/>
+</word>
+<word graphemes="hungry" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="3" stress="PRIMARY"/>
+<syllable position="3" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="h"/>
+<phoneme symbols="ʌ"/>
+<phoneme symbols="ŋ"/>
+<phoneme symbols="g"/>
+<phoneme symbols="ɾ"/>
+<phoneme symbols="iː"/>
+</word>
+<word graphemes="besides" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<syllable position="2" nPhonemes="4" stress="PRIMARY"/>
+<phoneme symbols="b"/>
+<phoneme symbols="ə"/>
+<phoneme symbols="s"/>
+<phoneme symbols="aɪ"/>
+<phoneme symbols="d"/>
+<phoneme symbols="z"/>
+</word>
+<word graphemes="I" phraseAccent="NONE">
+<syllable position="0" nPhonemes="1" stress="NONE"/>
+<phoneme symbols="aɪ"/>
+</word>
+<word graphemes="don't" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="4" stress="NONE"/>
+<phoneme symbols="d"/>
+<phoneme symbols="oʊ"/>
+<phoneme symbols="n"/>
+<phoneme symbols="t"/>
+</word>
+<word graphemes="like" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="l"/>
+<phoneme symbols="aɪ"/>
+<phoneme symbols="k"/>
+</word>
+<word graphemes="curry" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="3" stress="PRIMARY"/>
+<syllable position="3" nPhonemes="1" stress="NONE"/>
+<phoneme symbols="k"/>
+<phoneme symbols="ɜː"/>
+<phoneme symbols="ɾ"/>
+<phoneme symbols="iː"/>
+</word>
+</utterance>
+</textsegment>
+<textsegment speaker="Speaker 2" NR="-1" ID="-1" TRACK="sentence4" REV="-1">
+<utterance>
+<orthography>Well, there's a nice bar near here, The King's Head. Maybe we could go there?</orthography>
+<boundary beforeWord="1" type="B3"/>
+<boundary beforeWord="7" type="B2"/>
+<boundary beforeWord="10" type="B3"/>
+<subdivision firstWord="0"></subdivision>
+<subdivision firstWord="7"></subdivision>
+<subdivision firstWord="10"></subdivision>
+<word graphemes="well" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="e"/>
+<phoneme symbols="l"/>
+</word>
+<word graphemes="there's" phraseAccent="NONE">
+<syllable position="0" nPhonemes="4" stress="NONE"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="eɪ"/>
+<phoneme symbols="ɾ"/>
+<phoneme symbols="z"/>
+</word>
+<word graphemes="a" phraseAccent="NONE">
+<syllable position="0" nPhonemes="1" stress="NONE"/>
+<phoneme symbols="ə"/>
+</word>
+<word graphemes="nice" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="n"/>
+<phoneme symbols="aɪ"/>
+<phoneme symbols="s"/>
+</word>
+<word graphemes="bar" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="b"/>
+<phoneme symbols="ɑː"/>
+<phoneme symbols="ɾ"/>
+</word>
+<word graphemes="near" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="n"/>
+<phoneme symbols="iː"/>
+<phoneme symbols="ɾ"/>
+</word>
+<word graphemes="here" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="h"/>
+<phoneme symbols="iː"/>
+<phoneme symbols="ɾ"/>
+</word>
+<word graphemes="the" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="ə"/>
+</word>
+<word graphemes="King's" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="4" stress="NONE"/>
+<phoneme symbols="k"/>
+<phoneme symbols="ɪ"/>
+<phoneme symbols="ŋ"/>
+<phoneme symbols="z"/>
+</word>
+<word graphemes="Head" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="h"/>
+<phoneme symbols="e"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="maybe" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="2" stress="PRIMARY"/>
+<syllable position="2" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="m"/>
+<phoneme symbols="eɪ"/>
+<phoneme symbols="b"/>
+<phoneme symbols="iː"/>
+</word>
+<word graphemes="we" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="iː"/>
+</word>
+<word graphemes="could" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="k"/>
+<phoneme symbols="ʊ"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="go" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="g"/>
+<phoneme symbols="oʊ"/>
+</word>
+<word graphemes="there" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="e"/>
+<phoneme symbols="ɾ"/>
+</word>
+</utterance>
+</textsegment>
+<textsegment speaker="Speaker 1" NR="-1" ID="-1" TRACK="sentence5" REV="-1">
+<utterance>
+<orthography>I'd rather not. I don't drink.</orthography>
+<boundary beforeWord="3" type="B3"/>
+<subdivision firstWord="0"></subdivision>
+<subdivision firstWord="3"></subdivision>
+<word graphemes="I'd" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="aɪ"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="rather" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="PRIMARY"/>
+<syllable position="3" nPhonemes="1" stress="NONE"/>
+<phoneme symbols="ɾ"/>
+<phoneme symbols="æ"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="ɜː"/>
+</word>
+<word graphemes="not" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="n"/>
+<phoneme symbols="ɑː"/>
+<phoneme symbols="t"/>
+</word>
+<word graphemes="I" phraseAccent="NONE">
+<syllable position="0" nPhonemes="1" stress="NONE"/>
+<phoneme symbols="aɪ"/>
+</word>
+<word graphemes="don't" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="4" stress="NONE"/>
+<phoneme symbols="d"/>
+<phoneme symbols="oʊ"/>
+<phoneme symbols="n"/>
+<phoneme symbols="t"/>
+</word>
+<word graphemes="drink" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="5" stress="NONE"/>
+<phoneme symbols="d"/>
+<phoneme symbols="ɾ"/>
+<phoneme symbols="ɪ"/>
+<phoneme symbols="ŋ"/>
+<phoneme symbols="k"/>
+</word>
+</utterance>
+</textsegment>
+<textsegment speaker="Speaker 2" NR="-1" ID="-1" TRACK="sentence6" REV="-1">
+<utterance>
+<orthography>Okay then. What would you suggest?</orthography>
+<boundary beforeWord="2" type="B3"/>
+<subdivision firstWord="0"></subdivision>
+<word graphemes="okay" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="1" stress="PRIMARY"/>
+<syllable position="1" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="oʊ"/>
+<phoneme symbols="k"/>
+<phoneme symbols="eɪ"/>
+</word>
+<word graphemes="then" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="e"/>
+<phoneme symbols="n"/>
+</word>
+<word graphemes="what" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="ɑː"/>
+<phoneme symbols="t"/>
+</word>
+<word graphemes="would" phraseAccent="NONE">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="ʊ"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="you" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="j"/>
+<phoneme symbols="uː"/>
+</word>
+<word graphemes="suggest" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<syllable position="3" nPhonemes="4" stress="PRIMARY"/>
+<phoneme symbols="s"/>
+<phoneme symbols="ə"/>
+<phoneme symbols="g"/>
+<phoneme symbols="dʒ"/>
+<phoneme symbols="e"/>
+<phoneme symbols="s"/>
+<phoneme symbols="t"/>
+</word>
+</utterance>
+</textsegment>
+<textsegment speaker="Speaker 1" NR="-1" ID="-1" TRACK="sentence7" REV="-1">
+<utterance>
+<orthography>Well, we could go to the movies.</orthography>
+<boundary beforeWord="1" type="B3"/>
+<subdivision firstWord="0"></subdivision>
+<word graphemes="well" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="e"/>
+<phoneme symbols="l"/>
+</word>
+<word graphemes="we" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="w"/>
+<phoneme symbols="iː"/>
+</word>
+<word graphemes="could" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="k"/>
+<phoneme symbols="ʊ"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="go" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="g"/>
+<phoneme symbols="oʊ"/>
+</word>
+<word graphemes="to" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="t"/>
+<phoneme symbols="uː"/>
+</word>
+<word graphemes="the" phraseAccent="NONE">
+<syllable position="0" nPhonemes="2" stress="NONE"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="ə"/>
+</word>
+<word graphemes="movies" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="2" stress="PRIMARY"/>
+<syllable position="2" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="m"/>
+<phoneme symbols="uː"/>
+<phoneme symbols="v"/>
+<phoneme symbols="iː"/>
+<phoneme symbols="z"/>
+</word>
+</utterance>
+</textsegment>
+<textsegment speaker="Speaker 2" NR="-1" ID="-1" TRACK="sentence8" REV="-1">
+<utterance>
+<orthography>That's a good idea.</orthography>
+<subdivision firstWord="0"></subdivision>
+<word graphemes="that's" phraseAccent="PRIMARY">
+<syllable position="0" nPhonemes="4" stress="NONE"/>
+<phoneme symbols="ð"/>
+<phoneme symbols="æ"/>
+<phoneme symbols="t"/>
+<phoneme symbols="s"/>
+</word>
+<word graphemes="a" phraseAccent="NONE">
+<syllable position="0" nPhonemes="1" stress="NONE"/>
+<phoneme symbols="ə"/>
+</word>
+<word graphemes="good" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="3" stress="NONE"/>
+<phoneme symbols="g"/>
+<phoneme symbols="ʊ"/>
+<phoneme symbols="d"/>
+</word>
+<word graphemes="idea" phraseAccent="SECONDARY">
+<syllable position="0" nPhonemes="1" stress="NONE"/>
+<syllable position="1" nPhonemes="2" stress="PRIMARY"/>
+<syllable position="3" nPhonemes="1" stress="NONE"/>
+<phoneme symbols="aɪ"/>
+<phoneme symbols="d"/>
+<phoneme symbols="iː"/>
+<phoneme symbols="ə"/>
+</word>
+</utterance>
+</textsegment>
+</recordingSessionAnnotation>

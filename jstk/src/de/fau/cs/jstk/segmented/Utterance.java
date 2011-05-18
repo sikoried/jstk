@@ -38,26 +38,23 @@ public class Utterance implements Serializable{
 	/**
 	 * The utterance as displayed to the user/learner: with capitalization, punctuation etc.
 	 */
-	private String orthography;
+	private String orthography = null;
 
 	/**
-	 * who is speaking this, e.g. "Prince Hamlet" as in Prince Hamlet:
+	 * role which is speaking this, e.g. "Prince Hamlet" as in Prince Hamlet:
 	 * "To be or not to be"
+	 * *not* the name of the participant. only used for dod (Dialogue of the Day) 
 	 */
-	private String speaker;
+	private String role = null;
 	
-	private Word [] words;
+	private Word [] words = null;
 	
 	/** 
 	 * phrase Boundaries (B2, B3 boundaries)
 	 */
-	private Boundary [] boundaries;
+	private Boundary [] boundaries = null;
 	
-	/**
-	 * phrase boundaries, primary or secondary ones, mainly.
-	 * usually, there should be exactly one primary accent per main phrase (see {@link getB3Boundaries})
-	 */
-	private PhraseAccent [] phraseAccents;
+	
 	
 	/**
 	 * Possible subdivisions of this utterance, e.g. for a novice second language learner
@@ -68,10 +65,6 @@ public class Utterance implements Serializable{
 	private Subdivision [] subdivisions;
 
 	public Utterance(){
-		setOrthography(null);
-		setSpeaker(null);
-		boundaries = new Boundary[0];
-		setSubdivisions(new Subdivision[0]);
 	}
 	
 	public Utterance(String orthography, String speaker,
@@ -265,18 +258,18 @@ public class Utterance implements Serializable{
 	}
 
 	public void setSpeaker(String speaker) {
-		this.speaker = speaker;
+		this.role = speaker;
 	}
 
 	public String getSpeaker() {
-		return speaker;
+		return role;
 	}
 	
 	// FIXME
 	public String toString(){
 		String ret = "subdivisions = ";
 		for (Subdivision s : getSubdivisions()){
-			ret += "" + s.getFirstWord() + "; ";
+			ret += "" + s.getIndex() + "; ";
 			
 		}
 		ret += "\n";
@@ -289,20 +282,18 @@ public class Utterance implements Serializable{
 
 		System.err.println("getSubdivisionOrthography: subdivision " + i);
 		
-		startIndex = getSubdivisions()[i].getFirstWord();
+		startIndex = getSubdivisions()[i].getIndex();
 		if (i == getSubdivisions().length - 1)
 			endIndex = words.length;
 		else
-			endIndex = getSubdivisions()[i + 1].getFirstWord();
+			endIndex = getSubdivisions()[i + 1].getIndex();
 		
 		System.err.println("startIndex = " + startIndex);
 		System.err.println("endIndex = " + endIndex);
-		System.err.println("strlen = " + getOrthography().length());
-				
+		System.err.println("strlen = " + getOrthography().length());				
 		
 		//return getOrthography().substring(start, end);
 		return getOrthography(startIndex, endIndex);
-
 	}
 
 	public void setSubdivisions(Subdivision [] subdivisions) {
@@ -357,13 +348,13 @@ public class Utterance implements Serializable{
 		return getB3Boundaries().length + 1;
 	}
 	
-	public void setPhraseAccents(PhraseAccent [] phraseAccents) {
-		this.phraseAccents = phraseAccents;
-	}
-
-	public PhraseAccent [] getPhraseAccents() {
-		return phraseAccents;
-	}
+//	public void setPhraseAccents(PhraseAccent [] phraseAccents) {
+//		this.phraseAccents = phraseAccents;
+//	}
+//
+//	public PhraseAccent [] getPhraseAccents() {
+//		return phraseAccents;
+//	}
 
 }
 

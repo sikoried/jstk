@@ -41,10 +41,9 @@ import org.w3c.dom.Node;
 
 public class UtteranceCollection implements Serializable{
 	private static final long serialVersionUID = -2577602064537299436L;
-	private Utterance [] turns;
+	private Utterance [] turns = null;
 
-	public UtteranceCollection(){
-		turns = new Utterance[0];
+	public UtteranceCollection(){		
 	}
 	
 	public UtteranceCollection(Utterance [] turns){

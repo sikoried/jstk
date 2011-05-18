@@ -24,7 +24,7 @@ public class Subdivision implements Serializable{
 	}
 	
 	public Subdivision(int firstWord/*, int firstCharacterInOrthography*/){
-		this.setFirstWord(firstWord);
+		this.setIndex(firstWord);
 		//this.setFirstCharacterInOrthography(firstCharacterInOrthography);
 	}
 	
@@ -46,10 +46,10 @@ public class Subdivision implements Serializable{
 		return new Subdivision(firstWord/*, firstCharacterInOrthography*/);				
 	}	
 	
-	public void setFirstWord(int firstWord) {
+	public void setIndex(int firstWord) {
 		this.index = firstWord;
 	}
-	public int getFirstWord() {
+	public int getIndex() {
 		return index;
 	}
 	

@@ -135,6 +135,7 @@ public class PitchCorrector extends JFrame implements KeyListener,
 		Box box = Box.createVerticalBox();
 
 		JPanel panel = new JPanel();
+		// Note: need to have jstk/res on java build path!
 		playButton = new JButton("", new ImageIcon(this.getClass().getResource(
 				"/app/transcriber/play1.png")));
 		playButton.setRolloverIcon(new ImageIcon(this.getClass().getResource(
