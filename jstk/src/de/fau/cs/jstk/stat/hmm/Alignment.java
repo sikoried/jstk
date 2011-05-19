@@ -109,11 +109,24 @@ public class Alignment {
 			throw new AlignmentException("observation shorter than number of states");
 		
 		q = new int [observation.size()];
+
+		// the actual field width
+		double width = (double) q.length / (double) model.ns;
 		
-		double skew = (model.ns - 1.) / (q.length - 1.);
+		// the slack due to the rounding
+		double slack = 0.;
 		
-		for (int i = 0; i < q.length; ++i)
-			q[i] = (int) Math.round(skew * i);
+		int j = 0;
+		for (int i = 0; i < model.ns; ++i) {
+			int fields = (int) (width - slack + .5);
+			slack = fields - (width - slack);
+			for (int k = 0; k < fields; ++k)
+				q[j++] = i;
+		}
+		
+		// in case of precision problems, fill with last state
+		while (j < q.length)
+			q[j++] = model.ns - 1;
 	}
 	
 	/**

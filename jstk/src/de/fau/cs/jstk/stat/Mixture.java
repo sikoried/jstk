@@ -73,7 +73,7 @@ public final class Mixture {
 	public boolean diagonal;
 	
 	/** last seen feature vector */
-	private double [] last = null;
+	private transient double [] last = null;
 	
 	/**
 	 * Create a new MixtureDensity.
@@ -84,6 +84,7 @@ public final class Mixture {
 	public Mixture(int featureDimension, int numberOfDensities, boolean diagonalCovariances) {
 		this.nd = numberOfDensities;
 		this.fd = featureDimension;
+		this.last = new double [fd];
 		components = new Density [nd];
 		diagonal = diagonalCovariances;
 		
@@ -97,6 +98,7 @@ public final class Mixture {
 	public Mixture(Mixture copy) {
 		this.nd = copy.nd;
 		this.fd = copy.fd;
+		this.last = new double [fd];
 		this.diagonal = copy.diagonal;
 		
 		components = new Density [nd];
@@ -116,7 +118,8 @@ public final class Mixture {
 		id = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
 		fd = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
 		nd = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
-
+		this.last = new double [fd];
+		
 		diagonal = (IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN) == 0);
 		
 		components = new Density [nd];
@@ -200,10 +203,20 @@ public final class Mixture {
 	 * @return
 	 */
 	public double evaluate2(double [] x) {
-		if (last == x)
+		boolean eq = true;
+		int i = 0;
+		while (eq && i < fd) {
+			eq &= (x[i] == last[i]);
+			i++;
+		}
+		
+		// if all values are equal, we can skip the computation
+		if (eq) {
 			return score;
-		last = x;
-		return evaluate(x);
+		} else {
+			System.arraycopy(x, 0, last, 0, fd);
+			return evaluate(x);
+		}
 	}
 	
 	/**
