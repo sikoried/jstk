@@ -24,41 +24,58 @@ package de.fau.cs.jstk.sampled;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 /**
  * a simple class for speech/silence segmentation based on short-time energy.
  * 
- * TODO: description of what is happening exactly
+ * in short: 
+ * - call processSamples(), e.g. from a recording thread. Should be fast.
+ * - call update() as often as you will, from a different thread. Only then, you will see the
+ *   changes made by the samples processed in the meantime. update() and processSamples() should be 
+ *   synchronized, and care has been taken minimize blocking time.
+ * 
  * 
  * @author hoenig
  *
  */
 public class Segmenter {
 	
-	int samplingRate;
+	private int samplingRate;
 	double windowDuration;
 	int windowSamples;
 	int maskRadius;
 	boolean doPreemphasis;
 	double minSNR;
 	
-	double [] leftOverSamples = null;
 	
+	
+		
 	List<Double> energy = new LinkedList<Double>();
 	//List<Boolean> isSaturated = new LinkedList<Boolean>();
 	List <Double> maxAmp = new LinkedList<Double>();
-	boolean [] isSpeech = null;
-	
+	boolean [] isSpeech = null;	
 	
 	double threshold;
 	double speech;
 	double silence;
 	
 	double samplesSum = 0.0;
-	int samplesProcessed = 0;
+	int samplesNSummed = 0;
 
 	private double baseEnergy;
 	private double maxEnergy;
+
+	/**
+	 * mutex to control access to tmpEnergy, tmpMaxAmp, leftOverSamples, nSamplesEaten
+	 */	
+	Semaphore mutex = new Semaphore(1);	
+	
+	List<Double> tmpEnergy = new LinkedList<Double>();
+	List<Double> tmpMaxAmp = new LinkedList<Double>();
+
+	double [] leftOverSamples = null;
+	
 	
 	/**
 	 * 
@@ -70,7 +87,7 @@ public class Segmenter {
 	 */
 	public Segmenter(int samplingRate, double desiredWindowDuration, double smoothingLength,
 			double minSNR){
-		this.samplingRate = samplingRate;
+		this.setSamplingRate(samplingRate);
 		
 		windowSamples = (int)Math.round(desiredWindowDuration * samplingRate);
 		maskRadius = (int)Math.round(smoothingLength / desiredWindowDuration / 2);
@@ -109,7 +126,7 @@ public class Segmenter {
 	 * 
 	 * @return number of analysis windows
 	 */
-	public synchronized int getNWindows(){
+	public int getNWindows(){
 		return energy.size();
 	}
 	
@@ -232,9 +249,17 @@ public class Segmenter {
 
 	/**
 	 * eat up any number of samples, update silence segmenting
+	 * NOTE (new!): you have to call update() manually before you see any changes!
 	 * @param samples
 	 */
-	public synchronized void processSamples(double [] samples){
+	public void processSamples(double [] samples){
+		
+		try {
+			mutex.acquire();
+		} catch (InterruptedException e) {			
+			e.printStackTrace();
+		}		
+		
 		if (leftOverSamples != null){
 			double [] tmp = new double[samples.length + leftOverSamples.length];
 			System.arraycopy(leftOverSamples, 0, tmp, 0,                      leftOverSamples.length);
@@ -245,14 +270,17 @@ public class Segmenter {
 		
 		while(samples.length - pos > windowSamples){		
 			double [] window = Arrays.copyOfRange(samples, pos, pos + windowSamples);
-			maxAmp.add(computeMaxAmp(window));
-			energy.add(computeEnergy(window));	
+			tmpMaxAmp.add(computeMaxAmp(window));
+			tmpEnergy.add(computeEnergy(window));	
 			pos += windowSamples;		
 		}
 		
 		leftOverSamples = Arrays.copyOfRange(samples, pos, samples.length);		
 		
-		update();		
+		mutex.release();
+		
+		// outdated
+		//update();		
 	}
 
 	private double computeMaxAmp(double[] window) {
@@ -280,15 +308,14 @@ public class Segmenter {
 			for (i = samples.length - 1; i > 0; i--)
 				samples[i] -= alpha * samples[i - 1];
 			samples[0] = samples[1];			
-		}
-		
+		}		
 		
 		// update mean (I know, not necessary if doPreemphasis and alpha = 1)
 		for (double d : samples){
 			samplesSum += d;
-			samplesProcessed++;
+			samplesNSummed++;
 		}
-		double mean = samplesSum / samplesProcessed;
+		double mean = samplesSum / samplesNSummed;
 
 		// energy, after DC subtraction
 		
@@ -345,9 +372,6 @@ public class Segmenter {
 	}
 
 	public double getEnergy() {
-
-		if (getNWindows() == 0)
-			return 0.0;		
 		return getEnergy((getNWindows() - 1) * windowDuration);
 	}
 	
@@ -385,10 +409,9 @@ public class Segmenter {
 	 * @return energy (in [0;1]) at @time
 	 */
 	public double getMaxAmp(double time) {
+		
 		int frame = (int)Math.round(time / windowDuration + 0.001);
-		if (frame < 0)
-			frame = 0;
-
+		
 		return maxAmp.get(frame);	
 	}
 	
@@ -396,7 +419,24 @@ public class Segmenter {
 		return 10.0 * Math.log10(energy + baseEnergy);
 	}
 	
-	private void update(){		
+	public void update(){		
+		
+		// fetch new data, synchronized
+		try {
+			mutex.acquire();
+		} catch (InterruptedException e) {			
+			e.printStackTrace();		
+		}		
+		
+		energy.addAll(tmpEnergy);
+		tmpEnergy.clear();
+		maxAmp.addAll(tmpMaxAmp);
+		tmpMaxAmp.clear();
+		
+		mutex.release();
+		
+		// actual updating, can happen unsynchronized
+		
 		computeLevels();
 		smooth();
 		/*
@@ -574,6 +614,14 @@ public class Segmenter {
 		}		
 		System.out.print(segmenter);
 		System.err.println("snr = " + segmenter.getSNR());
+	}
+
+	public void setSamplingRate(int samplingRate) {
+		this.samplingRate = samplingRate;
+	}
+
+	public int getSamplingRate() {
+		return samplingRate;
 	}
 
 
