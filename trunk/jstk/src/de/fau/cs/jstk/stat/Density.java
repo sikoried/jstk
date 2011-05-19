@@ -267,6 +267,9 @@ public abstract class Density {
 		 * @param source
 		 */
 		void absorb(Accumulator source) {
+			if (source.n == 0)
+				return;
+			
 			// observations
 			n += source.n;
 			

@@ -219,10 +219,8 @@ public final class Hmm {
 	 */
 	public void init() {
 		accumulator = new Accumulator();
-		for (State si : s) {
-			si.discard();
+		for (State si : s)
 			si.init();
-		}
 	}
 	
 	/**
@@ -291,8 +289,10 @@ public final class Hmm {
 			throw new RuntimeException("HMM.absorbAccumulator(): Source HMM has different number of states!");
 		
 		// do we have an accumulator?
-		if (accumulator == null)
+		if (accumulator == null) {
+			logger.info("empty accumulator -- allocating a new one!");
 			init();
+		}
 		
 		// absorb the state accumulators
 		for (int i = 0; i < ns; ++i)
@@ -457,10 +457,11 @@ public final class Hmm {
 			if (t == no - 1)
 				break;
 			
-			x = o.next();
-			for (int i = 0; i < ns; ++i)			
+			for (int i = 0; i < ns; ++i)
 				for (int j = 0; j < ns; ++j)
 					accumulator.a[i][j] += alpha[t][i] * a[i][j] * ep[t+1][j] * beta[t+1][j];
+			
+			x = o.next();
 		}		
 	}
 	

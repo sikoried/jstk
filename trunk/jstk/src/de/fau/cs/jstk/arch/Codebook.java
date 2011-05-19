@@ -211,7 +211,6 @@ public class Codebook {
 	 * @param source
 	 */
 	public void consume(Codebook source) {
-		logger.info("consuming Accumulator");
 		for (Entry<Integer, Hmm> e : models.entrySet()) {
 			if (!source.models.containsKey(e.getKey())) {
 				logger.fatal("source Accumulator for model " + e.getKey() + " not found -- exitting.");

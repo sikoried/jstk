@@ -55,6 +55,8 @@ public final class Alphabet {
 		BufferedReader br = new BufferedReader(new FileReader(file));
 		
 		while ((buf = br.readLine()) != null) {
+			if (buf.startsWith(";"))
+				continue;
 			String [] split = buf.trim().split("\\s+");
 			lookup.put(split[0], Short.parseShort(split[1]));
 		}
