@@ -244,19 +244,24 @@ public class AudioCapture implements AudioSource {
 				tdl = (TargetDataLine) AudioSystem.getLine(info);
 			}
 			
-			if (desiredBufDur != 0){
-				int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
+			try{
+				if (desiredBufDur != 0){
+					int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
 					* af.getFrameSize();
-				tdl.open(af, desiredBufSize);
-				if (tdl.getBufferSize() != desiredBufSize){
-					System.err.println("AudioCapture.initialize: could not set desiredBufDur = " + desiredBufDur + 
-							" which corresponds to a buffer size of " + desiredBufSize + ". Got bufSize = " + 
-							tdl.getBufferSize());
+					tdl.open(af, desiredBufSize);
+					if (tdl.getBufferSize() != desiredBufSize){
+						System.err.println("AudioCapture.initialize: could not set desiredBufDur = " + desiredBufDur + 
+								" which corresponds to a buffer size of " + desiredBufSize + ". Got bufSize = " + 
+								tdl.getBufferSize());
+					}
 				}
+				else
+					tdl.open(af);
 			}
-			else
-				tdl.open(af);
-			
+			// important to catch IllegalArgumentException also!!
+			catch (IllegalArgumentException e){
+				throw new LineUnavailableException(e.getMessage());
+			}
 
 
 			actualBufDur = tdl.getBufferSize() / af.getFrameSize() / af.getFrameRate();

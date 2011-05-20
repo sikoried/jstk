@@ -193,18 +193,29 @@ public class AudioPlay {
 	private void openLine() throws LineUnavailableException{
 		lineOpened = true;
 		
-		if (desiredBufDur != 0){
-			int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
+
+		try{
+			if (desiredBufDur != 0){
+				int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
 				* af.getFrameSize();
-			line.open(af, desiredBufSize);
-			if (line.getBufferSize() != desiredBufSize){
-				System.out.println("could not set desiredBufDur = " + desiredBufDur + 
-						" which corresponds to a buffer size of " + desiredBufSize + ". Got bufSize = " + 
-						line.getBufferSize());
+
+
+				line.open(af, desiredBufSize);
+
+				if (line.getBufferSize() != desiredBufSize){
+					System.out.println("could not set desiredBufDur = " + desiredBufDur + 
+							" which corresponds to a buffer size of " + desiredBufSize + ". Got bufSize = " + 
+							line.getBufferSize());
+				}
 			}
+			else
+				line.open(af);
+		}		
+		// important to catch IllegalArgumentException also!!
+		catch (IllegalArgumentException e){
+			throw new LineUnavailableException(e.getMessage());
 		}
-		else
-			line.open(af);
+
 		//System.out.println("line.getBufferSize = " + line.getBufferSize());
 		line.start();
 		

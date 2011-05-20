@@ -266,6 +266,7 @@ public class Utterance implements Serializable{
 	}
 	
 	// FIXME
+	@Override
 	public String toString(){
 		String ret = "subdivisions = ";
 		for (Subdivision s : getSubdivisions()){
