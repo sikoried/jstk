@@ -21,6 +21,7 @@
 */
 package de.fau.cs.jstk.lm;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -67,11 +68,15 @@ public class FixedSequences extends LanguageModel {
 	public void addSequence(String transcription, String silences) 
 		throws OutOfVocabularyException {
 		
-		// tokenize the transcription
-		String [] tok = transcription.trim().split("\\s+");
-		
 		// tokenize the silences and retrieve transcription
 		String [] sils = silences.trim().split("\\s+");
+		
+		// remove silence words, if present! otherwise they would be required
+		for (String s : sils)
+			transcription = transcription.replaceAll("\\b" + s + "\\b", "");
+		
+		// tokenize the transcription
+		String [] tok = transcription.trim().split("\\s+");
 		
 		// remember token sequence
 		seqs.add(tok);
@@ -182,10 +187,12 @@ public class FixedSequences extends LanguageModel {
 	}
 	
 	/**
-	 * Generate the fixed network for beam forced alignment
+	 * Generate the fixed network for beam forced alignment.
+	 * @param tree (null; all info is already present)
+	 * @param sils (null; all info is already present)
 	 */
-	public TreeNode generateNetwork(TokenTree tree, List<Tokenization> sil,
-			double silprob) throws OutOfVocabularyException {
+	public TreeNode generateNetwork(TokenTree tree, HashMap<Tokenization, Double> sils) 
+		throws OutOfVocabularyException {
 		
 		TreeNode root = new TreeNode(null, null);
 		
