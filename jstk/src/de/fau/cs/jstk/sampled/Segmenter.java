@@ -46,10 +46,7 @@ public class Segmenter {
 	int windowSamples;
 	int maskRadius;
 	boolean doPreemphasis;
-	double minSNR;
-	
-	
-	
+	private double minSNR;	
 		
 	List<Double> energy = new LinkedList<Double>();
 	//List<Boolean> isSaturated = new LinkedList<Boolean>();
@@ -97,7 +94,7 @@ public class Segmenter {
 		/* ups, pre-emphasis had disastrous effects. */
 		this.doPreemphasis = false;
 		
-		this.minSNR = minSNR;
+		this.setMinSNR(minSNR);
 		
 		double [] baseSignal = {-1.0/32767.0, 1.0/32767.0, -1.0/32767.0, 1.0/32767.0};		
 		baseEnergy = computeEnergy(baseSignal);
@@ -112,7 +109,7 @@ public class Segmenter {
 	 * @param samplingRate
 	 */
 	public Segmenter(int samplingRate){
-		this(samplingRate, 0.025, 0.2, 10.0);
+		this(samplingRate, 0.025, 0.2, 15.0);
 	}
 	
 	/**
@@ -188,15 +185,26 @@ public class Segmenter {
 			return false;
 		
 		int startFrame = (int)(start / windowDuration);
-		if (startFrame < 0)
-			startFrame = 0;
-		if (startFrame >= getNWindows())
-			startFrame = getNWindows() - 1;
 		int i;
 		for (i = startFrame; i < getNWindows(); i++)
 			if (isSaturated(i))
 				return true;
 		return false;
+	}
+	
+	/**
+	 * @param start
+	 * @return when (in seconds, measured from start of processed samples) the last 
+	 * saturated value was observed, counting after start. returns -1 if no
+	 * saturation has been observed after start. 
+	 */
+	public double lastSaturation(double start){
+		int startFrame = (int)(start / windowDuration);
+		int i;
+		for (i = getNWindows() - 1; i>= startFrame; i--)
+			if (isSaturated(i))
+				return windowDuration * i;
+		return -1.0;		
 	}
 	
 	public boolean hasSaturation(){
@@ -219,7 +227,7 @@ public class Segmenter {
 		if (getNWindows() == 0)
 			return false;		
 		
-		if (getSNR() < minSNR)
+		if (getSNR() < getMinSNR())
 			return false;		
 		
 		int startFrame = (int)(start / windowDuration);
@@ -332,13 +340,20 @@ public class Segmenter {
 	/**
 	 * TODO: description of what is happening 
 	 * 
-	 * @return current estimate of signal-to-noise ratio
+	 * @return current estimate of signal-to-noise ratio. Any NaN value is substituted by 0.
 	 */
 	public double getSNR(){
-		return energyToDB(speech) - energyToDB(silence);		
+		if (getNWindows() == 0)
+			throw new ArrayIndexOutOfBoundsException("no windows observed yet");
+		double snr = energyToDB(speech) - energyToDB(silence);
+		if (Double.isNaN(snr))
+			return 0;
+		return snr;
 	}
 	
 	public double getSpeechEnergy(){
+		if (getNWindows() == 0)
+			throw new ArrayIndexOutOfBoundsException("no windows observed yet");
 		return speech;
 	}
 	
@@ -622,6 +637,14 @@ public class Segmenter {
 
 	public int getSamplingRate() {
 		return samplingRate;
+	}
+
+	public void setMinSNR(double minSNR) {
+		this.minSNR = minSNR;
+	}
+
+	public double getMinSNR() {
+		return minSNR;
 	}
 
 

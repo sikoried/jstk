@@ -32,7 +32,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.TargetDataLine;
 
@@ -42,7 +41,11 @@ public class RawCapturer implements Runnable, LineListener{
 		// actual recording starts
 		public void captureStarted(RawCapturer instance);
 		// actual recording stops (was actively stopped)
-		public void captureStopped(RawCapturer instance);		
+		public void captureStopped(RawCapturer instance);
+		/* some error occurred, e.g. when trying
+		 * line = (TargetDataLine) AudioSystem.getMixer(mixer).getLine(info);
+		 * */
+		public void captureFailed(RawCapturer instance, Exception e);
 	}	
 
 	private Set<CaptureEventListener> dependents = new HashSet<CaptureEventListener>();
@@ -68,6 +71,8 @@ public class RawCapturer implements Runnable, LineListener{
 	private int factor_buffer_smaller = 16;
 
 	private Thread shutdownHook = null;
+	
+	Exception exception = null;
 	
 	RawCapturer(BufferedOutputStream os, AudioFormat format){
 		this(os, format, null, 0.0);		
@@ -105,10 +110,13 @@ public class RawCapturer implements Runnable, LineListener{
 	public void dispose(){
 		stopCapturing();
 		
-		line.removeLineListener(this);
+		if (line != null)
+			line.removeLineListener(this);
 		line = null;
 
-		dependents.clear();
+
+		if (dependents != null)
+			dependents.clear();
 		dependents = null;
 		
 		thread = null;
@@ -116,9 +124,11 @@ public class RawCapturer implements Runnable, LineListener{
 		format = null;
 		
 		mixer = null;
-		if (shutdownHook != null)
-			Runtime.getRuntime().removeShutdownHook(shutdownHook);
-		shutdownHook = null;
+		synchronized(shutdownHook){
+			if (shutdownHook != null)
+				Runtime.getRuntime().removeShutdownHook(shutdownHook);
+			shutdownHook = null;
+		}
 	}
 	
 	public void addStateListener(CaptureEventListener client) {
@@ -128,16 +138,23 @@ public class RawCapturer implements Runnable, LineListener{
 		dependents.remove(client);
 	}
 	private void notifyStart() {
-		System.err.println("notifyStart...");
+		System.err.println("RawCapturer: notifyStart for " + dependents.size());		
 		for (CaptureEventListener s : dependents)
 			s.captureStarted(this);
 	}
 	private void notifyStop() {
-		System.err.println("notifyStop...");
+		System.err.println("RawCapturer: notifyStop for " + dependents.size());
 		for (CaptureEventListener s : dependents)
 			s.captureStopped(this);
 	}
-
+	private void notifyFailure(Exception e){
+		System.err.println("RawCapturer: notifyFailure for " + dependents.size());		
+		for (CaptureEventListener s : dependents){		
+			s.captureFailed(this, e);
+		}		
+	}
+	
+	
 	
 	/**
 	 * stress-test this component: sleep (actively) *after* writing data to os.
@@ -203,9 +220,27 @@ public class RawCapturer implements Runnable, LineListener{
 			else
 				line.open(format);				
 			
-		} catch (LineUnavailableException e) {
+		}
+		/* no sufficient: 
+		 *		catch (LineUnavailableException e) {
+		 *
+		 * we also gett java.lang.IllegalArgumentException: Line unsupported,
+		 * which needs not to be catched, but we better do!
+		 */
+		catch (Exception e) {
+
 			e.printStackTrace();
-			stopCapturing();
+			
+			exception = e;			
+			Runnable runnable = new Runnable(){
+				@Override
+				public void run() {
+					notifyFailure(exception);			
+				}					
+			};
+			new Thread(runnable).start();
+				
+			stopped = true;
 			return;
 		}		
 		System.err.println("Bufsize = " + line.getBufferSize());
@@ -234,8 +269,22 @@ public class RawCapturer implements Runnable, LineListener{
 			try {
 				os.write(buffer, 0, numBytesRead);
 			} catch (IOException e) {				
-				e.printStackTrace();				
-				stopCapturing();	
+				e.printStackTrace();
+				exception = e;
+				
+				Runnable runnable = new Runnable(){
+					@Override
+					public void run() {
+						notifyFailure(exception);			
+					}					
+				};
+				new Thread(runnable).start();
+				
+			
+				// end, but do not drain!
+				System.err.println("trying to stop...");
+				stopped = true;
+				break;
 			}
 			if (stressTestEnabled){
 				long nanoSleep = (long) (activeSleepRatio * numBytesRead / format.getFrameRate() / format.getFrameSize() * 1000000000.0);
@@ -250,12 +299,20 @@ public class RawCapturer implements Runnable, LineListener{
 			}
 		}
 		
-		if (!stopped)
+		if (!stopped){
+			System.err.println("line.drain()");
 			line.drain();
+		}
+		System.err.println("line.stop()");
 		line.stop();
-		if (stopped) 
+		if (stopped){
+			System.err.println("line.flush()");
 			line.flush();
+		}
+		System.err.println("line.close()");
 		line.close();		
+		
+		System.err.println("leaving");
 
 				
 	}
@@ -297,15 +354,15 @@ public class RawCapturer implements Runnable, LineListener{
 		// And the latter from time to time refuses to put out anything
 		capturer.enableStressTest(0.99);
 		
-		/* outdated
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			public void run() {
-				System.err.println("Inside Add Shutdown Hook");
-				capturer.stopCapturing();
-				System.err.println("player stopped");
-			}			
-		});
-		*/		
+//		 outdated
+//		Runtime.getRuntime().addShutdownHook(new Thread(){
+//			public void run() {
+//				System.err.println("Inside Add Shutdown Hook");
+//				capturer.stopCapturing();
+//				System.err.println("player stopped");
+//			}			
+//		});
+//				
 		
 		capturer.start();		
 		

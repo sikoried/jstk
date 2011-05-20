@@ -31,7 +31,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
-import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
@@ -42,7 +41,11 @@ public class RawPlayer implements Runnable, LineListener{
 		// actual playback starts
 		public void playbackStarted(RawPlayer instance);
 		// actual playback stops (was actively stopped or ais is at its and, and has been playback stops now)
-		public void playbackStopped(RawPlayer instance);		
+		public void playbackStopped(RawPlayer instance);
+		/* some error occurred, e.g. when trying
+		 * line = (SourceDataLine) AudioSystem.getMixer(mixer).getLine(info);
+		 * */
+		public void playbackFailed(RawPlayer instance, Exception e);
 	}	
 
 	private Set<PlayEventListener> dependents = new HashSet<PlayEventListener>();
@@ -67,6 +70,8 @@ public class RawPlayer implements Runnable, LineListener{
 	private int factor_buffer_smaller = 16;
 
 	private Thread shutdownHook = null;
+
+	private Exception exception = null;
 	
 	RawPlayer(AudioInputStream ais){
 		this(ais, null, 0.0);		
@@ -91,9 +96,11 @@ public class RawPlayer implements Runnable, LineListener{
 		ais = null;
 		
 		mixer = null;
-		if (shutdownHook != null)
-			Runtime.getRuntime().removeShutdownHook(shutdownHook);
-		shutdownHook = null;
+		synchronized(shutdownHook){
+			if (shutdownHook != null)
+				Runtime.getRuntime().removeShutdownHook(shutdownHook);
+			shutdownHook = null;
+		}
 	}
 	
 	/**
@@ -130,7 +137,7 @@ public class RawPlayer implements Runnable, LineListener{
 	}
 	
 	private void notifyStart() {
-		System.err.println("notifyStart for " + dependents.size());
+		System.err.println("RawPlayer: notifyStart for " + dependents.size());
 		for (PlayEventListener s : dependents){
 			System.err.println("notify " + s);
 			s.playbackStarted(this);
@@ -138,11 +145,18 @@ public class RawPlayer implements Runnable, LineListener{
 	}
 	
 	private void notifyStop() {
-		System.err.println("notifyStop for " + dependents.size());
+		System.err.println("RawPlayer: notifyStop for " + dependents.size());
 		for (PlayEventListener s : dependents){
 			System.err.println("notify " + s);
 			s.playbackStopped(this);
 		}
+	}
+	
+	private void notifyFailure(Exception e){
+		System.err.println("RawPlayer: notifyFailure for " + dependents.size());
+		for (PlayEventListener s : dependents){		
+			s.playbackFailed(this, e);
+		}		
 	}
 	
 	/**
@@ -210,10 +224,26 @@ public class RawPlayer implements Runnable, LineListener{
 						(int)Math.round(desiredBufSize * ais.getFormat().getFrameRate() * ais.getFormat().getFrameSize()));
 			else
 				line.open(ais.getFormat());				
-			
-		} catch (LineUnavailableException e) {
+		}
+		/* no sufficient: 
+		 *		catch (LineUnavailableException e) {
+		 *
+		 * we also gett java.lang.IllegalArgumentException: Line unsupported,
+		 * which needs not to be catched, but we better do!
+		 */
+		catch (Exception e) {
 			e.printStackTrace();
-			stopPlaying();
+
+			exception = e;			
+			Runnable runnable = new Runnable(){
+				@Override
+				public void run() {
+					notifyFailure(exception);			
+				}					
+			};
+			new Thread(runnable).start();
+						
+			stopped = true;
 			return;
 		}		
 		System.err.println("Bufsize = " + line.getBufferSize());
@@ -241,7 +271,19 @@ public class RawPlayer implements Runnable, LineListener{
 					
 			} catch (IOException e) {				
 				e.printStackTrace();
-				stopPlaying();				
+				
+				exception  = e;			
+				Runnable runnable = new Runnable(){
+					@Override
+					public void run() {
+						notifyFailure(exception);			
+					}					
+				};
+				new Thread(runnable).start();
+
+				// end, but do not drain!
+				stopped = true;		
+				break;
 			}			
 		
 			if (stressTestEnabled){
@@ -329,15 +371,15 @@ public class RawPlayer implements Runnable, LineListener{
 		// And the latter from time to time refuses to put out anything
 		//player.enableStressTest(0.98);
 		
-		/* outdated 
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			public void run() {
-				System.err.println("Inside Add Shutdown Hook");
-				player.stopPlaying();
-				System.err.println("player stopped");
-			}			
-		});		
-		*/
+//		 outdated 
+//		Runtime.getRuntime().addShutdownHook(new Thread(){
+//			public void run() {
+//				System.err.println("Inside Add Shutdown Hook");
+//				player.stopPlaying();
+//				System.err.println("player stopped");
+//			}			
+//		});		
+//		
 		
 		player.start();		
 		
