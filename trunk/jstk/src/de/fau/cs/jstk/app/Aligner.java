@@ -206,7 +206,7 @@ public class Aligner {
 					// generate decoding tree
 					FixedSequences forced = new FixedSequences(tt);
 					forced.addSequence(t.transcription, silences);
-					TreeNode root = forced.generateNetwork(null, null, 0.);
+					TreeNode root = forced.generateNetwork(null, null);
 					
 					// prepare decoder
 					ViterbiBeamSearch dec = new ViterbiBeamSearch(root, 0., 1.);

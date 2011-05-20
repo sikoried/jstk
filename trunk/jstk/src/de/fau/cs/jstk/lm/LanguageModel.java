@@ -21,11 +21,11 @@
 */
 package de.fau.cs.jstk.lm;
 
-import java.util.List;
+import java.util.HashMap;
 
 import de.fau.cs.jstk.arch.TokenTree;
-import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.arch.TokenTree.TreeNode;
+import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
 
 
@@ -41,10 +41,9 @@ public abstract class LanguageModel {
 	 * models as requested
 	 * @param tree
 	 * @param sil list of Tokenizations considered silence
-	 * @param silprob silence probability 
 	 * @return Root node of the LST network
 	 */
-	public abstract TreeNode generateNetwork(TokenTree tree, List<Tokenization> sil, double silprob) 
+	public abstract TreeNode generateNetwork(TokenTree tree, HashMap<Tokenization, Double> sils) 
 		throws OutOfVocabularyException;
 	
 	/**

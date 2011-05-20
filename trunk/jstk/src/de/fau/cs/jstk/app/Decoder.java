@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -44,7 +45,7 @@ import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
 import de.fau.cs.jstk.io.FrameInputStream;
-import de.fau.cs.jstk.lm.Unigram;
+import de.fau.cs.jstk.lm.Srilm;
 
 public class Decoder {
 	private static Logger logger = Logger.getLogger(Decoder.class);
@@ -52,7 +53,7 @@ public class Decoder {
 	public static final String SYNOPSIS =
 		"sikoried, 11/16/2010\n" +
 		"Time-synchronuous beam search for network decoding.\n\n" +
-		"usage: app.Decoder config codebook [options]\n" +
+		"usage: app.Decoder config codebook lmfile [options]\n" +
 		"-l list [indir]\n" +
 		"  Read files from list and optional indir.\n" +
 		"-f file\n" +
@@ -92,7 +93,7 @@ public class Decoder {
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
 		
-		if (args.length < 4) {
+		if (args.length < 5) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
@@ -121,8 +122,12 @@ public class Decoder {
 		// load the config
 		Configuration conf = new Configuration(new File(args[z++]));
 		conf.loadCodebook(new File(args[z++]));
-		
 		conf.buildTokenTree();
+		
+		// load language model
+		BufferedReader brd = new BufferedReader(new FileReader(args[z++]));
+		Srilm lm = new Srilm(conf.tok, brd);
+		brd.close();
 		
 		for (; z < args.length; ++z) {
 			if (args[z].equals("-f"))
@@ -171,16 +176,10 @@ public class Decoder {
 				throw new Exception("unknown argument " + args[z]);
 		}
 		
-		Unigram lm = new Unigram(conf.tok);
-		lm.collectStats(conf.tok.tokenizations);
-		lm.estimateWeights();
-
-		logger.info(lm.toString());
+		HashMap<Tokenization, Double> sil = new HashMap<Tokenization, Double>();
+		sil.put(new Tokenization("sil", new String [0]), silprob);
 		
-		List<Tokenization> sil = new LinkedList<Tokenization>();
-		sil.add(new Tokenization("sil", new String [0]));
-		
-		TreeNode root = lm.generateNetwork(conf.tt, sil, silprob);
+		TreeNode root = lm.generateNetwork(conf.tt, sil);
 		
 		logger.info(TokenTree.traverseNetwork(root));
 		
@@ -225,22 +224,25 @@ public class Decoder {
 				case TOKEN:
 					for (Hypothesis t : h.extractTokens())
 						bwr.append(t.node.toString() + " ");
+					bwr.append("\n");
 					break;
 				case WORD:
 					for (Hypothesis w : h.extractWords())
 						bwr.append(w.node.word.word + " ");
+					bwr.append("\n");
 					break;
 				case COMPACT:
 					bwr.append(h.toCompactString());
+					bwr.append("\n");
 					break;
 				case DETAIL:
 					bwr.append(h.toDetailedString());
+					bwr.append("\n");
 					break;
 				case MA:
 					h.toMetaAlignment(conf.tt).write(bwr);
 					break;
 				}
-				bwr.append("\n");
 			}
 
 			bwr.flush();

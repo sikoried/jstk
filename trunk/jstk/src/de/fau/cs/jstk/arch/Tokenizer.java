@@ -86,6 +86,16 @@ public final class Tokenizer {
 	}
 	
 	/**
+	 * Validate if the Tokenizer knows the referenced word.
+	 * @param word
+	 * @return
+	 */
+	public boolean validate(String word) {
+		int pos = Collections.binarySearch(tokenizations, new Tokenization(word, new String [0]));
+		return (pos >= 0);
+	}
+	
+	/**
 	 * Get a String representation of the Tokenizer
 	 */
 	public String toString() {
