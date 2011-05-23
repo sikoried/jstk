@@ -63,6 +63,11 @@ public class Utterance implements Serializable{
 	 * First subdivision starts at the first word, i.e. there is always at least one subdivision.
 	 */
 	private Subdivision [] subdivisions;
+	
+	private String segmentId = null;
+	private String segmentTrack = null;
+	private String segmentRev = null;
+	private String segmentFilename = null;
 
 	public Utterance(){
 	}
@@ -329,10 +334,10 @@ public class Utterance implements Serializable{
 		List<Boundary> list = new LinkedList<Boundary>();
 		
 		for (Boundary b : boundaries)			
-			if (b.equals(BOUNDARIES.B3))
+			if (b.getType().equals(BOUNDARIES.B3))
 				list.add(b);
 		
-		return (Boundary[]) list.toArray();		
+		return list.toArray(new Boundary[]{});		
 	}
 
 	/**
@@ -347,6 +352,45 @@ public class Utterance implements Serializable{
 //		}
 //		return ret;		
 		return getB3Boundaries().length + 1;
+	}
+
+	public void setSegmentId(String segmentId) {
+		this.segmentId = segmentId;
+	}
+
+	public String getSegmentId() {
+		return segmentId;
+	}
+
+	public void setSegmentTrack(String segmentTrack) {
+		this.segmentTrack = segmentTrack;
+	}
+
+	public String getSegmentTrack() {
+		return segmentTrack;
+	}
+
+	public void setSegmentRev(String segmentRev) {
+		this.segmentRev = segmentRev;
+	}
+
+	public String getSegmentRev() {
+		return segmentRev;
+	}
+
+	public void setSegmentFilename(String segmentFilename) {
+		this.segmentFilename = segmentFilename;
+	}
+
+	public String getSegmentFilename() {
+		return segmentFilename;
+	}
+	
+	/**
+	 * The identifier that's used in the label files.
+	 */
+	public String getMoniker() {
+		return segmentId + (segmentTrack == null ? "" : "_" + segmentTrack);
 	}
 	
 //	public void setPhraseAccents(PhraseAccent [] phraseAccents) {

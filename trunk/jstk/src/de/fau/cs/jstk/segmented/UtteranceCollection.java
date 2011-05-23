@@ -36,11 +36,17 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 
 public class UtteranceCollection implements Serializable{
 	private static final long serialVersionUID = -2577602064537299436L;
+	
+	private static enum SegmentAttributes {
+		NR, ID, TRACK, REV, FILENAME, SPEAKER
+	}
+	
 	private Utterance [] turns = null;
 
 	public UtteranceCollection(){		
@@ -65,7 +71,7 @@ public class UtteranceCollection implements Serializable{
 					+ attributeValue);
 		}
 		Node textsegment = node.getFirstChild();
-		Node utterance;
+		Node utteranceNode;
 		//String orthography, speaker;
 		//List<Boundary> boundaries = null;
 		 
@@ -78,25 +84,47 @@ public class UtteranceCollection implements Serializable{
 			if (!nodeName.equals("textsegment"))
 				throw new Exception("expecting node textsegment, got "
 						+ nodeName);
-				
-			Node speakerNode = textsegment.getAttributes().getNamedItem("speaker");
-			String speaker = null;
-			if (speakerNode != null)
-				speaker = speakerNode.getNodeValue();
-				
-			utterance = textsegment.getFirstChild();
-			nodeName = utterance.getNodeName();
+			
+			utteranceNode = textsegment.getFirstChild();
+			nodeName = utteranceNode.getNodeName();
 			if (nodeName.equals("#text")) {
-				utterance = utterance.getNextSibling();
-				nodeName = utterance.getNodeName();
+				utteranceNode = utteranceNode.getNextSibling();
+				nodeName = utteranceNode.getNodeName();
 			}
-			nodeName = utterance.getNodeName();
+			nodeName = utteranceNode.getNodeName();
 			if (!nodeName.equals("utterance")) {
 				throw new Exception("expecting node utterance, got " + nodeName);
 			}
 			
-			turns.add(Utterance.read(utterance, speaker));			
+			Utterance utterance = Utterance.read(utteranceNode, null);
 
+			NamedNodeMap attributes = textsegment.getAttributes();
+			for (int i = 0; i < attributes.getLength(); i++) {
+				Node item = attributes.item(i);
+				switch (SegmentAttributes.valueOf(item.getLocalName().toUpperCase())) {
+				case NR:
+					break;
+				case ID:
+					utterance.setSegmentId(item.getNodeValue());
+					break;
+				case TRACK:
+					utterance.setSegmentTrack(item.getNodeValue());
+					break;
+				case REV:
+					utterance.setSegmentRev(item.getNodeValue());
+					break;
+				case FILENAME:
+					utterance.setSegmentFilename(item.getNodeValue());
+					break;
+				case SPEAKER:
+					utterance.setSpeaker(item.getNodeValue());
+					break;
+				default:
+					throw new Exception("Unknown textsegment attribute: " + item.getNodeName());
+				}
+			}
+
+			turns.add(utterance);			
 			textsegment = textsegment.getNextSibling();
 		}
 		
