@@ -96,11 +96,10 @@ public class RawPlayer implements Runnable, LineListener{
 		ais = null;
 		
 		mixer = null;
-		synchronized(shutdownHook){
-			if (shutdownHook != null)
-				Runtime.getRuntime().removeShutdownHook(shutdownHook);
-			shutdownHook = null;
-		}
+		if (shutdownHook != null)
+			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		shutdownHook = null;
+		
 	}
 	
 	/**
@@ -175,7 +174,7 @@ public class RawPlayer implements Runnable, LineListener{
 	public void start(){
 		Runtime.getRuntime().addShutdownHook(shutdownHook  = new Thread(){
 			public void run() {
-				System.err.println("Inside Shutdown Hook: stopping player...");
+				System.err.println("RawPlayer: Inside Shutdown Hook: stopping player...");
 				stopPlaying();
 				System.err.println("player stopped");
 			}			
@@ -285,6 +284,7 @@ public class RawPlayer implements Runnable, LineListener{
 				stopped = true;		
 				break;
 			}			
+			
 		
 			if (stressTestEnabled){
 				long nanoSleep = (long) (activeSleepRatio * numBytesRead / ais.getFormat().getFrameRate() / ais.getFormat().getFrameSize() * 1000000000.0);
