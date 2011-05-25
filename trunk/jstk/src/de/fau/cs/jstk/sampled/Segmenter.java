@@ -372,12 +372,8 @@ public class Segmenter {
 		
 		int i;
 		int n = 0;
-		int startFrame = (int)(start / windowDuration);
-		if (startFrame < 0)
-			startFrame = 0;
-
-		if (startFrame >= getNWindows())
-			startFrame = getNWindows() - 1;
+		int startFrame = (int)(start / windowDuration);		
+		
 		for (i = getNWindows() - 1; i >= startFrame; i--){
 			if (isSpeech(i))
 				break;
@@ -386,6 +382,32 @@ public class Segmenter {
 		return (double) n * getWindowDuration();		
 	}
 
+	/**
+	 * 
+	 * @param start
+	 * @return duration of silence after @start
+	 */
+	public double getInitialSilence(double start){
+		if (!hasSpeech(start))
+			return getDuration();
+		
+		int i;
+		int n = 0;
+		int startFrame = (int)(start / windowDuration);
+		
+		for (i = startFrame; i < getNWindows() - 1; i++){
+			if (isSpeech(i))
+				break;
+			n++;
+		}
+		return (double) n * getWindowDuration();		
+	}
+	
+	public double getInitialSilence(){
+		return getInitialSilence(0.0);
+	}
+
+	
 	public double getEnergy() {
 		return getEnergy((getNWindows() - 1) * windowDuration);
 	}

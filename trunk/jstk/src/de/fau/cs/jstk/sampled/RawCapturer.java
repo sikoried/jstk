@@ -114,7 +114,6 @@ public class RawCapturer implements Runnable, LineListener{
 			line.removeLineListener(this);
 		line = null;
 
-
 		if (dependents != null)
 			dependents.clear();
 		dependents = null;
@@ -124,11 +123,11 @@ public class RawCapturer implements Runnable, LineListener{
 		format = null;
 		
 		mixer = null;
-		synchronized(shutdownHook){
-			if (shutdownHook != null)
-				Runtime.getRuntime().removeShutdownHook(shutdownHook);
-			shutdownHook = null;
-		}
+		
+		if (shutdownHook != null)
+			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		shutdownHook = null;
+
 	}
 	
 	public void addStateListener(CaptureEventListener client) {
@@ -152,9 +151,7 @@ public class RawCapturer implements Runnable, LineListener{
 		for (CaptureEventListener s : dependents){		
 			s.captureFailed(this, e);
 		}		
-	}
-	
-	
+	}	
 	
 	/**
 	 * stress-test this component: sleep (actively) *after* writing data to os.
@@ -172,9 +169,12 @@ public class RawCapturer implements Runnable, LineListener{
 	public void start(){
 		Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread(){
 			public void run() {
-				System.err.println("Inside Shutdown Hook: stopping player...");
+				// to avoid "java.lang.IllegalStateException: Shutdown in progress"
+				// in dispose()
+				//shutdownHook = null;
+				System.err.println("RawCapturer: Inside Shutdown Hook: stopping capturing...");
 				stopCapturing();
-				System.err.println("player stopped");
+				System.err.println("capturing stopped");
 			}			
 		});		
 		thread.start();		

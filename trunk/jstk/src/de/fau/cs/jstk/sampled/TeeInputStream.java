@@ -43,7 +43,14 @@ public class TeeInputStream extends InputStream{
 	
 	public int read(byte [] buf, int off, int len) throws IOException{
 		int readBytes = is.read(buf, off, len);
-		consumer.write(buf, off, readBytes);
+//		System.err.println(String.format("TeeInputStream.read: buf.length = %d, off = %d, len = %d, readBytes = %d",
+//				buf.length, off, len, readBytes));
+		if (readBytes > 0)
+			consumer.write(buf, off, readBytes);
+		else if (readBytes < 0){
+			consumer.close();
+			return readBytes;
+		}
 		// TODO: ?
 		consumer.flush();
 		return readBytes;
