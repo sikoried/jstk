@@ -73,7 +73,7 @@ public abstract class VisualComponent extends JComponent implements
 	/**
 	 * number of samples shown per pixel
 	 */
-	public double xPerPixel = 40;
+	public double xPerPixel = 160;
 
 	/**
 	 * first x value that is shown in the component

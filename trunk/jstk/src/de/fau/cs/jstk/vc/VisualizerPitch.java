@@ -106,6 +106,7 @@ public class VisualizerPitch extends FileVisualizer {
 
 	@Override
 	protected void drawSignal(Graphics g) {
+		if (true) return;
 		double nshift = shift * samplerate / 1000;
 
 		int firstFrame = (int) (xMin / nshift);
@@ -542,6 +543,11 @@ public class VisualizerPitch extends FileVisualizer {
 			listener.f0PointsSelected(this, points);
 		}
 
+	}
+	
+	@Override
+	public String toString() {
+		return "VisualizerPitch '" + name + "'";
 	}
 
 }

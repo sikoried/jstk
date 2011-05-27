@@ -27,7 +27,7 @@ import de.fau.cs.jstk.framed.Window;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedAudioSourceReader;
 
-public class VisualizerSpectrogram extends FileVisualizer {
+public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 
 	private static final long serialVersionUID = 877673756485841354L;
 
@@ -41,6 +41,9 @@ public class VisualizerSpectrogram extends FileVisualizer {
 	private boolean colorSpectrogram = false;
 	private double brightness = 0.5;
 	private double gamma = 1.0;
+
+	private Thread computeThread;
+	private boolean requestStop = false;
 
 	public VisualizerSpectrogram(String name, BufferedAudioSource source) {
 		super(name, source);
@@ -70,51 +73,132 @@ public class VisualizerSpectrogram extends FileVisualizer {
 
 	@Override
 	protected void recalculate() {
+		stop();
+		if (audiosource != null) {
+			computeThread = new Thread(this);
+			computeThread.start();
+		}
+	}
+
+	@Override
+	public void run() {
 		calculate_spectrogram();
+	}
+
+	private void stop() {
+		if ((computeThread != null) && computeThread.isAlive()) {
+			System.err.print("Asking spectrogram calculation to stop... ");
+			requestStop = true;
+			while (computeThread.isAlive()) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+				}
+			}
+			requestStop = false;
+			System.err.println("done");
+		}
 	}
 
 	protected void calculate_spectrogram() {
 		if (audiosource == null) {
 			return;
 		}
+		
+		// shift = (xPerPixel * 1000.0 / samplerate);
 
-		shift = (xPerPixel * 1000.0 / samplerate);
-
-		int size = (int) Math.ceil(xMax / xPerPixel);
 		BufferedAudioSourceReader as = audiosource.getReader();
 
-		if ((spectrogram == null) || (spectrogram.length < size)) {
-			spectrogram = new double[size][];
-		}
+		System.err.println("Calculating spectrogram... " + xPerPixel);
 
-		Window window = Window
-				.create(as, windowFunction, windowLength, shift);
+		Window window = Window.create(as, windowFunction, windowLength, 10);
 
 		min = 0.0;
 		max = 0.0;
-		for (int i = 0; i < spectrogram.length; i++) {
-			int sample = (int) (i * xPerPixel);
-			 double[] spectrum = VisualizerSpectrum.calculateSpectrum(as, sample,
-					samplerate, windowLength, fft_size, window, false);
-			 
-				for (int j = 0; j < spectrum.length; j++) {
-					spectrum[j] = Math.pow(spectrum[j], gamma);
-					if (spectrum[j] < min) {
-						min = spectrum[j];
+		int i = 0;
+		boolean finished = false;
+		int size = 0;
+		while (!finished) {
+			
+			if (i >= size) {
+				xMax = audiosource.getBufferSize() - 1;
+				// size = (int) Math.ceil(xMax / xPerPixel);
+				size = (int) Math.ceil(xMax * 100.0 / samplerate);
+				if (spectrogram == null) {
+					if (size > 0) {
+						spectrogram = new double[size][];
+					} else {
+						try {
+							System.err.println("sleeping " + xMax);
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+						}
+						continue;						
 					}
-					if (spectrum[j] > max) {
-						max = spectrum[j];
+				} else if (size > spectrogram.length) {
+					double[][] old = spectrogram;
+					spectrogram = new double[size][];
+					System.arraycopy(old, 0, spectrogram, 0, old.length);					
+				} else {
+					if (audiosource.stillReading) {
+						try {
+							System.err.println("sleeping again " + audiosource.getBufferSize());
+							Thread.sleep(100);
+						} catch (InterruptedException e) {
+						}
+						continue;
+					} else {
+						break;
 					}
 				}
+			}
+			
+			if (i % 1000 == 0) {
+				System.err.println("Spectrum " + i);
+			}
+			
+			// int sample = (int) (i * xPerPixel);
+			int sample = (int) (i * samplerate / 100);
+			double[] spectrum = VisualizerSpectrum.calculateSpectrum(as,
+					sample, samplerate, windowLength, fft_size, window, false);
 
-				spectrogram[i] = spectrum;
+			if (i == 7000) {
+				System.err.println();
+				System.err.println("sample: " + sample);
+				System.err.println("samplerate: " + samplerate);
+				System.err.println("windowLength: " + windowLength);
+				System.err.println("fft_size: " + fft_size);
+				System.err.println("window: " + window);
+				for (int j = 0; j < spectrum.length; j++) {
+					System.err.print(" " + spectrum[j]);
+				}
+				System.err.println();
+			}
+
+			for (int j = 0; j < spectrum.length; j++) {
+				spectrum[j] = Math.pow(spectrum[j], gamma);
+				if (spectrum[j] < min) {
+					min = spectrum[j];
+				}
+				if (spectrum[j] > max) {
+					max = spectrum[j];
+				}
+			}			
+
+			spectrogram[i] = spectrum;
+			i++;
+						
+			if (requestStop) {
+				break;
+			}
 		}
+		System.err.println("Spectrogram computation finished: " + i);
 	}
 
 	@Override
 	protected void drawSignal(Graphics g) {
 		if (spectrogram == null) {
-			calculate_spectrogram();
+			recalculate();
 		}
 
 		draw(g);
@@ -136,11 +220,24 @@ public class VisualizerSpectrogram extends FileVisualizer {
 		int h = y0 - border_top;
 		int x1 = convertXtoPX(highlightedSectionStartSample);
 		int x2 = convertXtoPX(highlightedSectionEndSample);
-		int size = (int) Math.ceil(xMax / xPerPixel);
+		xMax = audiosource.getBufferSize() - 1;
+		int size = (int) Math.ceil(xMax * 100.0 / samplerate);
+		
+		if (spectrogram == null) {
+			return;
+		}
+		
 
 		int i = (int) (xMin / xPerPixel);
+		System.err.println("HIER: " + xMax + " " + i + " " + size + " " + min + " " + max);
 		for (int x = border_left; (x < getWidth() - border_right) && (i < size); x++, i++) {
 			double spectrum[] = spectrogram[i];
+		    
+			if (spectrum == null) {
+				System.err.println("no spectrum for " + i);
+		    	continue;
+		    }
+		    
 			boolean selected = false;
 			if (showHighlightedSection && isHighlighted && (x >= x1)
 					&& (x <= x2)) {

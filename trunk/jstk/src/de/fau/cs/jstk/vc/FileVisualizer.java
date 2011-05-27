@@ -27,6 +27,7 @@ import java.util.*;
 import javax.swing.*;
 
 import de.fau.cs.jstk.io.BufferedAudioSource;
+import de.fau.cs.jstk.vc.interfaces.AudioBufferListener;
 import de.fau.cs.jstk.vc.interfaces.SampleSelectedListener;
 import de.fau.cs.jstk.vc.interfaces.SignalSectionSelectedListener;
 import de.fau.cs.jstk.vc.interfaces.VisualizationListener;
@@ -41,7 +42,7 @@ import de.fau.cs.jstk.vc.interfaces.VisualizationListener;
  * 
  */
 public abstract class FileVisualizer extends VisualComponent implements
-		VisualizationListener {
+		VisualizationListener, AudioBufferListener {
 
 	/**
 	 * Constant defining that the visible section of the signal is not changed
@@ -175,6 +176,7 @@ public abstract class FileVisualizer extends VisualComponent implements
 
 		enabled = false;
 		if (source != null) {
+			source.addBufferListener(this);
 			xMax = source.getBufferSize() - 1;
 			enabled = true;
 		}
@@ -197,6 +199,7 @@ public abstract class FileVisualizer extends VisualComponent implements
 			isSelected = false;
 			isHighlighted = false;
 			isMarked = false;
+			source.addBufferListener(this);
 			if (scrollbar != null) {
 				scrollbar.setEnabled(true);
 			}
@@ -802,6 +805,17 @@ public abstract class FileVisualizer extends VisualComponent implements
 		}
 		draw();
 		repaint();
+	}
+	
+	public void newSamplesAvailable(int numSamples) {
+		xMax = numSamples - 1;
+		if (scrollbar != null) {
+		  //scrollbar.setMinimum(0);
+		  scrollbar.setMaximum(audiosource.getBufferSize());
+		  //scrollbar.setUnitIncrement(visibleSamples / 20);
+		  //scrollbar.setValue((int) xMin); // order of setValue and setVisible
+		  //scrollbar.setVisibleAmount(visibleSamples); // important!
+		}
 	}
 	
 	public void mouseMoved(Object sender, int sample) {
