@@ -57,7 +57,7 @@ public class BufferedAudioSourceReader implements AudioSource {
 	 */
 	public BufferedAudioSourceReader(BufferedAudioSource audioSource) {
 		currentReadIndex = 0;
-		stopIndex = audioSource.getBufferSize();
+		stopIndex = -1;
 		startIndex = 0;
 		source = audioSource;
 	}
@@ -103,7 +103,7 @@ public class BufferedAudioSourceReader implements AudioSource {
 	public void setReadIndex(int position) {
 		if (position < startIndex) {
 			position = startIndex;
-		} else if (position > stopIndex) {
+		} else if ((position > stopIndex) && (stopIndex != -1)) {
 			position = stopIndex;
 		}
 		currentReadIndex = position;
@@ -128,7 +128,7 @@ public class BufferedAudioSourceReader implements AudioSource {
 		int read = 0;
 		int stop = currentReadIndex + length;
 		for (; currentReadIndex < stop; currentReadIndex++) {
-			if (currentReadIndex >= stopIndex) {
+			if ((currentReadIndex >= stopIndex) && (stopIndex != -1)) {
 				break;
 			}
 			buf[read] = source.get(currentReadIndex);
