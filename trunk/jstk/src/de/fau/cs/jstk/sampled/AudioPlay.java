@@ -38,13 +38,13 @@ import javax.sound.sampled.SourceDataLine;
  * @author sikoried
  * @see de.fau.cs.jstk.app.ThreadedPlayer
  */
-public class AudioPlay {
+public class AudioPlay implements Runnable {
 	private SourceDataLine line;
 	
 	//private int bs;
 	private double [] doubleBuf = null;
 	private byte[] byteBuf = null;
-	int fs;
+	private int fs;
 	
 	private String mixerName = null;
 	private AudioSource source = null;
@@ -61,10 +61,13 @@ public class AudioPlay {
 	/// in seconds
 	//private double actualBufDur = 0;
 	
-	AudioFormat af;
-	boolean lineOpened = false;
+	private AudioFormat af;
+	private boolean lineOpened = false;
 
 	private double scale = 1.;
+	
+	private Thread playThread = null;
+	private boolean requestStop = false;
 			
 	/**
 	 * Creates a new AudioPlay object using the given AudioSource.
@@ -117,6 +120,17 @@ public class AudioPlay {
 //		
 	}
 
+	
+	public void setAudioSource(AudioSource source) throws IOException, LineUnavailableException {
+		if (this.source.getSampleRate() != source.getSampleRate()) {
+			line.stop();
+			line.close();
+			this.source = source;
+			initialize();
+		} else {
+			this.source = source;
+		}
+	}
 	
 	/** 
 	 * Initialize the play back by setting up the outgoing lines. 
@@ -317,6 +331,41 @@ public class AudioPlay {
 		}
 	}
 	
+	@Override
+	public void run() {
+		// play whole section
+		try {
+			while (write() > 0) {
+				if (requestStop) {
+					System.err.println("AudioPlay forced to stop");
+					break;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}		
+	}
+	
+	public void play() {
+		stop();
+		playThread = new Thread(this);
+		playThread.start();
+	}
+	
+	public void stop() {
+		if ((playThread != null) && playThread.isAlive()) {			
+			requestStop = true;
+			while (playThread.isAlive()) {
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+				}
+			}
+			requestStop = false;
+		}
+	}
+
+	
 	public static final String SYNOPSIS = 
 		"usage: sampled.AudioPlay [-m mixer-name] [-f format-string] [file1 ...]\n" +
 		"Play back the listed audio files. If required, use the specified mixer\n" +
@@ -357,4 +406,5 @@ public class AudioPlay {
 				;
 		}
 	}
+
 }
