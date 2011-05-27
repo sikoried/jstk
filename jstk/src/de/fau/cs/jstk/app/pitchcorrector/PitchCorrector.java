@@ -115,6 +115,7 @@ public class PitchCorrector extends JFrame implements KeyListener,
 
 	private Preferences preferences;
 	private int pitchDisplays;
+	private AudioPlay audioPlay;
 
 	public PitchCorrector(String title) throws Exception {
 		super(title, "mainWindow");
@@ -193,7 +194,7 @@ public class PitchCorrector extends JFrame implements KeyListener,
 		for (int i = 0; i < pitchDisplays; i++) {
 			pitchContextMenus[i] = new PitchContextMenu();
 
-			pitchVisualizers[i] = new VisualizerPitch("pitchVis", source, null,
+			pitchVisualizers[i] = new VisualizerPitch("pitchVis" + i, source, null,
 					null, shift);
 			pitchVisualizers[i].setPreferredSize(new Dimension(640, 70));
 			pitchVisualizers[i].setComponentPopupMenu(createPopupMenu(i));
@@ -1201,12 +1202,18 @@ public class PitchCorrector extends JFrame implements KeyListener,
 
 	private void play(int start, int end) {
 		try {
-			AudioPlay audioPlay = new AudioPlay(source.getReader(start, end
+			if (audioPlay != null) {
+				audioPlay.stop();
+				audioPlay.setAudioSource(source.getReader(start, end - start + 1));
+			} else {
+				audioPlay = new AudioPlay(source.getReader(start, end
 					- start + 1));
+			}
 
 			// play whole section
-			while (audioPlay.write() > 0) {
-			}
+			//while (audioPlay.write() > 0) {
+			//}
+			audioPlay.play();
 
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, e.getMessage(), "File error",
