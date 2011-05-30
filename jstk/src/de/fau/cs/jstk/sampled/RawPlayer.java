@@ -323,7 +323,7 @@ public class RawPlayer implements Runnable, LineListener{
 		if (!le.getLine().equals(line))
 			return;
 		
-		System.err.println(le);
+		System.err.println("RawPlayer: update: "+ le);
 		
 		if (le.getType() == LineEvent.Type.START)
 			notifyStart();

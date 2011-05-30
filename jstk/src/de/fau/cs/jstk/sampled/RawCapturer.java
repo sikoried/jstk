@@ -193,7 +193,19 @@ public class RawCapturer implements Runnable, LineListener{
 		if (stopped)
 			return;
 		
-		stopped = true;
+		line.stop();
+		
+//		// FIXME
+//		try {
+//			Thread.sleep(100);
+//		} catch (InterruptedException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
+//		System.exit(1);
+//		
+		// let's only stop as soon as we are notified by update() 
+		//stopped = true;
 		try {
 			thread.join();
 		} catch (InterruptedException e) {
@@ -258,13 +270,24 @@ public class RawCapturer implements Runnable, LineListener{
 		line.start();		
 		
 		// main playback loop
-		while(!stopped){
+		while(true){//!stopped){
 			int numBytesRead = 0;
 			
 			numBytesRead = line.read(buffer, 0, buffer.length);												
 			
+//			System.err.println(String.format("numBytesRead = %d, isActive = %s, isRunning = %s",
+//					numBytesRead,
+//					line.isActive(), 
+//					line.isRunning()));
+			
 			if (numBytesRead < 0)
 				break;
+			else if (numBytesRead == 0 &&
+					// equivalent to using stopped would be !line.isRunning()
+					stopped){
+				break;				
+			}
+				
 			//System.err.println("available = " + line.available());
 			try {
 				os.write(buffer, 0, numBytesRead);
@@ -299,13 +322,13 @@ public class RawCapturer implements Runnable, LineListener{
 			}
 		}
 		
-		if (!stopped){
-			System.err.println("line.drain()");
-			line.drain();
-		}
-		System.err.println("line.stop()");
-		line.stop();
-		if (stopped){
+//		if (false){//!stopped){
+//			System.err.println("line.drain()");
+//			line.drain();
+//		}
+//		System.err.println("line.stop()");
+//		line.stop();
+		if (true){//stopped){
 			System.err.println("line.flush()");
 			line.flush();
 		}
@@ -322,12 +345,14 @@ public class RawCapturer implements Runnable, LineListener{
 		if (!le.getLine().equals(line))
 			return;
 		
-		System.err.println(le);
+		System.err.println("RawCapturer: update: "+ le);
 		
 		if (le.getType() == LineEvent.Type.START)
 			notifyStart();
-		else if (le.getType() == LineEvent.Type.STOP)
+		else if (le.getType() == LineEvent.Type.STOP){
+			stopped = true;
 			notifyStop();						
+		}
 	}	
 	
 	public static void main(String [] args){
