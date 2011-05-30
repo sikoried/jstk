@@ -40,12 +40,12 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.arch.Configuration;
 import de.fau.cs.jstk.arch.TokenTree;
-import de.fau.cs.jstk.arch.TokenTree.TreeNode;
+import de.fau.cs.jstk.arch.TreeNode;
 import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
 import de.fau.cs.jstk.io.FrameInputStream;
-import de.fau.cs.jstk.lm.Srilm;
+import de.fau.cs.jstk.lm.Unigram;
 
 public class Decoder {
 	private static Logger logger = Logger.getLogger(Decoder.class);
@@ -122,12 +122,12 @@ public class Decoder {
 		// load the config
 		Configuration conf = new Configuration(new File(args[z++]));
 		conf.loadCodebook(new File(args[z++]));
-		conf.buildTokenTree();
 		
 		// load language model
-		BufferedReader brd = new BufferedReader(new FileReader(args[z++]));
-		Srilm lm = new Srilm(conf.tok, brd);
-		brd.close();
+		HashMap<Tokenization, Double> sil = new HashMap<Tokenization, Double>();
+		sil.put(new Tokenization("sil", new String [0]), silprob);
+		Unigram lm = new Unigram(conf.tok, conf.th, sil);
+		lm.loadSrilm(new File(args[z++]));
 		
 		for (; z < args.length; ++z) {
 			if (args[z].equals("-f"))
@@ -176,12 +176,11 @@ public class Decoder {
 				throw new Exception("unknown argument " + args[z]);
 		}
 		
-		HashMap<Tokenization, Double> sil = new HashMap<Tokenization, Double>();
-		sil.put(new Tokenization("sil", new String [0]), silprob);
 		
-		TreeNode root = lm.generateNetwork(conf.tt, sil);
 		
-		logger.info(TokenTree.traverseNetwork(root));
+		TreeNode root = lm.generateNetwork();
+		
+		logger.info(TokenTree.traverseNetwork(root, " "));
 		
 		if (files.size() < 1) {
 			System.err.println("Nothing to do. Bye.");
@@ -240,7 +239,7 @@ public class Decoder {
 					bwr.append("\n");
 					break;
 				case MA:
-					h.toMetaAlignment(conf.tt).write(bwr);
+					h.toMetaAlignment(conf.th).write(bwr);
 					break;
 				}
 			}

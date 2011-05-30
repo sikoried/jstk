@@ -34,7 +34,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.arch.Token;
-import de.fau.cs.jstk.arch.TokenTree;
+import de.fau.cs.jstk.arch.TokenHierarchy;
 import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.exceptions.AlignmentException;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
@@ -127,14 +127,14 @@ public class MetaAlignment {
 	public List<Alignment> alignments = new LinkedList<Alignment>();
 	
 	/** TokenTree to resolve tokens and HMM ids */
-	public TokenTree tt = null;
+	public TokenHierarchy th = null;
 	
 	/**
 	 * Create a new (empty) MetaAlignment which uses the given TokenTree
 	 * @param tt 
 	 */
-	public MetaAlignment(TokenTree tt) {
-		this.tt = tt;
+	public MetaAlignment(TokenHierarchy th) {
+		this.th = th;
 	}
 	
 	/**
@@ -143,8 +143,8 @@ public class MetaAlignment {
 	 * @param tt
 	 * @param alignments
 	 */
-	public MetaAlignment(TokenTree tt, List<Alignment> alignments) {
-		this.tt = tt;
+	public MetaAlignment(TokenHierarchy th, List<Alignment> alignments) {
+		this.th = th;
 		this.alignments = alignments;
 	}
 	
@@ -160,9 +160,9 @@ public class MetaAlignment {
 	 * @throws IOException
 	 * @throws OutOfVocabularyException
 	 */
-	public MetaAlignment(FrameSource source, BufferedReader in, TokenTree tt, boolean forcedInsteadOfLinear)
+	public MetaAlignment(FrameSource source, BufferedReader in, TokenHierarchy th, boolean forcedInsteadOfLinear)
 		throws AlignmentException, OutOfVocabularyException, IOException {
-		this(tt);
+		this(th);
 		read(source, in, forcedInsteadOfLinear);		
 	}
 	
@@ -176,9 +176,9 @@ public class MetaAlignment {
 	 * @throws OutOfVocabularyException
 	 * @throws IOException
 	 */
-	public MetaAlignment(FrameSource source, Iterable<Tokenization> transcription, TokenTree tt, boolean forcedInsteadOfLinear)
+	public MetaAlignment(FrameSource source, Iterable<Tokenization> transcription, TokenHierarchy th, boolean forcedInsteadOfLinear)
 		throws AlignmentException, OutOfVocabularyException, IOException {
-		this(tt);
+		this(th);
 		score = align(source, transcription, forcedInsteadOfLinear);
 	}
 	
@@ -194,7 +194,7 @@ public class MetaAlignment {
 		List<Alignment> duplicates = new LinkedList<Alignment>();
 		for (Alignment a : alignments) {
 			// follow the hierarchy up to the top
-			Token tok = tt.tokenHierarchy.getPolyphone(a.model.id);
+			Token tok = th.getPolyphone(a.model.id);
 			while ((tok = tok.lessContext) != null) {
 				if (a.q != null)
 					duplicates.add(new Alignment(tok.hmm, a.observation, a.q));
@@ -213,7 +213,7 @@ public class MetaAlignment {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		for (Alignment a : alignments)
-			sb.append(tt.tokenHierarchy.getPolyphone(a.model.id) + (a.q == null ? " " : " " + Arrays.toString(a.q) + " "));
+			sb.append(th.getPolyphone(a.model.id) + (a.q == null ? " " : " " + Arrays.toString(a.q) + " "));
 		return sb.toString();
 	}
 	
@@ -230,7 +230,11 @@ public class MetaAlignment {
 	public double align(FrameSource source, Iterable<Tokenization> transcription, boolean forcedInsteadOfLinear) 
 		throws AlignmentException, OutOfVocabularyException, IOException {
 		// get overall transcription (models are required for later MetaAlignment construction)
-		List<Token> tseq = tt.translate(transcription);
+		List<Token> tseq = new LinkedList<Token>();
+		for (Tokenization t : transcription) {
+			for (Token tt : th.tokenizeWord(t.sequence))
+				tseq.add(tt);
+		}
 		
 		// build up model sequence
 		Hmm [] seq = new Hmm [tseq.size()];
@@ -325,7 +329,7 @@ public class MetaAlignment {
 			String [] split = line.split("\\s+");
 			
 			// get the Token and respective model
-			Token tok = tt.tokenHierarchy.getPolyphone(split[0]);
+			Token tok = th.getPolyphone(split[0]);
 			if (tok == null)
 				throw new OutOfVocabularyException("MetaAlignment.read(): model '" + split[0] + "' not in TokenTree.");
 			if (tok.hmm == null)

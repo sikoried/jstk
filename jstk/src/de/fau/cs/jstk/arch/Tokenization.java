@@ -29,12 +29,23 @@ import java.io.IOException;
  * @author sikoried
  */
 public final class Tokenization implements Comparable <Tokenization> {
-
+	private static final String [] nullseq = new String [0];
+	
 	/** The actual word */
 	public String word;
 	
 	/** The token sequence using tokens */
 	public String [] sequence;
+	
+	/** 
+	 * Generate a phony Tokenization with only the word but no actual 
+	 * tokenization. This can be used to search within the Tokenizer
+	 * @param word
+	 */
+	public Tokenization(String word) {
+		this.word = word;
+		this.sequence = nullseq;
+	}
 	
 	/**
 	 * Create a new lexicon entry using given word and transcription

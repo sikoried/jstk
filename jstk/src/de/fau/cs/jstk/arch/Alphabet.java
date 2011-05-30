@@ -35,7 +35,7 @@ import java.util.Map.Entry;
  * @author sikoried
  */
 public final class Alphabet {
-	/** Lookup table: token->hmm-states */
+	/** Lookup table: token->num-hmm-states */
 	public HashMap<String, Short> lookup = new HashMap<String, Short>();
 	
 	/**

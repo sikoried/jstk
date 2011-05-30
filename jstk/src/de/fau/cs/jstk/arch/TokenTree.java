@@ -25,8 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,379 +32,68 @@ import java.util.Stack;
 
 import org.apache.log4j.BasicConfigurator;
 
-import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
 import de.fau.cs.jstk.util.Pair;
 
 
 /**
- * The TokenTree stores the compiled Tokenizer/TokenHierarchy. The tree is 
- * organized by token prefixes and used for both training and recognition.
+ * The TokenTree is made up by TreeNodes and is used for decoder network
+ * generation.
  *  
  * @author sikoried
  */
 public class TokenTree {
 	public long id = 0;
 	
-	/**
-	 * Helper class to build up a tree. Each node stores the token (for the 
-	 * statistical parameters), its parent and children. If the end of the word
-	 * is reached, the lexical entry is non-null.
-	 * 
-	 * @author sikoried
-	 *
-	 */
-	public static final class TreeNode {
-		/** ID of the associated Tree (only set for root nodes) */
-		public long treeId;
-		
-		/** distributed language model weight */
-		public double p = 0.;
-		
-		/** factored language model weight (logarithmic) */
-		public double f = 0.;
-				
-		/** Associated token */
-		public Token token = null;
-		
-		/** If this is a leaf, there will be a word -- otherwise null */
-		public Tokenization word = null;
-		
-		public TreeNode parent;
-		public TreeNode [] children = new TreeNode [0];
-		
-		public TreeNode(Token phone, TreeNode parent, long id) {
-			this(phone, parent);
-			treeId = id;
-		}
-		
-		public TreeNode(Token phone, TreeNode parent) {
-			this.token = phone;
-			this.parent = parent;
-		}
-		
-		public boolean equals(TreeNode n) {
-			return n == this;
-		}
-		
-		/** 
-		 * Determine the start node for this word (required at training time)
-		 * @return origin of this node
-		 */
-		public TreeNode startNode() {
-			TreeNode n = this;
-			while (!n.isRootNode())
-				n = n.parent;
-			return n;
-		}
-		
-		/**
-		 * Return the ID of the tree this node belongs to
-		 * @return
-		 */
-		public long getTreeId() {
-			return treeId;
-		}
-		
-		/**
-		 * Add the given TreeNode to the list of children.
-		 * @param node Node to insert
-		 * @return inserted node
-		 */
-		public TreeNode addChild(TreeNode node) {
-			TreeNode [] nc = new TreeNode [children.length + 1];
-			System.arraycopy(children, 0, nc, 0, children.length); 
-			nc[children.length] = node;
-			children = nc;
-			
-			// ensure proper parent link
-			node.parent = this;
-			return node;
-		}
-		
-		/**
-		 * Add a LST to the list of children (the parent is not updated!)
-		 * @param root
-		 */
-		public void addLST(TreeNode root) {
-			TreeNode [] nc = new TreeNode [children.length + 1];
-			System.arraycopy(children, 0, nc, 0, children.length); 
-			nc[children.length] = root;
-			children = nc;
-		}
-		
-		/**
-		 * Remove all children and set the given node as new child
-		 * @param node
-		 */
-		public void setChild(TreeNode node) {
-			children = new TreeNode [] { node };
-		}
-		
-		/**
-		 * Remove specified child==node
-		 * @param node
-		 * @return true on success
-		 */
-		public boolean removeChild(TreeNode node) {
-			if (token == null)
-				return false;
-			
-			// locate child
-			int ndx = -1;
-			for (int i = 0; i < children.length; ++i) {
-				if (children[i].equals(node)) {
-					ndx = i;
-					break;
-				}
-			}
-			
-			if (ndx == -1)
-				return false;
-			
-			TreeNode [] nc = new TreeNode[children.length - 1];
-			int k = 0;
-			for (int j = 0; j < children.length; ++j)
-				if (j != ndx)
-					nc[k++] = children[j];
-			
-			children = nc;
-			
-			return true;
-		}
-		
-		/**
-		 * Add a given Tokenization to the TreeNode (marking it 
-		 * as a WORD_BOUNDARY)
-		 * @param w
-		 * @return inserted Tokenization
-		 */
-		public TreeNode addTokenization(Tokenization w) {
-			TreeNode tn = new TreeNode(null, this);
-			tn.word = w;
-			addChild(tn);
-			return tn;
-		}
-		
-		/**
-		 * Check if node is actually a word leaf
-		 */
-		public boolean isWordLeaf() {
-			return word != null;
-		}
-		
-		/**
-		 * Check if node is a (dummy) root node
-		 * @return
-		 */
-		public boolean isRootNode() {
-			return parent == null || 
-					token == null && word == null;
-		}
-		
-		/** return a string representation of this node */
-		public String toString() {
-			if (isWordLeaf())
-				return word.word;
-			else if (token == null)
-				return "[root id=" + treeId + "]";
-			else
-				return token.toString();
-		}
-	}
-	
 	/** The root of the tree to reach all words */
-	public TreeNode root = new TreeNode(null, null);
-	
-	/** The available phones */
-	public TokenHierarchy tokenHierarchy;
-	
-	/** The selected Tokenizer */
-	public Tokenizer tokenizer;
-	
-	/** translation table for word -> leaf in the token tree */
-	public HashMap<String, TreeNode> wordLeaves = new HashMap<String, TreeNode>();
+	public TreeNode root;
 	
 	/**
-	 * Construct a token tree using the given token hierarchy and fill it 
-	 * using with elements of the tokenizer.
-	 * @param tokenHierarchy
-	 * @param tokenizer
+	 * Generate a new TokenTree for the given root node.
+	 * @param id (unique) ID of the new tree
 	 */
-	public TokenTree(TokenHierarchy tokenHierarchy, Tokenizer tokenizer) {
-		this(tokenHierarchy, tokenizer, true);
+	public TokenTree(long id) {
+		this(id, new TreeNode(null, null));
 	}
 	
 	/**
-	 * Construct a TokenTree using the given hierarchy and tokenizer
-	 * @param tokenHierarchy
-	 * @param tokenizer
-	 * @param fill fill the tree with the elements of the tokenizer?
+	 * Generate a new TokenTree for the given root node.
+	 * @param id (unique) ID of the new tree
+	 * @param root null for an empty tree
 	 */
-	public TokenTree(TokenHierarchy tokenHierarchy, Tokenizer tokenizer, boolean fill) {
-		this.tokenHierarchy = tokenHierarchy;
-		this.tokenizer = tokenizer;
+	public TokenTree(long id, TreeNode root) {
+		this.root = root;
+		setId(id);
+	}
 		
-		if (fill) {
-			// add words
-			for (Tokenization entry : tokenizer.tokenizations)
-				addToTree(entry, tokenHierarchy.tokenizeWord(entry.sequence));
-		}
-	}
-	
-	/**
-	 * Generate a deep copy of the TokenTree
-	 */
-	public TokenTree clone() {
-		TokenTree tt = new TokenTree(tokenHierarchy, tokenizer);
-		tt.id = id;
-		return tt;
-	}
-	
-	/**
-	 * Link all word leaves to the given lexical successor tree (used by the
-	 * decoder)
-	 * @param lst
-	 * @return
-	 */
-	public void linkLeaves(TreeNode lst) {
-		for (TreeNode n : wordLeaves.values())
-			n.setChild(lst);
-	}
-	
-	/**
-	 * Clear the tree of all nodes.
-	 */
-	public void emptyTree() {
-		root = new TreeNode(null, null);
-	}
-	
-	/**
-	 * Detach a subtree from the TokenTree; used for example to separate the 
-	 * silence branches for the decoder. all nodes will be placed  
-	 * @param nodes list of nodes (the node and everything below it will be removed from the tree)
-	 * @return
-	 */
-	public TokenTree detachSubtree(List<TreeNode> nodes) {
-		TokenTree subtree = new TokenTree(tokenHierarchy, tokenizer);
-		
-		// BFS search for nodes
-		for (TreeNode n : nodes) {
-			Stack<TreeNode> agenda = new Stack<TreeNode>();
-			agenda.add(root);
-			
-			while (agenda.size() > 0) {
-				TreeNode inspect = agenda.pop();
-				if (inspect.removeChild(n)) {
-					subtree.root.addChild(n);
-					break;
-				}
-			}
-		}
-		
-		return subtree;
-	}
-	
 	/**
 	 * Add a token sequence (i.e. a word) to the token tree
-	 * @param sequence
+	 * @param word Tokenization
+	 * @param sequence Token sequence to represent the Tokenisation
+	 * @param prob language model probability
 	 */
-	public void addToTree(Tokenization word, Token [] sequence) {
+	public void addToTree(Tokenization word, Token [] sequence, double prob) {
 		TreeNode target = root, inspect = root;
 		for (Token tok : sequence) {
 			// check if there is a matching token on this level
 			for (int i = 0; i < inspect.children.length; ++i) {
-				if (!inspect.children[i].isWordLeaf() && inspect.children[i].token.equals(tok)) {
+				if (!inspect.children[i].isWordNode() && inspect.children[i].token.equals(tok)) {
 					target = inspect.children[i];
 					break;
 				}
 			}
 			
 			// no, we need a new branch!
-			if (target == inspect) 
-				target = inspect.addChild(new TreeNode(tok, null, id));
+			if (target == inspect) {
+				target = new TreeNode(tok, inspect);
+				inspect.addChild(target);
+			}
 			
 			inspect = target;
 		}
-		
-		// we're at the leaf, add word arc
-		wordLeaves.put(word.word, target.addTokenization(word));
-	}
-	
-	/**
-	 * Translate a Tokenization into the corresponding Tokens
-	 * @param w Tokenization
-	 * @return sequence of Token
-	 */
-	public List<Token> translate(Tokenization w) throws OutOfVocabularyException {
-		if (!wordLeaves.containsKey(w.word))
-			throw new OutOfVocabularyException("unknown word \"" + w.word + "\"");
-		
-		TreeNode leaf = wordLeaves.get(w.word);
-		
-		// discard the actual leaf!
-		leaf = leaf.parent;
-		
-		// follow the leaf to the root, build up the acoustic model
-		LinkedList<Token> reverse = new LinkedList<Token>();
-		while (leaf.parent != null) {
-			reverse.addFirst(leaf.token);
-			leaf = leaf.parent;
-		}
-		
-		return reverse;
-	}
-	
-	/**
-	 * Translate a Tokenization into the corresponding TreeNodes
-	 * @param w Tokenization
-	 * @return sequence of Token
-	 */
-	public List<TreeNode> nodeTranslate(Tokenization w) throws OutOfVocabularyException {
-		if (!wordLeaves.containsKey(w.word))
-			throw new OutOfVocabularyException("unknown word \"" + w.word + "\"");
-		
-		TreeNode leaf = wordLeaves.get(w.word);
-		
-		// follow the leaf to the root, build up the acoustic model
-		LinkedList<TreeNode> reverse = new LinkedList<TreeNode>();
-		while (leaf.parent != null) {
-			reverse.addFirst(leaf);
-			leaf = leaf.parent;
-		}
-		
-		return reverse;
-	}
-	
-	/**
-	 * Translate a Tokenization sequence ("sentence") into the corresponding Tokens
-	 * @param sent Iterable Tokenizations representing the sentence
-	 * @return sequence of Token
-	 */
-	public List<Token> translate(Iterable<Tokenization> sent)
-		throws OutOfVocabularyException {
-		LinkedList<Token> tokens = new LinkedList<Token>();
-		
-		for (Tokenization w : sent) {
-			if (!wordLeaves.containsKey(w.word))
-				throw new OutOfVocabularyException("unknown word \"" + w.word + "\"");
-			
-			TreeNode leaf = wordLeaves.get(w.word);
-			
-			// discard the actual leaf
-			leaf = leaf.parent;
-			
-			// follow the leaf to the root, build up the acoustic model
-			LinkedList<Token> reverse = new LinkedList<Token>();
-			while (leaf.parent != null) {
-				reverse.addFirst(leaf.token);
-				leaf = leaf.parent;
-			}
-			
-			// add the model to the big list
-			tokens.addAll(reverse);
-		}
-		
-		return tokens;
+
+		// add the leaf
+		TreeNode child = new TreeNode(target, word, prob);
+		target.addChild(child);
 	}
 	
 	/**
@@ -415,33 +102,129 @@ public class TokenTree {
 	 */
 	public void setId(long id) {
 		this.id = id;
-		List<TreeNode> agenda = new LinkedList<TreeNode>();
+		if (root != null)
+			root.treeId = id;
+	}
+	
+	/**
+	 * Get the size (node count) of the tree.
+	 * @return
+	 */
+	public int size() {
+		if (root == null)
+			return 0;
+		
+		int size = 0;
+		
+		Stack<TreeNode> agenda = new Stack<TreeNode>();
 		agenda.add(root);
 		
+		// depth first search
 		while (agenda.size() > 0) {
-			TreeNode n = agenda.remove(0);
-			
-			// update id
-			n.treeId = id;
-			
-			// enqueue children
-			for (TreeNode c : n.children)
-				agenda.add(c);
+			size++;
+			TreeNode c = agenda.pop();
+			for (TreeNode t : c.children)
+				agenda.push(t);
 		}
+		
+		return size;
+	}
+	
+	/**
+	 * Get a list of all TreeNodes (including leaves) in a DFS manner.
+	 * @return
+	 */
+	public List<TreeNode> nodes() {
+		return dfs();
+	}
+	
+	/**
+	 * Get a DFS list of all nodes.
+	 * @return
+	 */
+	public List<TreeNode> dfs() {
+		LinkedList<TreeNode> li = new LinkedList<TreeNode>();
+		if (root == null)
+			return li;
+		
+		Stack<TreeNode> agenda = new Stack<TreeNode>();
+		agenda.add(root);
+		
+		// depth first search
+		while (agenda.size() > 0) {
+			TreeNode c = agenda.pop();
+			
+			li.addFirst(c);
+			
+			for (TreeNode t : c.children)
+				agenda.push(t);
+		}
+		
+		return li;
+	}
+	
+	/**
+	 * Get a BFS list of all nodes.
+	 * @return
+	 */
+	public List<TreeNode> bfs() {
+		LinkedList<TreeNode> li = new LinkedList<TreeNode>();
+		if (root == null)
+			return li;
+		
+		Stack<TreeNode> agenda = new Stack<TreeNode>();
+		agenda.add(root);
+		
+		// depth first search
+		while (agenda.size() > 0) {
+			TreeNode c = agenda.pop();
+			
+			li.add(c);
+			
+			for (TreeNode t : c.children)
+				agenda.push(t);
+		}
+		
+		return li;
+	}
+	
+	/**
+	 * Get a list of leaves
+	 * @return
+	 */
+	public List<TreeNode> leaves() {
+		LinkedList<TreeNode> li = new LinkedList<TreeNode>();
+		if (root == null)
+			return li;
+		
+		Stack<TreeNode> agenda = new Stack<TreeNode>();
+		agenda.add(root);
+		
+		// depth first search
+		while (agenda.size() > 0) {
+			TreeNode c = agenda.pop();
+			
+			if (c.isWordNode())
+				li.add(c);
+			
+			for (TreeNode t : c.children)
+				agenda.push(t);
+		}
+		
+		return li;
 	}
 	
 	/**
 	 * Return a String representation of the lexical tree.
 	 */
 	public String toString() {
-		return "LexicalTree: " + wordLeaves.keySet().size() + " words";
+		return "LexicalTree: " + leaves().size() + " words using " + size() + " nodes";
 	}
 	
-	public String treeAsString() {
+	public String treeAsString(String indent) {
 		StringBuffer sb = new StringBuffer();
 		LinkedList<Pair<Integer, TreeNode>> agenda = new LinkedList<Pair<Integer, TreeNode>>();
 		agenda.add(new Pair<Integer, TreeNode>(0, root));
-		final String INDENT = "    ";
 
 		// depth first search
 		while (agenda.size() > 0) {
@@ -449,7 +232,7 @@ public class TokenTree {
 
 			// do correct indent
 			for (int i = 0; i < pair.a; ++i)
-				sb.append(INDENT);
+				sb.append(indent);
 
 			// print current
 			sb.append(pair.b.toString());
@@ -468,63 +251,30 @@ public class TokenTree {
 	 * Compute the distributed and factored language model weights for this 
 	 * lexical tree using the given word probability list. Make sure this 
 	 * tree is not part of a network, as recursiveness is NOT checked.
-	 * @param wts
 	 */
-	public void factorLanguageModelWeights(HashMap<Tokenization, Double> wts) 
-		throws OutOfVocabularyException {				
-		// DFS search to null the probs
-		Stack<TreeNode> agenda1 = new Stack<TreeNode>();
-		Stack<TreeNode> agenda2 = new Stack<TreeNode>();
-		Stack<TreeNode> agenda3 = new Stack<TreeNode>();
-		agenda1.add(root);
+	public void factorLanguageModelWeights() {
+		List<TreeNode> dfs = dfs();
 		
-		while (agenda1.size() > 0) {
-			TreeNode c = agenda1.pop();
-			
-			// build agendas for prob distribution and factorization
-			agenda2.push(c);
-			agenda3.push(c);
-			
-			// reset probs
-			if (c.word == null)
-				c.p = 0.;
-			else {
-				Double wt = wts.get(c.word);
-				if (wt == null)
-					throw new OutOfVocabularyException(c.word.toString());
-				c.p = wt;
-			}
-			c.f = 0.;
-			
-			// add children to agenda
-			for (TreeNode n : c.children)
-				agenda1.push(n);
-		}
-		
-		// use the existing DFS agenda to distribute the probabilities
-		while (agenda2.size() > 0) {
-			TreeNode c = agenda2.pop();
-
-			// sum over children
-			for (TreeNode n : c.children)
-				c.p += n.p;
-		}
-		
-		// use the existing DFS agenda to factorize the probabilities
-		while (agenda3.size() > 0) {
-			TreeNode c = agenda3.pop();
-			
-			// leafs don't require factorization
-			if (c.children.length < 1)
+		// distribute probs
+		for (TreeNode n : dfs) {
+			if (n.isWordNode())
 				continue;
 			
-			// factorize the probs of the children
-			double sum = 0.;
-			for (TreeNode n : c.children)
-				sum += n.p;
+			n.p = 0.;
+			for (TreeNode c : n.children)
+				n.p += c.p;
+		}
+		
+		// factorize
+		for (TreeNode n : dfs) {
+			// factorization is not applied at the leaf level!
+			if (n.isWordNode())
+				continue;
 			
-			for (TreeNode n : c.children)
-				n.f = Math.log(n.p / sum);
+			// c.f = Math.log(c.p - n.p)			
+			double logsum = Math.log(n.p);			
+			for (TreeNode c : n.children)
+				c.f = Math.log(c.p) - logsum;
 		}
 		
 		// for consistency
@@ -533,14 +283,12 @@ public class TokenTree {
 	}
 	
 	/** 
-	 * Traverse a newtork of TokenTree's to visualize the decoding network. This
+	 * Traverse a network of TokenTree's to visualize the decoding network. This
 	 * makes sure that no subtree is printed twice.
 	 * @param root
 	 * @return
 	 */
-	public static String traverseNetwork(TreeNode root) {
-		final String INDENT = "    ";
-		
+	public static String traverseNetwork(TreeNode root, String indent) {
 		StringBuffer sb = new StringBuffer();
 		
 		HashSet<TreeNode> visited = new HashSet<TreeNode>();
@@ -561,11 +309,11 @@ public class TokenTree {
 			
 			// do correct indent
 			for (int i = 0; i < p.b; ++i)
-				sb.append(INDENT);
+				sb.append(indent);
 			
 			// print TreeNode
 			sb.append(p.a + " P=" + fmt.format(p.a.p) + " F=" + fmt.format(p.a.f));
-			if (p.a.isWordLeaf())
+			if (p.a.isWordNode())
 				for (TreeNode c : p.a.children) {
 					sb.append(" LST=" + c);
 				}
@@ -590,12 +338,7 @@ public class TokenTree {
 		"  --print-all\n" +
 		"    Print the complete tree\n" +
 		"  --list-words\n" +
-		"    List all the words and their transcriptions (in alphabetical order)\n" +
-		"  --find word\n" +
-		"    Check if a word exists in the tree and show its transcription. Use\n" +
-		"    a comma separated list if you want to query more than one word.\n" +
-		"  --compose-sentence \"your sentence to compose\"" +
-		"  --factor";
+		"    List all the words and their transcriptions (in alphabetical order)";
 	
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -634,15 +377,13 @@ public class TokenTree {
 		conf.buildTokenTree();
 		
 		if (printAll) {
-			System.out.println(conf.tt.treeAsString());
+			System.out.println(TokenTree.traverseNetwork(conf.tt.root, "   "));
 		}
 		
 		if (listWords) {
-			LinkedList<String> leafs = new LinkedList<String>(conf.tt.wordLeaves.keySet());
-			Collections.sort(leafs);
-			for (String l : leafs) {
-				TreeNode n = conf.tt.wordLeaves.get(l);
-				System.out.print(l);
+			List<TreeNode> leafs = conf.tt.leaves();
+			for (TreeNode n : leafs) {
+				System.out.print(n.word);
 				LinkedList<Token> toreverse = new LinkedList<Token>();
 				toreverse.add(n.token);
 				while (n.parent != null && n.parent.token != null) {
@@ -653,31 +394,6 @@ public class TokenTree {
 					System.out.print(" " + toreverse.remove(toreverse.size() - 1));
 				System.out.println();
 			}
-		}
-		
-		for (String w : findWord) {
-			TreeNode n = conf.tt.wordLeaves.get(w);
-			if (n == null)
-				System.out.println("Word \"" + w + "\" not found");
-			else {
-				System.out.print(w);
-				LinkedList<Token> toreverse = new LinkedList<Token>();
-				toreverse.add(n.token);
-				while (n.parent != null && n.parent.token != null) {
-					n = n.parent;
-					toreverse.add(n.token);
-				}
-				while (toreverse.size() > 0)
-					System.out.print(" " + toreverse.remove(toreverse.size() - 1));
-				System.out.println();
-			}
-		}
-		
-		for (String s : compSent) {
-			System.out.println(s);
-			for (Token t : conf.tt.translate(conf.tok.getSentenceTokenization(s)))
-				System.out.print(t + " ");
-			System.out.println();
 		}
 	}
 }
