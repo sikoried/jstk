@@ -209,7 +209,7 @@ public class RawAudioFormat {
 	 * @return requested RawAudioFormat
 	 * @throws UnsupportedAudioFileException
 	 */
-	public static RawAudioFormat getAudioFormat(String key) 
+	public static RawAudioFormat getRawAudioFormat(String key) 
 		throws UnsupportedAudioFileException {
 		if (predefinedFormats == null) 
 			initializePredefinedFormats();
@@ -354,7 +354,7 @@ public class RawAudioFormat {
 		if (parameterString.startsWith("f:"))
 			return getRawAudioFormatFromFile(parameterString.substring(2));
 		else if (parameterString.startsWith("t:"))
-			return getAudioFormat(parameterString.substring(2));
+			return getRawAudioFormat(parameterString.substring(2));
 		else if (parameterString.startsWith("r:")) {
 			String [] h = parameterString.substring(2).split(",");
 			if (h.length == 4) {

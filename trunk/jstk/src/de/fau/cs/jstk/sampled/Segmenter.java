@@ -72,6 +72,7 @@ public class Segmenter {
 	List<Double> tmpMaxAmp = new LinkedList<Double>();
 
 	double [] leftOverSamples = null;
+	private boolean rawSpeechAtEnd = false;
 	
 	
 	/**
@@ -475,6 +476,10 @@ public class Segmenter {
 		// actual updating, can happen unsynchronized
 		
 		computeLevels();
+		
+		if (getNWindows() > 0)
+			rawSpeechAtEnd = isSpeech(getNWindows() - 1);			
+		
 		smooth();
 		/*
 		System.err.print(String.format("silence %f, speech %f\n",
@@ -667,6 +672,15 @@ public class Segmenter {
 
 	public double getMinSNR() {
 		return minSNR;
+	}
+
+
+	/**
+	 * whether the last frame, *unsmoothed*, is speech 
+	 * @return
+	 */
+	public boolean isRawSpeechAtEnd() {
+		return rawSpeechAtEnd;
 	}
 
 

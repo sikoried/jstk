@@ -292,7 +292,7 @@ public class ThreadedPlayer implements Runnable {
 			System.err.println("Hit [ENTER] to start playing " + file);
 			System.in.read();
 			
-			ThreadedPlayer play = new ThreadedPlayer(new AudioPlay(args[0], new AudioFileReader(file, RawAudioFormat.getAudioFormat("ssg/16"), true)));
+			ThreadedPlayer play = new ThreadedPlayer(new AudioPlay(args[0], new AudioFileReader(file, RawAudioFormat.getRawAudioFormat("ssg/16"), true)));
 			play.start();
 		}
 	}
