@@ -56,6 +56,7 @@ import org.xml.sax.SAXException;
 
 import de.fau.cs.jstk.arch.mf.SCModelFactory;
 import de.fau.cs.jstk.exceptions.CodebookException;
+import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
 import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.stat.hmm.Hmm.Topology;
 import de.fau.cs.jstk.util.Pair;
@@ -457,14 +458,16 @@ public final class Configuration {
 	 * Generate the TokenTree for the current Alphabet, Tokenizer and TokenHierarchy
 	 * @throws Exception
 	 */
-	public void buildTokenTree() {
+	public void buildTokenTree() throws OutOfVocabularyException {
 		logger.info("building TokenTree");
 		if (!hasTokenHierarchy())
 			throw new RuntimeException("No TokenHierarchy available");
 		if (!hasTokenizer())
 			throw new RuntimeException("No Tokenizer available");
 		
-		tt = new TokenTree(th, tok);
+		tt = new TokenTree(0);
+		for (Tokenization t : tok.tokenizations)
+			tt.addToTree(t, th.tokenizeWord(tok.tokenize(t.word)), 1. / tok.tokenizations.size());
 	}
 	
 	/**

@@ -139,10 +139,6 @@ public class Trainer {
 		 */
 		Worker(Configuration config, Distributor d, CountDownLatch latch) {
 			this.conf = config;
-			
-			if (!config.hasTokenTree())
-				config.buildTokenTree();
-
 			this.dist = d;
 			this.latch = latch;
 		}
@@ -158,13 +154,13 @@ public class Trainer {
 					MetaAlignment ma = null;
 					if (job.align == AlignmentType.MANUAL || job.align == AlignmentType.MANUAL_LINEAR) {
 						BufferedReader br = new BufferedReader(new FileReader(job.turn.canonicalOutputName()));
-						ma = new MetaAlignment(fs, br, conf.tt, job.align == AlignmentType.MANUAL);
+						ma = new MetaAlignment(fs, br, conf.th, job.align == AlignmentType.MANUAL);
 						br.close();
 					}
 					else if (job.align == AlignmentType.FORCED)
-						ma = new MetaAlignment(fs, conf.tok.getSentenceTokenization(job.turn.transcription), conf.tt, true);
+						ma = new MetaAlignment(fs, conf.tok.getSentenceTokenization(job.turn.transcription), conf.th, true);
 					else if (job.align == AlignmentType.LINEAR)
-						ma = new MetaAlignment(fs, conf.tok.getSentenceTokenization(job.turn.transcription), conf.tt, false);
+						ma = new MetaAlignment(fs, conf.tok.getSentenceTokenization(job.turn.transcription), conf.th, false);
 					else
 						throw new Exception("Trainer.Worker#" + Thread.currentThread().getId() + ".run(): invalid alignment strategy!");
 

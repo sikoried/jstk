@@ -21,13 +21,15 @@
 */
 package de.fau.cs.jstk.lm;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import de.fau.cs.jstk.arch.TokenHierarchy;
 import de.fau.cs.jstk.arch.TokenTree;
-import de.fau.cs.jstk.arch.TokenTree.TreeNode;
 import de.fau.cs.jstk.arch.Tokenization;
+import de.fau.cs.jstk.arch.Tokenizer;
+import de.fau.cs.jstk.arch.TreeNode;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
 
@@ -38,10 +40,15 @@ import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
  * 
  * @author sikoried
  */
-public class FixedSequences extends LanguageModel {
-
+public class FixedSequences implements LanguageModel {
+	/** Tokenizer to get the token sequences */
+	private Tokenizer tok;
+	
 	/** TokenHierarchy to construct the nodes from */
-	private TokenTree tt = null;
+	private TokenHierarchy th;
+	
+	/** list of used silence tokens (used to match hypotheses to allowed sequences) */
+	private HashSet<Tokenization> silences;
 	
 	/** list of root nodes for the possible sequences */
 	private List<TreeNode> roots = new LinkedList<TreeNode>();
@@ -49,15 +56,18 @@ public class FixedSequences extends LanguageModel {
 	/** list of Token sequences for the allowed Tokenization sequences */
 	private List<String []> seqs = new LinkedList<String []>();
 	
-	/** list of used silence tokens (used to match hypotheses to allowed sequences) */
-	private List<String []> sils = new LinkedList<String []>();
+	private int treeId = 0;
 	
 	/**
 	 * Generate a new FixedSequences model based on the given TokenHierarchy
 	 * @param th
 	 */
-	public FixedSequences(TokenTree tt) {
-		this.tt = tt;
+	public FixedSequences(Tokenizer tok, TokenHierarchy th, String [] silences) 
+		throws OutOfVocabularyException {
+		this.tok = tok;
+		this.silences = new HashSet<Tokenization>();
+		for (String s : silences)
+			this.silences.add(tok.getWordTokenization(s));
 	}
 	
 	/**
@@ -65,77 +75,57 @@ public class FixedSequences extends LanguageModel {
 	 * @param transcription sequence of words separated by whitespace
 	 * @param silences whitespace separated list of silence symbols
 	 */
-	public void addSequence(String transcription, String silences) 
+	public void addSequence(String transcription) 
 		throws OutOfVocabularyException {
-		
-		// tokenize the silences and retrieve transcription
-		String [] sils = silences.trim().split("\\s+");
-		
 		// remove silence words, if present! otherwise they would be required
-		for (String s : sils)
-			transcription = transcription.replaceAll("\\b" + s + "\\b", "");
+		for (Tokenization s : silences)
+			transcription = transcription.replaceAll("\\b" + s.word + "\\b", "");
 		
 		// tokenize the transcription
 		String [] tok = transcription.trim().split("\\s+");
 		
 		// remember token sequence
 		seqs.add(tok);
-		
-		// remember possible silences
-		this.sils.add(sils);
-		
-		// initial silence tree
-		long treeid = 0;
-		TokenTree init = new TokenTree(tt.tokenHierarchy, tt.tokenizer, false);
-		init.setId(treeid++);
-		for (String s : sils) {
-			Tokenization t = tt.tokenizer.getWordTokenization(s);
-			init.addToTree(t, tt.tokenHierarchy.tokenizeWord(t.sequence));
-		}
 
 		// now build word trees and link correspondingly
-		TokenTree prev = init;
+		TokenTree prev = null, init = null;
 		for (int i = 0; i < tok.length; ++i) {
 			// build silence tree with optional silences
-			TokenTree st = new TokenTree(tt.tokenHierarchy, tt.tokenizer, false);
-			if (prev != init) {
-				st.setId(treeid++);
-				
-				for (String s : sils) {
-					Tokenization ts = tt.tokenizer.getWordTokenization(s);
-					st.addToTree(ts, tt.tokenHierarchy.tokenizeWord(ts.sequence));
-				}
-			}
+			TokenTree tree = new TokenTree(treeId++);
+			for (Tokenization s : silences)
+				tree.addToTree(s, th.tokenizeWord(s.sequence), 0.5 / silences.size());
 			
 			// build word tree
-			TokenTree wt = new TokenTree(tt.tokenHierarchy, tt.tokenizer, false);
-			wt.setId(treeid++);
-			Tokenization t = tt.tokenizer.getWordTokenization(tok[i]);
-			wt.addToTree(t, tt.tokenHierarchy.tokenizeWord(t.sequence));
+			Tokenization t = this.tok.getWordTokenization(tok[i]);
+			tree.addToTree(t, th.tokenizeWord(t.sequence), 0.5);
 			
-			// link the previous tree to the word and attach silence model
-			for (TreeNode n : prev.wordLeaves.values()) {
-				n.addLST(wt.root);
-				if (prev != init)
-					n.addLST(st.root);
-			}
+			// factorize
+			tree.factorLanguageModelWeights();
 			
-			for (TreeNode n : st.wordLeaves.values())
-				n.addLST(wt.root);
+			// now link the silences as a loop
+			for (TreeNode n : tree.leaves())
+				if (silences.contains(n.word))
+					n.setLst(tree.root);
 			
-			prev = wt;
+			// link the previous words to the new tree
+			if (prev != null)
+				for (TreeNode n : tree.leaves())
+					if (!silences.contains(n.word))
+						n.setLst(tree.root);
+			else
+				init = tree;
+			
+			prev = tree;
 		}
 		
 		// build trailing silence tree with optional silences
-		TokenTree trail = new TokenTree(tt.tokenHierarchy, tt.tokenizer, false);
-		trail.setId(treeid++);
-		for (String s : sils) {
-			Tokenization ts = tt.tokenizer.getWordTokenization(s);
-			trail.addToTree(ts, tt.tokenHierarchy.tokenizeWord(ts.sequence));
-		}
+		TokenTree trail = new TokenTree(treeId++);
+		for (Tokenization s : silences)
+			trail.addToTree(s, th.tokenizeWord(s.sequence), 1. / silences.size());
 		
-		for (TreeNode n : prev.wordLeaves.values())
-			n.addLST(trail.root);
+		for (TreeNode n : prev.leaves())
+			if (!silences.contains(n.word))
+				n.setLst(trail.root);
 		
 		// add the initial root to the sequence list
 		roots.add(init.root);
@@ -155,19 +145,12 @@ public class FixedSequences extends LanguageModel {
 			// will be the best due to the sorting
 			for (int i = 0; i < seqs.size(); ++i) {
 				String [] ref = seqs.get(i);
-				String [] sil = sils.get(i);
 				
 				// sanitize the candidate word sequence by removing the adequate silences
 				List<String> clean = new LinkedList<String>();
-				for (Hypothesis hi : cand) {
-					boolean si = false;
-					String w = hi.node.word.word;
-					for (String s : sil)
-						if (w.equals(s))
-							si = true;
-					if (!si)
-						clean.add(w);
-				}
+				for (Hypothesis hi : cand)
+					if (!silences.contains(hi.node.word))
+						clean.add(hi.node.word.word);
 								
 				if (clean.size() != ref.length)
 					continue;
@@ -188,13 +171,13 @@ public class FixedSequences extends LanguageModel {
 	
 	/**
 	 * Generate the fixed network for beam forced alignment.
-	 * @param tree (null; all info is already present)
+	 * @param tokenizer (null; all info is already present)
+	 * @param hierarchy (null; all info is already present)
 	 * @param sils (null; all info is already present)
 	 */
-	public TreeNode generateNetwork(TokenTree tree, HashMap<Tokenization, Double> sils) 
-		throws OutOfVocabularyException {
+	public TreeNode generateNetwork() {
 		
-		TreeNode root = new TreeNode(null, null);
+		TreeNode root = new TreeNode(treeId++);
 		
 		for (TreeNode r : roots) {
 			for (TreeNode c : r.children)

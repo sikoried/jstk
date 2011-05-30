@@ -28,8 +28,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 
-import de.fau.cs.jstk.arch.TokenTree;
-import de.fau.cs.jstk.arch.TokenTree.TreeNode;
+import de.fau.cs.jstk.arch.TokenHierarchy;
+import de.fau.cs.jstk.arch.TreeNode;
 import de.fau.cs.jstk.exceptions.AlignmentException;
 import de.fau.cs.jstk.stat.hmm.Alignment;
 import de.fau.cs.jstk.stat.hmm.MetaAlignment;
@@ -160,7 +160,7 @@ public class ViterbiBeamSearch {
 			Hypothesis h = nodeExpansions.remove(0);
 			
 			for (TreeNode succ : h.node.children) {
-				if (succ.isWordLeaf()) {
+				if (succ.isWordNode()) {
 					// generate the null-hypothesis with the word
 					// this is not an active hypothesis!!
 					// h.p -> h -> token [null] -> word [null] ---> expansion
@@ -249,7 +249,7 @@ public class ViterbiBeamSearch {
 			// if h is in final state, add potential children
 			if (h.finalStateActive()) {
 				for (TreeNode succ : h.node.children) {
-					if (succ.isWordLeaf()) {
+					if (succ.isWordNode()) {
 						Hypothesis help = new Hypothesis(h, h.node, 0.);
 						expanded.vadd(new Hypothesis(help, succ, lmwt));
 					} else
@@ -259,7 +259,7 @@ public class ViterbiBeamSearch {
 				// track back to the last proper hypothesis, but maintain the 
 				// viterbi score!
 				Hypothesis it = h;
-				while (it.p != null && !(it.nullhyp && it.node.isWordLeaf()))
+				while (it.p != null && !(it.nullhyp && it.node.isWordNode()))
 					it = it.p;
 				if (it.p != null) {
 					it.vs = h.vs;
@@ -549,7 +549,7 @@ public class ViterbiBeamSearch {
 			Hypothesis it = this;
 			while (it.p != null) {
 				if (it.nullhyp) {
-					if (it.node.isWordLeaf())
+					if (it.node.isWordNode())
 						trace.push(it.node.word.word);
 					else
 						trace.push(it.node.toString());
@@ -576,7 +576,7 @@ public class ViterbiBeamSearch {
 			Hypothesis it = this;
 			while (it.p != null) {
 				if (it.nullhyp) {
-					if (it.node.isWordLeaf())
+					if (it.node.isWordNode())
 						trace.push("[" + it.node.word.word + ", " + it.as + "]");
 					else
 						trace.push("(" + it.node.toString() + ", " + it.as + ")");
@@ -620,7 +620,7 @@ public class ViterbiBeamSearch {
 			while (it.p != null) {
 				if (it.nullhyp) {
 					trace1.push(it);
-					if (it.node.isWordLeaf()) {
+					if (it.node.isWordNode()) {
 						trace2.push(wordc);
 						wordc = 0;
 					} else {
@@ -642,7 +642,7 @@ public class ViterbiBeamSearch {
 			
 			while (trace1.size() > 0) {
 				Hypothesis h = trace1.pop();
-				if (h.node.isWordLeaf())
+				if (h.node.isWordNode())
 					if (trace2.size() > 0)
 						sb.append("[" + h.node.word.word + ", " + trace2.pop() + ", " + h.as + "] ");
 					else
@@ -664,7 +664,7 @@ public class ViterbiBeamSearch {
 		 * @param tt
 		 * @return
 		 */
-		public MetaAlignment toMetaAlignment(TokenTree tt) throws AlignmentException {
+		public MetaAlignment toMetaAlignment(TokenHierarchy th) throws AlignmentException {
 			// reverse the hypothesis
 			Stack<Hypothesis> trace = new Stack<Hypothesis>();
 		
@@ -715,7 +715,7 @@ public class ViterbiBeamSearch {
 				algs.add(a);
 			}
 			
-			MetaAlignment ma = new MetaAlignment(tt, algs);
+			MetaAlignment ma = new MetaAlignment(th, algs);
 			return ma;
 		}
 		
@@ -730,7 +730,7 @@ public class ViterbiBeamSearch {
 			
 			// follow trace, add word leaves
 			while (it.p != null) {
-				if (it.nullhyp && it.node.isWordLeaf())
+				if (it.nullhyp && it.node.isWordNode())
 					ws.add(0, it);
 				it = it.p;
 			}
@@ -748,7 +748,7 @@ public class ViterbiBeamSearch {
 			Hypothesis it = this;
 			
 			while (it.p != null) {
-				if (it.nullhyp && !it.node.isWordLeaf())
+				if (it.nullhyp && !it.node.isWordNode())
 					ts.add(0, it);
 				it = it.p;
 			}

@@ -77,7 +77,7 @@ public final class Tokenizer {
 	 */
 	public String [] tokenize(String word) 
 		throws OutOfVocabularyException {
-		int pos = Collections.binarySearch(tokenizations, new Tokenization(word, new String [0]));
+		int pos = Collections.binarySearch(tokenizations, new Tokenization(word));
 		
 		if (pos < 0)
 			throw new OutOfVocabularyException(word);

@@ -37,9 +37,9 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.arch.Configuration;
-import de.fau.cs.jstk.arch.TokenTree;
-import de.fau.cs.jstk.arch.TokenTree.TreeNode;
+import de.fau.cs.jstk.arch.TokenHierarchy;
 import de.fau.cs.jstk.arch.Tokenizer;
+import de.fau.cs.jstk.arch.TreeNode;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
 import de.fau.cs.jstk.exceptions.AlignmentException;
@@ -97,7 +97,7 @@ public class Aligner {
 	 */
 	private static class Worker implements Runnable {
 		Tokenizer tok;
-		TokenTree tt;
+		TokenHierarchy th;
 		Distributor distributor;
 		CountDownLatch latch;
 		
@@ -115,13 +115,9 @@ public class Aligner {
 		 * @param forcedInsteadOfLinear Use forced alignment instead of linear alignments
 		 * @param latch count-down latch for thread synchronization
 		 */
-		Worker(Configuration conf, Distributor d, boolean forcedInsteadOfLinear, CountDownLatch latch) {
-			this.tok = conf.tok;
-			
-			if (!conf.hasTokenTree())
-				conf.buildTokenTree();
-			
-			this.tt = conf.tt;
+		Worker(Tokenizer tok, TokenHierarchy th, Distributor d, boolean forcedInsteadOfLinear, CountDownLatch latch) {
+			this.tok = tok;
+			this.th = th;
 			this.distributor = d;
 			this.forced = forcedInsteadOfLinear;
 			this.latch = latch;
@@ -132,7 +128,7 @@ public class Aligner {
 				Turn t;
 				while ((t = distributor.next()) != null) {
 					FrameInputStream fs = new FrameInputStream(new File(t.canonicalInputName()));
-					MetaAlignment ma = new MetaAlignment(fs, tok.getSentenceTokenization(t.transcription), tt, forced);
+					MetaAlignment ma = new MetaAlignment(fs, tok.getSentenceTokenization(t.transcription), th, forced);
 					BufferedWriter bw = new BufferedWriter(new FileWriter(t.canonicalOutputName()));
 					ma.write(bw);
 					
@@ -164,7 +160,7 @@ public class Aligner {
 	 */
 	private static class BWorker implements Runnable {
 		Tokenizer tok;
-		TokenTree tt;
+		TokenHierarchy th;
 		Distributor distributor;
 		CountDownLatch latch;
 		
@@ -184,13 +180,9 @@ public class Aligner {
 		 * @param bs size of the beam
 		 * @param latch count-down latch for thread synchronization
 		 */
-		BWorker(Configuration conf, Distributor d, int bs, double bw, String silences, CountDownLatch latch) {
-			this.tok = conf.tok;
-			
-			if (!conf.hasTokenTree())
-				conf.buildTokenTree();
-			
-			this.tt = conf.tt;
+		BWorker(Tokenizer tok, TokenHierarchy th, Distributor d, int bs, double bw, String silences, CountDownLatch latch) {
+			this.tok = tok;
+			this.th = th;
 			this.distributor = d;
 			this.bs = bs;
 			this.bw = bw;
@@ -204,9 +196,9 @@ public class Aligner {
 				while ((t = distributor.next()) != null) {
 					
 					// generate decoding tree
-					FixedSequences forced = new FixedSequences(tt);
-					forced.addSequence(t.transcription, silences);
-					TreeNode root = forced.generateNetwork(null, null);
+					FixedSequences forced = new FixedSequences(tok, th, silences.split("\\s++"));
+					forced.addSequence(t.transcription);
+					TreeNode root = forced.generateNetwork();
 					
 					// prepare decoder
 					ViterbiBeamSearch dec = new ViterbiBeamSearch(root, 0., 1.);
@@ -237,9 +229,9 @@ public class Aligner {
 						// fall back to real viterbi
 						logger.info("Aligner.BWorker.run(): " + t.fileName + " no best hypothesis, falling back to regular Viterbi!");
 						fs = new FrameInputStream(new File(t.canonicalInputName()));
-						ma = new MetaAlignment(fs, tok.getSentenceTokenization(t.transcription), tt, true);
+						ma = new MetaAlignment(fs, tok.getSentenceTokenization(t.transcription), th, true);
 					} else
-						ma = h0.toMetaAlignment(tt);
+						ma = h0.toMetaAlignment(th);
 					 
 					BufferedWriter bw = new BufferedWriter(new FileWriter(t.canonicalOutputName()));
 					ma.write(bw);
@@ -368,9 +360,9 @@ public class Aligner {
 			conf.loadCodebook(new File(fCodebook));
 			
 			if (beam)
-				threads[j] = new BWorker(conf, dist, bs, bw, sils, latch);
+				threads[j] = new BWorker(conf.tok, conf.th, dist, bs, bw, sils, latch);
 			else
-				threads[j] = new Worker(conf, dist, forcedInsteadOfLinear, latch);
+				threads[j] = new Worker(conf.tok, conf.th, dist, forcedInsteadOfLinear, latch);
 		}
 		
 		// start the execution

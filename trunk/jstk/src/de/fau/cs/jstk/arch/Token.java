@@ -21,10 +21,6 @@
 */
 package de.fau.cs.jstk.arch;
 
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.PrintStream;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,7 +37,8 @@ import de.fau.cs.jstk.util.Pair;
  * @author sikoried
  */
 public final class Token {
-
+	private static final String [] emptycontext = new String [0];
+	
 	/** left context, including boundaries */
 	String [] left;
 	
@@ -87,41 +84,10 @@ public final class Token {
 	 * @param token
 	 */
 	public Token(String token) {
-		this.left = new String [0];
-		this.right = new String [0];
+		this.left = emptycontext;
+		this.right = emptycontext;
 		this.token = token;
 		updateHash();
-	}
-	
-	/** 
-	 * Generate a Token and initialize from the given ObjectInputStream
-	 * @param ois
-	 * @throws IOException
-	 */
-	public Token(ObjectInputStream ois) throws ClassNotFoundException, IOException {
-		if (!((String) ois.readObject()).equals("arch.Token"))
-			throw new IOException("Token.Token(): Stream does not point to arch.Token");
-		
-		token = (String) ois.readObject();
-		left = (String []) ois.readObject();
-		right = (String []) ois.readObject();
-		hmmId = (Integer) ois.readObject();
-		
-		updateHash();
-	}
-	
-	/**
-	 * Write the Token (and all involved data) to the given ObjectOutputStream.
-	 * @param oos
-	 * @throws IOException
-	 */
-	public void write(ObjectOutputStream oos) throws IOException {
-		oos.writeObject("arch.Token");
-		
-		oos.writeObject(token);
-		oos.writeObject(left);
-		oos.writeObject(right);
-		oos.writeObject(hmmId);
 	}
 	
 	public String uniqueIdentifier() {

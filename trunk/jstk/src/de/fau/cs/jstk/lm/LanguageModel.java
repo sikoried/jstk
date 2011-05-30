@@ -21,21 +21,17 @@
 */
 package de.fau.cs.jstk.lm;
 
-import java.util.HashMap;
-
-import de.fau.cs.jstk.arch.TokenTree;
-import de.fau.cs.jstk.arch.TokenTree.TreeNode;
-import de.fau.cs.jstk.arch.Tokenization;
-import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
-
+import de.fau.cs.jstk.arch.TreeNode;
 
 /**
- * The abstract LanguageModel enforces the generateNetwork function and provides
- * methods to reduce the network size.
- * 
+ * Up to now, the LanguageModel interface enforces only the generateNetwork 
+ * function. This is intended for small sized vocabularies that can explicitly 
+ * be modeled as a graph. For larger vocabularies or more complex grammars, 
+ * refer to the WFST packages.
+ *  
  * @author sikoried
  */
-public abstract class LanguageModel {
+public interface LanguageModel {
 	/**
 	 * Generate the LST network from the given TokenTrees and build silence
 	 * models as requested
@@ -43,15 +39,5 @@ public abstract class LanguageModel {
 	 * @param sil list of Tokenizations considered silence
 	 * @return Root node of the LST network
 	 */
-	public abstract TreeNode generateNetwork(TokenTree tree, HashMap<Tokenization, Double> sils) 
-		throws OutOfVocabularyException;
-	
-	/**
-	 * Reduce the given network by removing isomorphic subtrees 
-	 * @param root
-	 * @return
-	 */
-	public TreeNode reduceNetwork(TreeNode root) {
-		return null;
-	}
+	public TreeNode generateNetwork();
 }

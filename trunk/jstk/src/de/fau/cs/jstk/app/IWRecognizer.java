@@ -110,9 +110,6 @@ public class IWRecognizer {
 		 */
 		Worker(Configuration config, Distributor d, CountDownLatch latch, String sil, int n) {
 			this.conf = config;
-			if (!conf.hasTokenTree())
-				conf.buildTokenTree();
-			
 			this.distributor = d;
 			this.latch = latch;
 			this.sil = sil;
@@ -131,7 +128,7 @@ public class IWRecognizer {
 					List<Pair<Double, String>> hyp = new LinkedList<Pair<Double, String>>();
 					for (String w : cand) {
 						FrameInputStream fs = new FrameInputStream(new File(distributor.dir + System.getProperty("file.separator") + f.a));
-						MetaAlignment ma = new MetaAlignment(fs, conf.tok.getSentenceTokenization(sil + " " + w + " " + sil), conf.tt, true);
+						MetaAlignment ma = new MetaAlignment(fs, conf.tok.getSentenceTokenization(sil + " " + w + " " + sil), conf.th, true);
 						hyp.add(new Pair<Double, String>(ma.score, w));
 						fs.close();
 					}
