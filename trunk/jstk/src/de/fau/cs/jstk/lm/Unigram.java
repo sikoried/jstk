@@ -54,8 +54,8 @@ public class Unigram implements LanguageModel {
 	
 	private Tokenizer tok;
 	private TokenHierarchy th;
-	private HashMap<Tokenization, Double> sils;
-	private HashMap<Tokenization, Double> probs;
+	private HashMap<Tokenization, Double> sils = new HashMap<Tokenization, Double>();
+	private HashMap<Tokenization, Double> probs = new HashMap<Tokenization, Double>();
 	
 	/**
 	 * Generate a new Zerogram for all words in the given Tokenizer. The words
