@@ -93,14 +93,14 @@ public class FixedSequences implements LanguageModel {
 			// build silence tree with optional silences
 			TokenTree tree = new TokenTree(treeId++);
 			for (Tokenization s : silences)
-				tree.addToTree(s, th.tokenizeWord(s.sequence), 0.5 / silences.size());
+				tree.addToTree(s, th.tokenizeWord(s.sequence), 0.5f / silences.size());
 			
 			// build word tree
 			Tokenization t = this.tok.getWordTokenization(tok[i]);
-			tree.addToTree(t, th.tokenizeWord(t.sequence), 0.5);
+			tree.addToTree(t, th.tokenizeWord(t.sequence), 0.5f);
 			
 			// factorize
-			tree.factorLanguageModelWeights();
+			tree.factor();
 			
 			// now link the silences as a loop
 			for (TreeNode n : tree.leaves())
@@ -121,7 +121,7 @@ public class FixedSequences implements LanguageModel {
 		// build trailing silence tree with optional silences
 		TokenTree trail = new TokenTree(treeId++);
 		for (Tokenization s : silences)
-			trail.addToTree(s, th.tokenizeWord(s.sequence), 1. / silences.size());
+			trail.addToTree(s, th.tokenizeWord(s.sequence), 1.f / silences.size());
 		
 		for (TreeNode n : prev.leaves())
 			if (!silences.contains(n.word))

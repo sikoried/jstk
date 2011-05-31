@@ -31,13 +31,10 @@ package de.fau.cs.jstk.arch;
  */
 public final class TreeNode {
 	/** ID of the associated Tree (only set for root nodes) */
-	public long treeId = -Integer.MAX_VALUE;
-	
-	/** distributed language model weight */
-	public double p = 0.;
+	public int treeId = -1;
 	
 	/** factored language model weight (logarithmic) */
-	public double f = 0.;
+	public float f = 0.f;
 			
 	/** Associated token */
 	public Token token = null;
@@ -69,17 +66,17 @@ public final class TreeNode {
 	 * @param word
 	 * @param lmprob
 	 */
-	public TreeNode(TreeNode parent, Tokenization word, double lmprob) {
+	public TreeNode(TreeNode parent, Tokenization word, float lmprob) {
 		this(null, parent);
 		this.word = word;
-		this.p = lmprob;
+		this.f = lmprob;
 	}
 	
 	/**
 	 * Generate a new root TreeNode and assign the respective tree id
 	 * @param id ID of the respective tree
 	 */
-	public TreeNode(long id) {
+	public TreeNode(int id) {
 		this(null, null);
 		treeId = id;
 	}

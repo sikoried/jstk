@@ -108,7 +108,7 @@ public class Decoder {
 		
 		double wip = 0.01;
 		double lmwt = 10.;
-		double silprob = 0.05;
+		float silprob = 0.05f;
 		Mode mode = Mode.WORD;
 		int n = 1;
 		int bs = 500;
@@ -124,7 +124,7 @@ public class Decoder {
 		conf.loadCodebook(new File(args[z++]));
 		
 		// load language model
-		HashMap<Tokenization, Double> sil = new HashMap<Tokenization, Double>();
+		HashMap<Tokenization, Float> sil = new HashMap<Tokenization, Float>();
 		sil.put(new Tokenization("sil", new String [0]), silprob);
 		Unigram lm = new Unigram(conf.tok, conf.th, sil);
 		lm.loadSrilm(new File(args[z++]));
@@ -171,7 +171,7 @@ public class Decoder {
 			else if (args[z].equals("-o"))
 				outf = args[++z];
 			else if (args[z].equals("-s"))
-				silprob = Double.parseDouble(args[++z]);
+				silprob = Float.parseFloat(args[++z]);
 			else
 				throw new Exception("unknown argument " + args[z]);
 		}

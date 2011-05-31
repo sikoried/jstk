@@ -47,15 +47,15 @@ import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
  */
 public class Unigram implements LanguageModel {
 	/** The default language model probability for OOV words */
-	public static final double DEFAULT_OOV = 0.001;
+	public static final float DEFAULT_OOV = 0.001f;
 	
 	/** out-of-vocabulary probability */
-	private double oovProb = DEFAULT_OOV;
+	private float oovProb = DEFAULT_OOV;
 	
 	private Tokenizer tok;
 	private TokenHierarchy th;
-	private HashMap<Tokenization, Double> sils = new HashMap<Tokenization, Double>();
-	private HashMap<Tokenization, Double> probs = new HashMap<Tokenization, Double>();
+	private HashMap<Tokenization, Float> sils = new HashMap<Tokenization, Float>();
+	private HashMap<Tokenization, Float> probs = new HashMap<Tokenization, Float>();
 	
 	/**
 	 * Generate a new Zerogram for all words in the given Tokenizer. The words
@@ -65,7 +65,7 @@ public class Unigram implements LanguageModel {
 	 * @param hierarchy
 	 * @param sils
 	 */
-	public Unigram(Tokenizer tokenizer, TokenHierarchy hierarchy, HashMap<Tokenization, Double> sils) {
+	public Unigram(Tokenizer tokenizer, TokenHierarchy hierarchy, HashMap<Tokenization, Float> sils) {
 		this.tok = tokenizer;
 		this.th = hierarchy;
 		this.sils = sils;
@@ -76,11 +76,11 @@ public class Unigram implements LanguageModel {
 	 * @param t
 	 * @param p
 	 */
-	public void setProb(Tokenization t, double p) {
+	public void setProb(Tokenization t, float p) {
 		probs.put(t, p);
 	}
 	
-	public void setOovProb(double p) {
+	public void setOovProb(float p) {
 		oovProb = p;
 	}
 	
@@ -116,27 +116,27 @@ public class Unigram implements LanguageModel {
 				continue;
 			
 			// set the prob, mind the exponentiation!
-			probs.put(tok.getWordTokenization(sp[1]), Math.pow(10, Double.parseDouble(sp[0])));
+			probs.put(tok.getWordTokenization(sp[1]), (float) Math.pow(10, Float.parseFloat(sp[0])));
 		}
 	}
 	
 	public TreeNode generateNetwork() {
 		// re-distribute the probability masses to compensate for the silences
-		double pmass = 0.;
-		for (Map.Entry<Tokenization, Double> e : sils.entrySet()) 
+		float pmass = 0.f;
+		for (Map.Entry<Tokenization, Float> e : sils.entrySet()) 
 			pmass += e.getValue();
 		
-		double umass = 0.;
+		float umass = 0.f;
 		for (Tokenization t : tok.tokenizations) {
 			if (sils.containsKey(t))
 				continue;
-			Double p = probs.get(t);
+			Float p = probs.get(t);
 			if (p == null)
 				probs.put(t, p = oovProb);
 			umass += p;
 		}
 		
-		double skew = (1. - pmass) / umass;
+		float skew = (1.f - pmass) / umass;
 		for (Tokenization t : probs.keySet())
 			probs.put(t, probs.get(t) * skew);
 		
@@ -150,7 +150,7 @@ public class Unigram implements LanguageModel {
 		}
 		
 		// factor
-		tree.factorLanguageModelWeights();
+		tree.factor();
 		
 		// loop
 		for (TreeNode n : tree.leaves())
