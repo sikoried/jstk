@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +43,7 @@ import de.fau.cs.jstk.util.Pair;
  * @author sikoried
  */
 public class TokenTree {
-	public long id = 0;
+	public int id = 0;
 	
 	/** The root of the tree to reach all words */
 	public TreeNode root;
@@ -51,7 +52,7 @@ public class TokenTree {
 	 * Generate a new TokenTree for the given root node.
 	 * @param id (unique) ID of the new tree
 	 */
-	public TokenTree(long id) {
+	public TokenTree(int id) {
 		this(id, new TreeNode(null, null));
 	}
 	
@@ -60,7 +61,7 @@ public class TokenTree {
 	 * @param id (unique) ID of the new tree
 	 * @param root null for an empty tree
 	 */
-	public TokenTree(long id, TreeNode root) {
+	public TokenTree(int id, TreeNode root) {
 		this.root = root;
 		setId(id);
 	}
@@ -71,7 +72,7 @@ public class TokenTree {
 	 * @param sequence Token sequence to represent the Tokenisation
 	 * @param prob language model probability
 	 */
-	public void addToTree(Tokenization word, Token [] sequence, double prob) {
+	public void addToTree(Tokenization word, Token [] sequence, float prob) {
 		TreeNode target = root, inspect = root;
 		for (Token tok : sequence) {
 			// check if there is a matching token on this level
@@ -100,7 +101,7 @@ public class TokenTree {
 	 * Set the tree id and upate all nodes
 	 * @param id
 	 */
-	public void setId(long id) {
+	public void setId(int id) {
 		this.id = id;
 		if (root != null)
 			root.treeId = id;
@@ -248,11 +249,39 @@ public class TokenTree {
 	}
 
 	/**
+	 * Build up a map linking Tokenizations to the respective word leaf.
+	 * @return
+	 */
+	public HashMap<Tokenization, TreeNode> generateLeafMap() {
+		HashMap<Tokenization, TreeNode> m = new HashMap<Tokenization, TreeNode>();
+		
+		for (TreeNode l : leaves())
+			m.put(l.word, l);
+		
+		return m;
+	}
+	
+	/**
+	 * Generate a trace of Tokens that lead to the given leaf
+	 * @param leaf
+	 * @return
+	 */
+	public static List<Token> trace(TreeNode leaf) {
+		LinkedList<Token> li = new LinkedList<Token>();
+		
+		TreeNode it = leaf.parent;
+		while (!it.isRootNode())
+			li.addFirst(it.token);
+		
+		return li;
+	}
+	
+	/**
 	 * Compute the distributed and factored language model weights for this 
 	 * lexical tree using the given word probability list. Make sure this 
 	 * tree is not part of a network, as recursiveness is NOT checked.
 	 */
-	public void factorLanguageModelWeights() {
+	public void factor() {
 		List<TreeNode> dfs = dfs();
 		
 		// distribute probs
@@ -260,9 +289,9 @@ public class TokenTree {
 			if (n.isWordNode())
 				continue;
 			
-			n.p = 0.;
+			n.f = 0.f;
 			for (TreeNode c : n.children)
-				n.p += c.p;
+				n.f += c.f;
 		}
 		
 		// factorize
@@ -271,15 +300,14 @@ public class TokenTree {
 			if (n.isWordNode())
 				continue;
 			
-			// c.f = Math.log(c.p - n.p)			
-			double logsum = Math.log(n.p);			
+			// c.f = Math.log(c.f - n.f)			
+			float logsum = (float) Math.log(n.f);			
 			for (TreeNode c : n.children)
-				c.f = Math.log(c.p) - logsum;
+				c.f = (float) Math.log(c.f) - logsum;
 		}
 		
 		// for consistency
-		root.p = 1.;
-		root.f = 0.;
+		root.f = 0.f;
 	}
 	
 	/** 
@@ -312,7 +340,7 @@ public class TokenTree {
 				sb.append(indent);
 			
 			// print TreeNode
-			sb.append(p.a + " P=" + fmt.format(p.a.p) + " F=" + fmt.format(p.a.f));
+			sb.append(p.a + " F=" + fmt.format(p.a.f));
 			if (p.a.isWordNode())
 				for (TreeNode c : p.a.children) {
 					sb.append(" LST=" + c);
@@ -335,8 +363,6 @@ public class TokenTree {
 		"usage: arch.TokenTree config [options]\n" +
 		"    Load configuration and build up TokenTree\n" +
 		"\n" +
-		"  --print-all\n" +
-		"    Print the complete tree\n" +
 		"  --list-words\n" +
 		"    List all the words and their transcriptions (in alphabetical order)";
 	
@@ -350,16 +376,13 @@ public class TokenTree {
 		
 		Configuration conf = new Configuration(new File(args[0]));
 		
-		boolean printAll = false;
 		boolean listWords = false;
 
 		LinkedList<String> findWord = new LinkedList<String>();
 		LinkedList<String> compSent = new LinkedList<String>();
 		
 		for (int i = 1; i < args.length; ++i) {
-			if (args[i].equals("--print-all"))
-				printAll = true;
-			else if (args[i].equals("--list-words"))
+			if (args[i].equals("--list-words"))
 				listWords = true;
 			else if (args[i].equals("--find")) {
 				String [] words = args[++i].split(",");
@@ -373,12 +396,6 @@ public class TokenTree {
 		
 		if (!conf.hasAlphabet() || !conf.hasTokenizer() || !conf.hasTokenHierarchy())
 			throw new Exception("Config does not provide Alphabet+Tokenizer+Hierarchy");
-		
-		conf.buildTokenTree();
-		
-		if (printAll) {
-			System.out.println(TokenTree.traverseNetwork(conf.tt.root, "   "));
-		}
 		
 		if (listWords) {
 			List<TreeNode> leafs = conf.tt.leaves();

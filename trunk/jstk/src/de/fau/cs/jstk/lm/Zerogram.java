@@ -42,7 +42,7 @@ import de.fau.cs.jstk.arch.TreeNode;
 public class Zerogram implements LanguageModel {
 	private Tokenizer tok;
 	private TokenHierarchy th;
-	private HashMap<Tokenization, Double> sils;
+	private HashMap<Tokenization, Float> sils;
 	
 	/**
 	 * Generate a new Zerogram for all words in the given Tokenizer. The words
@@ -52,15 +52,15 @@ public class Zerogram implements LanguageModel {
 	 * @param hierarchy
 	 * @param sils
 	 */
-	public Zerogram(Tokenizer tokenizer, TokenHierarchy hierarchy, HashMap<Tokenization, Double> sils) {
+	public Zerogram(Tokenizer tokenizer, TokenHierarchy hierarchy, HashMap<Tokenization, Float> sils) {
 		this.tok = tokenizer;
 		this.th = hierarchy;
 		this.sils = sils;
 	}
 	
 	public TreeNode generateNetwork() {
-		double unif = 1.;
-		for (Map.Entry<Tokenization, Double> e : sils.entrySet()) 
+		float unif = 1.f;
+		for (Map.Entry<Tokenization, Float> e : sils.entrySet()) 
 			unif -= e.getValue();
 		
 		unif /= (tok.tokenizations.size() - sils.size());
@@ -75,7 +75,7 @@ public class Zerogram implements LanguageModel {
 		}
 		
 		// factor language model weights
-		tree.factorLanguageModelWeights();
+		tree.factor();
 		
 		// loop
 		for (TreeNode n : tree.leaves())

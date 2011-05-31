@@ -52,22 +52,22 @@ public class Bigram implements LanguageModel {
 	private static Logger logger = Logger.getLogger(Bigram.class);
 			
 	/** The default language model probability for OOV words */
-	public static final double DEFAULT_OOV = 0.001;
+	public static final float DEFAULT_OOV = 0.001f;
 	
 	/** out-of-vocabulary probability */
-	private double oovProb = DEFAULT_OOV;
+	private float oovProb = DEFAULT_OOV;
 	
 	private Tokenizer tok;
 	private TokenHierarchy th;
-	private HashMap<Tokenization, Double> sils;
-	private HashMap<N1gram, Double> p1 = new HashMap<N1gram, Double>();
-	private HashMap<N2gram, Double> p2 = new HashMap<N2gram, Double>();
+	private HashMap<Tokenization, Float> sils;
+	private HashMap<N1gram, Float> p1 = new HashMap<N1gram, Float>();
+	private HashMap<N2gram, Float> p2 = new HashMap<N2gram, Float>();
 	
 	private static class N1gram {
 		Tokenization t;
-		double p;
-		double backoff;
-		N1gram(Tokenization t, double p, double backoff) {
+		float p;
+		float backoff;
+		N1gram(Tokenization t, float p, float backoff) {
 			this.t = t;
 			this.p = p;
 			this.backoff = backoff;
@@ -76,22 +76,18 @@ public class Bigram implements LanguageModel {
 			if (o instanceof N1gram) 
 				return t.equals(((N1gram) o).t);
 			else
-				return false;	
+				return false;
 		}
 	}
 	
 	private static class N2gram {
 		Tokenization ta, tb;
-		double p;
-		
-		// up to now, we have no application for this one
-		@SuppressWarnings("unused")
-		double backoff;
-		N2gram(Tokenization ta, Tokenization tb, double p, double backoff) {
+		float p;
+
+		N2gram(Tokenization ta, Tokenization tb, float p) {
 			this.ta = ta;
 			this.tb = tb;
 			this.p = p;
-			this.backoff = backoff;
 		}
 		public boolean equals(Object o ) {
 			if (o instanceof N2gram) 
@@ -109,7 +105,7 @@ public class Bigram implements LanguageModel {
 	 * @param hierarchy
 	 * @param sils
 	 */
-	public Bigram(Tokenizer tokenizer, TokenHierarchy hierarchy, HashMap<Tokenization, Double> sils) {
+	public Bigram(Tokenizer tokenizer, TokenHierarchy hierarchy, HashMap<Tokenization, Float> sils) {
 		this.tok = tokenizer;
 		this.th = hierarchy;
 		this.sils = sils;
@@ -145,8 +141,8 @@ public class Bigram implements LanguageModel {
 			// set the prob, mind the exponentiation!
 			N1gram ng = new N1gram(
 					tok.getWordTokenization(sp[1]), 
-					Math.pow(10, Double.parseDouble(sp[0])), 
-					sp.length > 2 ? Math.pow(10, Double.parseDouble(sp[2])) : 0.);
+					(float) Math.pow(10, Float.parseFloat(sp[0])), 
+					sp.length > 2 ? (float) Math.pow(10, Float.parseFloat(sp[2])) : 0.f);
 			
 			p1.put(ng, ng.p);
 		}
@@ -174,8 +170,7 @@ public class Bigram implements LanguageModel {
 			N2gram ng = new N2gram(
 					tok.getWordTokenization(sp[1]), 
 					tok.getWordTokenization(sp[2]),
-					Math.pow(10, Double.parseDouble(sp[0])), 
-					sp.length > 3 ? Math.pow(10, Double.parseDouble(sp[3])) : 0.);
+					(float) Math.pow(10, Float.parseFloat(sp[0])));
 			
 			p2.put(ng, ng.p);
 		}
@@ -191,19 +186,19 @@ public class Bigram implements LanguageModel {
 		TokenTree unigram = new TokenTree(treeId++);
 		
 		// add silences
-		for (Map.Entry<Tokenization, Double> e : sils.entrySet())
+		for (Map.Entry<Tokenization, Float> e : sils.entrySet())
 			unigram.addToTree(e.getKey(), th.tokenizeWord(e.getKey().sequence), e.getValue());
 		
 		// unigrams
 		for (Tokenization t : tok.tokenizations) {
-			Double p = p1.get(new N1gram(t, 0, 0));
+			Float p = p1.get(new N1gram(t, 0f, 0f));
 			if (p == null)
 				p = oovProb;
 			
 			unigram.addToTree(t, th.tokenizeWord(t.sequence), p);
 		}
 		
-		unigram.factorLanguageModelWeights();
+		unigram.factor();
 		
 		// -%<------------------------------------------------------------------
 		// actual network generation 
@@ -230,18 +225,18 @@ public class Bigram implements LanguageModel {
 			// build tree with bi-gram weights
 			TokenTree tree = lut.get(t.word);
 			for (Tokenization right : tok.tokenizations) {
-				double prob;
+				float prob;
 				if (sils.containsKey(right)) {
 					// fixed silence prob
 					prob = sils.get(right);
 				} else {
 						// get counted or back-off bi-gram probability
-						N2gram bigram = new N2gram(t, right, 0, 0);
+						N2gram bigram = new N2gram(t, right, 0f);
 						
-						Double wt = p2.get(bigram);
+						Float wt = p2.get(bigram);
 						if (wt == null) {
-							N1gram n1 = new N1gram(t, 0, 0);
-							N1gram n2 = new N1gram(right, 0, 0);
+							N1gram n1 = new N1gram(t, 0f, 0f);
+							N1gram n2 = new N1gram(right, 0f, 0f);
 						
 							// locate the "real" N1gram
 							boolean f1 = false;
@@ -258,8 +253,8 @@ public class Bigram implements LanguageModel {
 									break;
 							}
 							
-							double n1bow = (n1.p == 0. ? oovProb : n1.backoff);
-							double b2prob = (n2.p == 0. ? oovProb : n2.p);
+							float n1bow = (n1.p == 0. ? oovProb : n1.backoff);
+							float b2prob = (n2.p == 0. ? oovProb : n2.p);
 						
 							prob = n1bow * b2prob;
 						} else
@@ -271,7 +266,7 @@ public class Bigram implements LanguageModel {
 			}
 			
 			// factor
-			tree.factorLanguageModelWeights();
+			tree.factor();
 			
 			// link LSTs
 			for (TreeNode n : tree.leaves()) {
