@@ -22,11 +22,16 @@ package de.fau.cs.jstk.vc;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.event.*;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.ListIterator;
+import java.util.Vector;
 
-import javax.swing.*;
+import javax.swing.JComponent;
 
 import de.fau.cs.jstk.vc.interfaces.MouseMotionVisualizationListener;
 

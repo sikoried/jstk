@@ -22,7 +22,9 @@
 package de.fau.cs.jstk.sampled;
 
 import java.io.IOException;
-import de.fau.cs.jstk.framed.*;
+
+import de.fau.cs.jstk.framed.TriangularWindow;
+import de.fau.cs.jstk.framed.Window;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 public class BandPassFilter implements AudioSource {

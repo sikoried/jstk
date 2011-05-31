@@ -20,7 +20,9 @@
 */
 package de.fau.cs.jstk.vc;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 import de.fau.cs.jstk.io.FrameSource;
 

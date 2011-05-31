@@ -21,8 +21,10 @@
 */
 package de.fau.cs.jstk.agmt;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 /**
  * Compute the multi-rater Kappa according to Fleiss. In general, it puts the

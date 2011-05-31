@@ -20,11 +20,27 @@
 */
 package de.fau.cs.jstk.app.transcriber;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
-import javax.swing.*;
-import javax.swing.text.*;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextPane;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 
 public class AboutDialog extends JDialog implements ActionListener {
 

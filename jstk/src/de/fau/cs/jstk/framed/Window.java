@@ -26,7 +26,8 @@ import java.io.IOException;
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
-import de.fau.cs.jstk.sampled.*;
+import de.fau.cs.jstk.sampled.AudioSource;
+import de.fau.cs.jstk.sampled.RawAudioFormat;
 
 public abstract class Window implements FrameSource {
 	AudioSource source;

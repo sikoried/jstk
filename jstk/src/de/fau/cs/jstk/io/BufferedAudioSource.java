@@ -19,14 +19,13 @@
  */
 package de.fau.cs.jstk.io;
 
-import de.fau.cs.jstk.sampled.*;
-import de.fau.cs.jstk.vc.interfaces.AudioBufferListener;
-import de.fau.cs.jstk.vc.interfaces.SignalSectionSelectedListener;
-import de.fau.cs.jstk.vc.interfaces.VisualizationListener;
-
 import java.io.IOException;
 import java.util.ListIterator;
 import java.util.Vector;
+
+import de.fau.cs.jstk.sampled.AudioCapture;
+import de.fau.cs.jstk.sampled.AudioSource;
+import de.fau.cs.jstk.vc.interfaces.AudioBufferListener;
 
 /**
  * A Buffer for the complete audio data.
@@ -109,7 +108,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 		audioBufferListeners = new Vector<AudioBufferListener>();
 
 		Thread t = new Thread(this);
-		long start = System.currentTimeMillis();
+
 		t.start();
 
 		/*

@@ -20,11 +20,18 @@
 */
 package de.fau.cs.jstk.vc;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.awt.event.MouseEvent;
+import java.util.ListIterator;
+import java.util.Vector;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.JScrollBar;
 
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.vc.interfaces.AudioBufferListener;

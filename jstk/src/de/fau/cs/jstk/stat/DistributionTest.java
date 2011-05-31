@@ -21,7 +21,8 @@
 */
 package de.fau.cs.jstk.stat;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * A collection of statistical tests for normal distribution of data

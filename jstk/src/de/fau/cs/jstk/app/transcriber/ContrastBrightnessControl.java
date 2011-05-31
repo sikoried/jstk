@@ -21,8 +21,12 @@
 */
 package de.fau.cs.jstk.app.transcriber;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.util.Iterator;
 import java.util.Vector;
 

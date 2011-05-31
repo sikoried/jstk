@@ -21,8 +21,8 @@
 */
 package de.fau.cs.jstk.sampled;
 
-import java.util.ArrayList;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
 

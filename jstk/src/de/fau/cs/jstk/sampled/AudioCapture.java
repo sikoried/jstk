@@ -21,14 +21,23 @@
 */
 package de.fau.cs.jstk.sampled;
 
-import java.io.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.sound.sampled.*;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.DataLine;
 import javax.sound.sampled.Line.Info;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.Mixer;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
 
 
 

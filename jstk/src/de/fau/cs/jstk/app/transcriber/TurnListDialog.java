@@ -20,13 +20,28 @@
 */
 package de.fau.cs.jstk.app.transcriber;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.Box;
+import javax.swing.DefaultListModel;
+import javax.swing.JDialog;
+import javax.swing.JList;
+import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 
 public class TurnListDialog extends JDialog implements DocumentListener, KeyListener {
 

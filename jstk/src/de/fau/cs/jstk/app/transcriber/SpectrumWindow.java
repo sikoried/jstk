@@ -20,8 +20,10 @@
 */
 package de.fau.cs.jstk.app.transcriber;
 
-import java.awt.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Container;
+
+import javax.swing.JOptionPane;
 
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.vc.VisualizerSpectrum;

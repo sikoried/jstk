@@ -24,6 +24,7 @@
 package de.fau.cs.jstk.segmented;
 
 import java.io.Serializable;
+
 import org.w3c.dom.Node;
 
 public class Boundary implements Serializable{

@@ -20,18 +20,60 @@
 */
 package de.fau.cs.jstk.app.transcriber;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
 
-import javax.sound.sampled.*;
-import javax.swing.*;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
+import javax.swing.JTextField;
 
-import de.fau.cs.jstk.io.*;
-import de.fau.cs.jstk.sampled.*;
-import de.fau.cs.jstk.vc.*;
-import de.fau.cs.jstk.vc.interfaces.*;
-import de.fau.cs.jstk.vc.transcription.*;
+import de.fau.cs.jstk.io.BufferedAudioSource;
+import de.fau.cs.jstk.io.BufferedFrameSource;
+import de.fau.cs.jstk.sampled.AudioFileReader;
+import de.fau.cs.jstk.sampled.AudioPlay;
+import de.fau.cs.jstk.sampled.BandPassFilter;
+import de.fau.cs.jstk.vc.F0Point;
+import de.fau.cs.jstk.vc.FileVisualizer;
+import de.fau.cs.jstk.vc.FrameFileReader;
+import de.fau.cs.jstk.vc.FrameFileWriter;
+import de.fau.cs.jstk.vc.VisualComponent;
+import de.fau.cs.jstk.vc.VisualizationInformer;
+import de.fau.cs.jstk.vc.VisualizerPitch;
+import de.fau.cs.jstk.vc.VisualizerPower;
+import de.fau.cs.jstk.vc.VisualizerSpectrogram;
+import de.fau.cs.jstk.vc.VisualizerSpeechSignal;
+import de.fau.cs.jstk.vc.interfaces.F0PointsSelectedListener;
+import de.fau.cs.jstk.vc.interfaces.PitchDefinedListener;
+import de.fau.cs.jstk.vc.interfaces.SampleSelectedListener;
+import de.fau.cs.jstk.vc.interfaces.WordHighlightedListener;
+import de.fau.cs.jstk.vc.transcription.Transcription;
+import de.fau.cs.jstk.vc.transcription.TranscriptionList;
+import de.fau.cs.jstk.vc.transcription.VisualizerTranscription;
 
 
 public class Transcriber extends JFrame implements KeyListener, ActionListener,
