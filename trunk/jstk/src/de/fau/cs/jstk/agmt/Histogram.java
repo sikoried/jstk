@@ -21,8 +21,11 @@
 */
 package de.fau.cs.jstk.agmt;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 
 /**
  * Use the Histogram class to compute histograms (binnings) of real valued data

@@ -25,7 +25,7 @@ package de.fau.cs.jstk.framed;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import de.fau.cs.jstk.exceptions.*;
+import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;

@@ -20,7 +20,7 @@
 */
 package de.fau.cs.jstk.vc.transcription;
 
-import java.io.*;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Vector;
 

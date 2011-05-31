@@ -33,13 +33,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import Jama.EigenvalueDecomposition;
+import Jama.Matrix;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.util.Pair;
-
-import Jama.EigenvalueDecomposition;
-import Jama.Matrix;
 
 /**
  * Compute and apply a principal components analysis (PCA). The input data needs

@@ -20,8 +20,15 @@
 */
 package de.fau.cs.jstk.app.pitchcorrector;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import de.fau.cs.jstk.app.transcriber.Preferences;
 

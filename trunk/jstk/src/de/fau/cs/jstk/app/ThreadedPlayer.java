@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
+
 import javax.sound.sampled.LineUnavailableException;
 
 import de.fau.cs.jstk.sampled.AudioFileReader;

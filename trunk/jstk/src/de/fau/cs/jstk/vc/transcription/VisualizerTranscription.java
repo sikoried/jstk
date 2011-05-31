@@ -20,9 +20,13 @@
 */
 package de.fau.cs.jstk.vc.transcription;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
 import java.awt.event.MouseEvent;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Vector;
 
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.vc.FileVisualizer;

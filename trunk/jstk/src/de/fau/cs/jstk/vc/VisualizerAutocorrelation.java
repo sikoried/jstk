@@ -22,11 +22,10 @@ package de.fau.cs.jstk.vc;
 
 import java.awt.Graphics;
 
-
-import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
-import de.fau.cs.jstk.framed.*;
+import de.fau.cs.jstk.framed.Window;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedAudioSourceReader;
+import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 public class VisualizerAutocorrelation extends VisualComponent {
 

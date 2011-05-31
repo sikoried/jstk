@@ -21,7 +21,9 @@
 */
 package de.fau.cs.jstk.app;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import de.fau.cs.jstk.sampled.AudioFileReader;
