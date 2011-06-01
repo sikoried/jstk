@@ -34,7 +34,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
 /**
- * writes wav file from AudioSource. Currently, only linearly 16-bit quantized, signed PCM 
+ * writes wav file from AudioSource. Warning: currently, only linearly 16-bit quantized, signed PCM 
  * is supported.
  * @author hoenig
  *
@@ -44,7 +44,7 @@ public class WaveFileWriter {
 	private static final int bufSize = 100000;
 	
 	public static void write(AudioSource source, 
-			int sampleRate, File outFile) throws IOException{
+			File outFile) throws IOException{
 		
 		List<byte[]> arrays = new LinkedList<byte[]>();		
 		
@@ -75,17 +75,10 @@ public class WaveFileWriter {
 			i += a.length;
 		}
 	
-		AudioFormat format = new AudioFormat(sampleRate, 16, 1, true, false);
+		AudioFormat format = new AudioFormat(source.getSampleRate(), 16, 1, true, false);
 		
 		AudioSystem.write(new AudioInputStream(new ByteArrayInputStream(
 					allData), format, allData.length),
 					AudioFileFormat.Type.WAVE, outFile);			
-	}	
-/* redundant nonsense:
-	public static void write(AudioInputStream source,  
-			int sampleRate, File outFile) throws IOException{		
-		AudioSystem.write(source, 
-					AudioFileFormat.Type.WAVE, outFile);		
 	}
-	*/		
 }
