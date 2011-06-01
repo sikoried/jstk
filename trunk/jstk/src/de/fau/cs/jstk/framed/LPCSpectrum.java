@@ -50,8 +50,8 @@ public class LPCSpectrum implements FrameSource {
 	/** order of the LPC computation */
 	private int order;
 
-	/** FrameSource to read from */
-	private FrameSource source;
+	/** AutoCorrelation to read from */
+	private AutoCorrelation source;
 
 	/** autocorrelation values */
 	private double[] ac;
@@ -79,7 +79,7 @@ public class LPCSpectrum implements FrameSource {
 	 * 
 	 * @param source
 	 */
-	public LPCSpectrum(FrameSource source) {
+	public LPCSpectrum(AutoCorrelation source) {
 		this(source, DEFAULT_ORDER, DEFAULT_PAD);
 	}
 
@@ -93,7 +93,7 @@ public class LPCSpectrum implements FrameSource {
 	 * @param source
 	 * @param order
 	 */
-	public LPCSpectrum(FrameSource source, int order) {
+	public LPCSpectrum(AutoCorrelation source, int order) {
 		this(source, DEFAULT_ORDER, DEFAULT_PAD);
 	}
 
@@ -104,7 +104,7 @@ public class LPCSpectrum implements FrameSource {
 	 * @param order
 	 * @param pad
 	 */
-	public LPCSpectrum(FrameSource source, int order, boolean pad) {
+	public LPCSpectrum(AutoCorrelation source, int order, boolean pad) {
 		this.source = source;
 		this.order = order;
 		this.pad = pad;
@@ -203,6 +203,10 @@ public class LPCSpectrum implements FrameSource {
 							* buf_fft[1]);
 
 		return true;
+	}
+	
+	public double toFrequency(double ndx, double sampleRate) {
+		return ndx * .5 * sampleRate / getFrameSize();
 	}
 
 	public static final String SYNOPSIS = 
