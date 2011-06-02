@@ -35,6 +35,9 @@ import java.util.LinkedList;
  * @author sikoried
  */
 public class BasicStats {
+	/// number of observations for the statistics
+	public int obs;
+	
 	/// minimum value of the input data array
 	public double min;
 	
@@ -65,6 +68,7 @@ public class BasicStats {
 	}
 	
 	void computeStats(double [] data) {
+		obs = data.length;
 		min = data[0];
 		max = data[0];
 		mean = data[0];
@@ -161,10 +165,11 @@ public class BasicStats {
 		}
 
 		// for each data row...
-		System.err.println("file:col min max median mean std-dev");
+		System.err.println("file:col obs min max median mean std-dev");
 		for (int i = 0; i < data.size(); ++i) {
 			BasicStats bs = new BasicStats(data.get(i));
-			System.out.println(names.get(i) + " " +
+			System.out.println(names.get(i) + " " + 
+				bs.obs + " " +
 				bs.min + " " +
 				bs.max + " " +
 				bs.med + " " +
