@@ -193,7 +193,10 @@ public class RawCapturer implements Runnable, LineListener{
 		if (stopped)
 			return;
 		
+		// the stop() sometime hangs quite a while!?!
+		System.err.println("stopCapturing: line.stop()...");
 		line.stop();
+		System.err.println("stopCapturing: ... line.stop() done");
 		
 //		// FIXME
 //		try {
@@ -262,8 +265,11 @@ public class RawCapturer implements Runnable, LineListener{
 
 		/* read+write partial buffer (why? see http://download.oracle.com/javase/tutorial/sound/capturing.html)
 			 * also, stress testing has confirmed that scheme (see enableStressTest)
-			 * */				 
-		byte [] buffer = new byte[line.getBufferSize() / factor_buffer_smaller ];		
+			 * */			
+		int bufSize = line.getBufferSize() / factor_buffer_smaller;
+		// make sure to read integral number of frames:
+		bufSize = bufSize / format.getFrameSize() * format.getFrameSize();
+		byte [] buffer = new byte[bufSize];		
 				
 		line.addLineListener(this);
 		line.flush();
