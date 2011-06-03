@@ -73,34 +73,13 @@ public class RawPlayer implements Runnable, LineListener{
 
 	private Exception exception = null;
 	
-	RawPlayer(AudioInputStream ais){
+	public RawPlayer(AudioInputStream ais){
 		this(ais, null, 0.0);		
 	}
 
-	RawPlayer(AudioInputStream ais, String mixerName){
+	public RawPlayer(AudioInputStream ais, String mixerName){
 		this(ais, mixerName, 0.0);
-	}
-	
-	public void dispose(){
-		stopPlaying();
-		
-		if (line != null)
-			line.removeLineListener(this);
-		line = null;
-		
-		if (dependents != null)
-			dependents.clear();		
-		dependents = null;
-		
-		thread = null;
-		ais = null;
-		
-		mixer = null;
-		if (shutdownHook != null)
-			Runtime.getRuntime().removeShutdownHook(shutdownHook);
-		shutdownHook = null;
-		
-	}
+	}	
 	
 	/**
 	 * set up player. no lines are occupied until start() is called.
@@ -125,6 +104,27 @@ public class RawPlayer implements Runnable, LineListener{
 			if (mixer == null)
 				System.err.println("could not find mixer " + mixerName);			
 		}
+	}	
+
+	public void dispose(){
+		stopPlaying();
+		
+		if (line != null)
+			line.removeLineListener(this);
+		line = null;
+		
+		if (dependents != null)
+			dependents.clear();		
+		dependents = null;
+		
+		thread = null;
+		ais = null;
+		
+		mixer = null;
+		if (shutdownHook != null)
+			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		shutdownHook = null;
+		
 	}
 	
 	public void addStateListener(PlayEventListener client) {
@@ -218,9 +218,11 @@ public class RawPlayer implements Runnable, LineListener{
 		try {
 			line = (SourceDataLine) AudioSystem.getMixer(mixer).getLine(info);
 
-			if (desiredBufSize != 0.0)			
+			if (desiredBufSize != 0.0){					
+			
 				line.open(ais.getFormat(), 
 						(int)Math.round(desiredBufSize * ais.getFormat().getFrameRate() * ais.getFormat().getFrameSize()));
+			}
 			else
 				line.open(ais.getFormat());				
 		}

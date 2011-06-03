@@ -430,29 +430,47 @@ public class AudioCapture implements AudioSource {
 			
 			DataLine.Info lineInfo = new DataLine.Info(forRecording ? TargetDataLine.class : SourceDataLine.class,
 					af);
-
+			
 			for (Mixer.Info i : list) {
+				
+				Mixer mixer = AudioSystem.getMixer(i);
+				System.out.println(mixer.getMixerInfo().toString() + ": checking... with + " + af.toString());
+				if (!mixer.isLineSupported(
+						forRecording ? 
+								new Info(TargetDataLine.class) :
+									new Info(SourceDataLine.class))){
+					System.out.println(mixer.getMixerInfo().toString() + ": Not considering");
+				
+					continue;
+				}
+				
 				DataLine dataline;
 				dataline = null;
 				try {
 					
-					Mixer mixer = AudioSystem.getMixer(i);
 					
 					dataline = (DataLine) mixer.getLine(lineInfo);
-					if (forRecording)
-						((TargetDataLine)dataline).open();
-					else
-						((SourceDataLine)dataline).open();
-										
-					dataline.start();
 					
+//					if (forRecording)
+//						((TargetDataLine)dataline).open(af);
+//					else
+//						((SourceDataLine)dataline).open(af);
+					
+					//dataline.start();
+					
+					System.out.println(mixer.getMixerInfo().toString() + ": OK");
 					working.add(i.getName());
-				} catch (Exception e) {					
-				}
-				if (dataline != null) {
-					try {
-						dataline.close();
-					} catch (Exception e) {
+				} catch (Exception e) {		
+					System.out.println(mixer.getMixerInfo().toString() + ": Not ok");
+					e.printStackTrace();
+				}				
+				finally{
+					if (dataline != null) {
+						try {
+							dataline.close();
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
 					}
 				}
 			}	
