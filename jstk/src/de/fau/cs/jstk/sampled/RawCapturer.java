@@ -269,7 +269,7 @@ public class RawCapturer implements Runnable, LineListener{
 		line.flush();
 		line.start();		
 		
-		// main playback loop
+		// main capturing loop
 		while(true){//!stopped){
 			int numBytesRead = 0;
 			

@@ -33,11 +33,9 @@ import java.util.concurrent.Semaphore;
  * - call processSamples(), e.g. from a recording thread. Should be fast.
  * - call update() as often as you will, from a different thread. Only then, you will see the
  *   changes made by the samples processed in the meantime. update() and processSamples() should be 
- *   synchronized, and care has been taken minimize blocking time.
- * 
+ *   synchronized, and care has been taken minimize blocking time. 
  * 
  * @author hoenig
- *
  */
 public class Segmenter {
 	
@@ -110,7 +108,7 @@ public class Segmenter {
 	 * @param samplingRate
 	 */
 	public Segmenter(int samplingRate){
-		this(samplingRate, 0.025, 0.2, 15.0);
+		this(samplingRate, 0.025, 0.2, 10.0);
 	}
 	
 	/**
