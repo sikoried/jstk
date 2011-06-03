@@ -74,11 +74,11 @@ public class RawCapturer implements Runnable, LineListener{
 	
 	Exception exception = null;
 	
-	RawCapturer(BufferedOutputStream os, AudioFormat format){
+	public RawCapturer(BufferedOutputStream os, AudioFormat format){
 		this(os, format, null, 0.0);		
 	}
 
-	RawCapturer(BufferedOutputStream os, AudioFormat format, String mixerName){
+	public RawCapturer(BufferedOutputStream os, AudioFormat format, String mixerName){
 		this(os, format, mixerName, 0.0);
 	}
 	

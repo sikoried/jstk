@@ -67,6 +67,7 @@ public class UtteranceCollectionTest {
 		Assert.assertEquals(PHRASE_ACCENT.NONE, collection.getTurns()[0].getWords()[1].getPhraseAccent());
 		Assert.assertEquals(PHRASE_ACCENT.PRIMARY, collection.getTurns()[0].getWords()[3].getPhraseAccent());
 
+		//this assumes UTF-8 encoding of source files! 
 		Assert.assertEquals("ɑː", collection.getTurns()[2].getWords()[1].getPhonemes()[1].getSymbols());	
 	}
 
