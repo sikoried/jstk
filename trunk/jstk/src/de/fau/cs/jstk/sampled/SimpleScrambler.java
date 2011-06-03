@@ -41,6 +41,8 @@ public class SimpleScrambler implements AudioSource {
 	/** 2*pi*(freq/samplerate) */
 	private double fmod;
 	
+	private long ind = 0;
+	
 	/**
 	 * Initialize a new SimpleScrambler on the given AudioSource
 	 * @param source
@@ -48,6 +50,10 @@ public class SimpleScrambler implements AudioSource {
 	 */
 	public SimpleScrambler(AudioSource source, double freq) {
 		this.source = source;
+		setFrequency(freq);
+	}
+	
+	public void setFrequency(double freq) {
 		this.fmod = 2. * Math.PI * freq / (double) source.getSampleRate();
 	}
 	
@@ -68,8 +74,10 @@ public class SimpleScrambler implements AudioSource {
 		 * but can be simplified to the real part as 
 		 *  buf[i] = buf[i] * cos(2*pi*(freq/rate)*k)
 		 */
-		for (int i = 0; i < r; ++i)
-			buf[i] *= Math.cos(fmod * i);
+		for (int i = 0; i < r; ++i) {
+			ind++;
+			buf[i] *= Math.cos(fmod * ind);
+		}
 		
 		return r;
 	}
