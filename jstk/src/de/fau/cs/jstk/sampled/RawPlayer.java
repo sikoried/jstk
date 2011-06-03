@@ -249,7 +249,10 @@ public class RawPlayer implements Runnable, LineListener{
 
 		byte [] buffer = new byte[line.getBufferSize()];
 		int partialBufferSize = buffer.length / factor_buffer_smaller;
-				
+		
+		// integral number of frames:
+		partialBufferSize = partialBufferSize / ais.getFormat().getFrameSize() * ais.getFormat().getFrameSize();
+		
 		line.addLineListener(this);
 		line.flush();
 		line.start();		
