@@ -150,8 +150,14 @@ public class AudioPlay implements Runnable {
 			Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
 			Mixer.Info target = null;
 			for (Mixer.Info m : availableMixers)
-				if (m.getName().trim().equals(mixerName))
+				// TODO: also respect the info whether mixer is for recording/playback
+				// otherwise, names can be ambiguous
+				if (m.getName().trim().equals(mixerName)){
+					if (target != null){
+						throw new IllegalArgumentException("found multiple matches for " + mixerName);
+					}
 					target = m;
+				}
 			
 			// If no target, fall back to default line
 			if (target != null)
