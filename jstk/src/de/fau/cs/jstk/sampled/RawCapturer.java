@@ -63,7 +63,7 @@ public class RawCapturer implements Runnable, LineListener{
 	
 	double desiredBufSize;
 	
-	Mixer.Info mixer = null;
+	Mixer.Info mixer;
 	
 	boolean stressTestEnabled = false;	
 	double activeSleepRatio;
@@ -96,15 +96,20 @@ public class RawCapturer implements Runnable, LineListener{
 		thread.setName("RawPlayer");
 		this.desiredBufSize = desiredBufSize;
 		
-		if (mixerName != null){
-			Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
+		mixer = null;
+		if (mixerName != null){			
 			
-			for (Mixer.Info m : availableMixers)
-				if (m.getName().trim().equals(mixerName))
-					mixer = m;
+			try {
+				mixer = MixerUtil.getMixerInfoFromName(mixerName, true);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
 			if (mixer == null)
-				System.err.println("could not find mixer " + mixerName);			
-		}
+				System.err.println("Error: could not find mixer " + mixerName);			
+		}		
+	
 	}
 	
 	public void dispose(){
@@ -225,9 +230,17 @@ public class RawCapturer implements Runnable, LineListener{
 			stopCapturing();
 			return;
         }
-		 
+		
+		System.err.println("opening: " + mixer);
+		
 		try {
-			line = (TargetDataLine) AudioSystem.getMixer(mixer).getLine(info);
+			/* according to the doc, AudioSystem.getMixer should be able to handle null,
+			 * but experiment seems to disprove that.  
+			 */
+			if (mixer == null)
+				line = (TargetDataLine) AudioSystem.getLine(info);
+			else
+				line = (TargetDataLine) AudioSystem.getMixer(mixer).getLine(info);
 
 			if (desiredBufSize != 0.0)			
 				line.open(format, 
@@ -239,7 +252,7 @@ public class RawCapturer implements Runnable, LineListener{
 		/* no sufficient: 
 		 *		catch (LineUnavailableException e) {
 		 *
-		 * we also gett java.lang.IllegalArgumentException: Line unsupported,
+		 * we also get java.lang.IllegalArgumentException: Line unsupported,
 		 * which needs not to be catched, but we better do!
 		 */
 		catch (Exception e) {

@@ -33,6 +33,7 @@ import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class RawPlayer implements Runnable, LineListener{
@@ -62,7 +63,7 @@ public class RawPlayer implements Runnable, LineListener{
 	
 	double desiredBufSize;
 	
-	Mixer.Info mixer = null;
+	Mixer.Info mixer;
 	
 	boolean stressTestEnabled = false;	
 	double activeSleepRatio;
@@ -94,13 +95,17 @@ public class RawPlayer implements Runnable, LineListener{
 		thread = new Thread(this);
 		thread.setName("RawPlayer");
 		this.desiredBufSize = desiredBufSize;
-		
+			 
+		mixer = null;
+		System.err.println("searching for mixerName " + mixerName);
 		if (mixerName != null){
-			Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
+			try {
+				mixer = MixerUtil.getMixerInfoFromName(mixerName, false);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			
-			for (Mixer.Info m : availableMixers)
-				if (m.getName().trim().equals(mixerName))
-					mixer = m;
 			if (mixer == null)
 				System.err.println("could not find mixer " + mixerName);			
 		}
@@ -216,7 +221,13 @@ public class RawPlayer implements Runnable, LineListener{
         }
 		 
 		try {
-			line = (SourceDataLine) AudioSystem.getMixer(mixer).getLine(info);
+			/* according to the doc, AudioSystem.getMixer should be able to handle null,
+			 * but experiment seems to disprove that (at least for capturing, but we do it here as well)  
+			 */
+			if (mixer == null)
+				line = (SourceDataLine) AudioSystem.getLine(info);
+			else
+				line = (SourceDataLine) AudioSystem.getMixer(mixer).getLine(info);
 
 			if (desiredBufSize != 0.0){					
 			

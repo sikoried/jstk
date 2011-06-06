@@ -26,17 +26,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.LinkedList;
-import java.util.List;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
-import javax.sound.sampled.Line.Info;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
-import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
 
 
@@ -233,8 +229,14 @@ public class AudioCapture implements AudioSource {
 				Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
 				Mixer.Info target = null;
 				for (Mixer.Info m : availableMixers)
-					if (m.getName().trim().equals(mixerName))
+					// TODO: also respect the info whether mixer is for recording/playback
+					// otherwise, names can be ambiguous
+					if (m.getName().trim().equals(mixerName)){
+						if (target != null){
+							throw new IllegalArgumentException("found multiple matches for " + mixerName);
+						}						
 						target = m;
+					}
 				
 				if (target != null)
 					tdl = (TargetDataLine) AudioSystem.getMixer(target).getLine(info);
@@ -411,99 +413,11 @@ public class AudioCapture implements AudioSource {
 		return readFrames;
 	}
 
-	public static String [] getMixerList(AudioFormat af) {
-		return getMixerList(af, true);
+	private static Mixer.Info [] getMixerList(AudioFormat af) {
+		return MixerUtil.getMixerList(af, true);
 	}
 	
-	/**
-	 * Return a list of Strings matching the mixer names.
-	 * @param af if not null, try to actually open lines and just return mixer that work with af. 
-	 * @return
-	 */
-	public static String [] getMixerList(AudioFormat af, boolean forRecording) {
-		if (af != null){
-			System.err.println("AudioCapture.getMixerList: retrieving only mixers that work with format " + af + 
-					(forRecording ? " for recording" : " for playback"));
-
-			Mixer.Info [] list = AudioSystem.getMixerInfo();
-			List<String> working = new LinkedList<String>();
-			
-			DataLine.Info lineInfo = new DataLine.Info(forRecording ? TargetDataLine.class : SourceDataLine.class,
-					af);
-			
-			for (Mixer.Info i : list) {
-				
-				Mixer mixer = AudioSystem.getMixer(i);
-				System.out.println(mixer.getMixerInfo().toString() + ": checking... with + " + af.toString());
-				if (!mixer.isLineSupported(
-						forRecording ? 
-								new Info(TargetDataLine.class) :
-									new Info(SourceDataLine.class))){
-					System.out.println(mixer.getMixerInfo().toString() + ": Not considering");
-				
-					continue;
-				}
-				
-				DataLine dataline;
-				dataline = null;
-				try {
-					
-					
-					dataline = (DataLine) mixer.getLine(lineInfo);
-					
-//					if (forRecording)
-//						((TargetDataLine)dataline).open(af);
-//					else
-//						((SourceDataLine)dataline).open(af);
-					
-					//dataline.start();
-					
-					System.out.println(mixer.getMixerInfo().toString() + ": OK");
-					working.add(i.getName());
-				} catch (Exception e) {		
-					System.out.println(mixer.getMixerInfo().toString() + ": Not ok");
-					e.printStackTrace();
-				}				
-				finally{
-					if (dataline != null) {
-						try {
-							dataline.close();
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					}
-				}
-			}	
-			String [] dummy = new String[0];
-			return working.toArray(dummy);
-		}
-		else{
-			Mixer.Info [] list = AudioSystem.getMixerInfo();			
-			
-			List<String> rightTypes = new LinkedList<String>();
-			
-			for (Mixer.Info i : list) {
-				Mixer mixer = AudioSystem.getMixer(i);
-				if (mixer.isLineSupported(
-						forRecording ? 
-								new Info(TargetDataLine.class) :
-									new Info(SourceDataLine.class))){
-					System.out.println(mixer.getMixerInfo().toString() + " is suited for " + 
-							(forRecording ? "recording" : "playback"));
-					rightTypes.add(i.getName());
-				}
-				else{
-					System.out.println(mixer.getMixerInfo().toString() + " is NOT suited for " + 
-							(forRecording ? "recording" : "playback"));
-					
-				}
-				
-			}
-
-			String [] dummy = new String[0];
-			return rightTypes.toArray(dummy);			
-		}
-	}
+	
 	
 	/**
 	 * Return a string representation of the capture device
@@ -646,8 +560,8 @@ public class AudioCapture implements AudioSource {
 		
 		// only list mixers and exit
 		if (listMixers) {
-			for (String m : getMixerList(null))
-				osw.write((m + "\n").getBytes());
+			for (Mixer.Info i : getMixerList(null))
+				osw.write((i.getName() + "\n").getBytes());
 			osw.flush();
 			osw.close();
 			System.exit(0);
