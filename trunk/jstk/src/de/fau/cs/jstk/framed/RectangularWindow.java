@@ -38,6 +38,10 @@ public class RectangularWindow extends Window {
 		super(source, windowLength, shiftLength);
 	}
 
+	public RectangularWindow(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
+		super(source, numberSamplesWindow, numberSamplesShift);
+	}
+	
 	protected double [] initWeights() {
 		return weights(nsw);
 	}

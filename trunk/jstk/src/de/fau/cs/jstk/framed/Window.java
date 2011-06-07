@@ -49,7 +49,7 @@ public abstract class Window implements FrameSource {
 	private int nss;
 
 	/** weights of the window */
-	private double[] w = null;
+	private double [] w = null;
 
 	/**
 	 * Create a default Hamming windos (16ms size, 10ms shift)
@@ -67,18 +67,26 @@ public abstract class Window implements FrameSource {
 	}
 
 	/**
-	 * Create a Hamming window using given frame shift length
+	 * Create a Window using given frame shift length
 	 * 
-	 * @param source
-	 *            AudioSource to read from
-	 * @param windowLength
-	 *            Frame length in milli-seconds
-	 * @param shiftLength
-	 *            Shift length in milli-seconds
+	 * @param source AudioSource to read from
+	 * @param windowLength Frame length in milli-seconds
+	 * @param shiftLength Shift length in milli-seconds
 	 */
 	public Window(AudioSource source, double windowLength, double shiftLength) {
 		this.source = source;
 		setWindowSpecs(windowLength, shiftLength);
+	}
+	
+	/**
+	 * Create a Window using given number of samples in Window and shift.
+	 * @param source
+	 * @param numberSamplesWindow
+	 * @param numberSamplesShift
+	 */
+	public Window(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
+		this.source = source;
+		setWindowSpecs(numberSamplesWindow, numberSamplesShift);
 	}
 
 	/**
@@ -105,6 +113,24 @@ public abstract class Window implements FrameSource {
 
 		updateNumerOfSamples();
 	}
+	
+	private void setWindowSpecs(int numberSamplesWindow, int numberSamplesShift) {
+		if (numberSamplesShift > numberSamplesWindow)
+			numberSamplesShift = numberSamplesWindow;
+		
+		int sr = source.getSampleRate();
+		nsw = numberSamplesWindow;
+		nss = numberSamplesShift;
+		
+		wl = nsw * 1000. / sr;
+		ws = nss * 1000. / sr;
+		
+		rb = new double [nsw];
+		rb_helper = new double [nss];
+		cind = -1;
+		
+		w = initWeights();
+	}
 
 	private void updateNumerOfSamples() {
 		int sr = source.getSampleRate();
@@ -112,8 +138,8 @@ public abstract class Window implements FrameSource {
 		nss = (int) (sr * ws / 1000.);
 
 		// re-allocate ring buffer to correct size, reset current index
-		rb = new double[nsw];
-		rb_helper = new double[nss];
+		rb = new double [nsw];
+		rb_helper = new double [nss];
 		cind = -1;
 
 		// initialize the weights
@@ -125,10 +151,10 @@ public abstract class Window implements FrameSource {
 	}
 
 	/** ring buffer for internal storage of the signal */
-	private double[] rb = null;
+	private double [] rb = null;
 
 	/** array to cache the newly read data (nss samples) */
-	private double[] rb_helper = null;
+	private double [] rb_helper = null;
 
 	/** current index in the ring buffer */
 	private int cind = -1;

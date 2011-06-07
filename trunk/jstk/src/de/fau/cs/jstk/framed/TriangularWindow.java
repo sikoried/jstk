@@ -2,6 +2,7 @@
 	Copyright (c) 2009-2011
 		Speech Group at Informatik 5, Univ. Erlangen-Nuremberg, GERMANY
 		Stefan Steidl
+		Korbinian Riedhammer
 
 	This file is part of the Java Speech Toolkit (JSTK).
 
@@ -30,6 +31,10 @@ public class TriangularWindow extends Window {
 	
 	public TriangularWindow(AudioSource source, double windowLength, double shiftLength) {
 		super(source, windowLength, shiftLength);
+	}
+	
+	public TriangularWindow(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
+		super(source, numberSamplesWindow, numberSamplesShift);
 	}
 
 	

@@ -38,6 +38,10 @@ public class HammingWindow extends Window {
 		super(source, windowLength, shiftLength);
 	}
 	
+	public HammingWindow(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
+		super(source, numberSamplesWindow, numberSamplesShift);
+	}
+	
 	protected double [] initWeights() {
 		return weights(nsw);
 	}
