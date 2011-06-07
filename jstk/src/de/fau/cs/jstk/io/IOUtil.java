@@ -178,10 +178,22 @@ public final class IOUtil {
 	 */
 	public static void writeShort(OutputStream os, short [] buf, ByteOrder bo) 
 		throws IOException {
+		writeShort(os, buf, buf.length, bo);
+	}
+	
+	/**
+	 * Write the given short array to the OutputStream using given ByteOrder
+	 * @param os
+	 * @param buf
+	 * @param bo
+	 * @throws IOException
+	 */
+	public static void writeShort(OutputStream os, short [] buf, int length, ByteOrder bo) 
+		throws IOException {
 		ByteBuffer bb = ByteBuffer.allocate(buf.length * Short.SIZE/8);
 		bb.order(bo);
-		for (short d : buf) 
-			bb.putShort(d);
+		for (int i = 0; i < length; ++i)
+			bb.putShort(buf[i]);
 		os.write(bb.array());
 	}
 

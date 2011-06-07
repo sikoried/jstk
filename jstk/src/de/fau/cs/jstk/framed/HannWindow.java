@@ -37,6 +37,10 @@ public class HannWindow extends Window {
 	public HannWindow(AudioSource source, double windowLength, double shiftLength) {
 		super(source, windowLength, shiftLength);
 	}
+	
+	public HannWindow(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
+		super(source, numberSamplesWindow, numberSamplesShift);
+	}
 
 	protected double [] initWeights() {
 		return weights(nsw);
