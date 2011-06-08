@@ -35,6 +35,14 @@ import javax.sound.sampled.LineListener;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.TargetDataLine;
 
+/**
+ * raw audio capture, i.e. without the detour of converting to double-samples (AudioSource)
+ * and back to signed shorts; for time-critical applications. 
+ * 
+ * use e.g. enableStressTest(0.95) to stress-test this component by actively waiting 95% of the time.  
+ * @author hoenig
+ *
+ */
 public class RawCapturer implements Runnable, LineListener{
 	
 	public interface CaptureEventListener {
@@ -108,8 +116,7 @@ public class RawCapturer implements Runnable, LineListener{
 			
 			if (mixer == null)
 				System.err.println("Error: could not find mixer " + mixerName);			
-		}		
-	
+		}
 	}
 	
 	public void dispose(){
@@ -390,24 +397,14 @@ public class RawCapturer implements Runnable, LineListener{
 		
 		BufferedOutputStream os = new BufferedOutputStream(System.out);
 	
-		AudioFormat format = new AudioFormat(32000, 16, 1, true, false);
+		AudioFormat format = new AudioFormat(16000, 16, 1, true, false);
 			
 		final RawCapturer capturer = new RawCapturer(os, format, mixer, 0.1);
 		
 		// "Intel [plughw:0,0]" works much better than "Java Sound Audio Engine". 
 		// And the latter from time to time refuses to put out anything
-		capturer.enableStressTest(0.99);
-		
-//		 outdated
-//		Runtime.getRuntime().addShutdownHook(new Thread(){
-//			public void run() {
-//				System.err.println("Inside Add Shutdown Hook");
-//				capturer.stopCapturing();
-//				System.err.println("player stopped");
-//			}			
-//		});
-//				
-		
+		//capturer.enableStressTest(0.99);
+
 		capturer.start();		
 		
 		// i.e. forever, unless interrupted (see addShutdownHook above)

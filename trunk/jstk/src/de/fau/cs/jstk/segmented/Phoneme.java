@@ -25,13 +25,22 @@ import java.io.Serializable;
 
 import org.w3c.dom.Node;
 
+/**
+ * phoneme identified by an IPA string (http://www.langsci.ucl.ac.uk/ipa/)
+ * @author hoenig
+ *
+ */
 public class Phoneme implements Serializable {
 	private static final long serialVersionUID = -4536269674274469022L;
 	/**
 	 * IPA representation, e.g. "i", "iː" or "eɪ"
 	 */
 	private String symbols = null;
-	
+
+
+	/**
+	 * default (empty) constructor for XMLEncoder/Decoder.
+	 */
 	public Phoneme(){
 	}
 	
@@ -56,7 +65,5 @@ public class Phoneme implements Serializable {
 		String symbols = node.getAttributes().getNamedItem("symbols").getNodeValue();
 
 		return new Phoneme(symbols);		
-	}
-
-	
+	}	
 }

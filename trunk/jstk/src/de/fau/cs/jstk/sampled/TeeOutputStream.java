@@ -28,6 +28,9 @@ import java.io.OutputStream;
  * OutputStream that branches off the data that is being read to another consumer (OutputStream),
  * much like the unix "tee" command.
  * 
+ * Useful e.g. when you capture data from the microphone and you have two consumers such as
+ * a ByteArrayOutputStream for the actual recording and a client.dod.SoundLevelEstimator for displaying volume 
+ * 
  * @author hoenig
  */
 public class TeeOutputStream extends OutputStream{

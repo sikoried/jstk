@@ -24,9 +24,13 @@
 package de.fau.cs.jstk.segmented;
 
 import java.io.Serializable;
-
 import org.w3c.dom.Node;
 
+/**
+ * phrase boundary: smaller (B2) and larger (B3) breaks in a sentence
+ * @author hoenig
+ *
+ */
 public class Boundary implements Serializable{
 	
 	private static final long serialVersionUID = -5380280871782636847L;
@@ -46,36 +50,37 @@ public class Boundary implements Serializable{
 	
 	/**
 	 *  the index of the word *before* which this boundary is located;
+	 *  Boundaries before the first word (index 0) and after the last are currently 
+	 *  disallowed!
 	 */
 	private int index;
 	
 	/**
-	 * the number of the character before which this boundary is located
-	 * in Utterance.orthography
-	 * 
-	 * FIXME: currently not provided by libpronunciation/annotation-process --annotation-in-xml
+	 * default (empty) constructor for XMLEncoder/Decoder.
 	 */
-	//private int firstCharacterInOrthography;
-	
 	public Boundary(){
 		type = null;
 		setIndex(0);
-		//setFirstCharacterInOrthography(0);
 	}
 	
-	public Boundary(BOUNDARIES type, int index/*, int firstCharacterInOrthography*/){
+	/**
+	 * 
+	 * @param type
+	 * @param index the index of the word *before* which this boundary is located
+	 */
+	public Boundary(BOUNDARIES type, int index){
 		this.setType(type);
 		this.setIndex(index);
-		//this.setFirstCharacterInOrthography(firstCharacterInOrthography);
 	}
 	
+	/**
+	 * read from annotool xml-format, see resource /segmented/dialog.xml for examples.
+	 */
 	public static Boundary read(Node node) throws Exception{
 		String nodeName = node.getNodeName();
 		
 		if (!nodeName.equals("boundary"))
-			throw new Exception("Expecting node name boundary, got " + nodeName);
-		
-	
+			throw new Exception("Expecting node name boundary, got " + nodeName);	
 		
 		int beforeWhichWord = Integer.parseInt(node.getAttributes().getNamedItem("beforeWord").getNodeValue());
 		BOUNDARIES type = BOUNDARIES.valueOf(node.getAttributes().getNamedItem("type").getNodeValue());
@@ -84,10 +89,8 @@ public class Boundary implements Serializable{
 		System.out.println("Boundary " + type.toString() + " beforeWhichWord " + beforeWhichWord +
 				" beforeOrthography " + beforeOrthography);*/				
 				
-		return new Boundary(type, beforeWhichWord/*, beforeOrthography*/);				
+		return new Boundary(type, beforeWhichWord);				
 	}
-
-
 
 	public void setType(BOUNDARIES type) {
 		this.type = type;
@@ -96,15 +99,6 @@ public class Boundary implements Serializable{
 	public BOUNDARIES getType() {
 		return type;
 	}
-
-	// obsolete: see Utterance.getOrthographyIndex
-//	public void setFirstCharacterInOrthography(int firstCharacterInOrthography) {
-//		this.firstCharacterInOrthography = firstCharacterInOrthography;
-//	}
-//
-//	public int getFirstCharacterInOrthography() {
-//		return firstCharacterInOrthography;
-//	}
 
 	/**
 	 * set *before* which word this boundary is located
@@ -119,8 +113,6 @@ public class Boundary implements Serializable{
 	 */
 	public int getIndex() {
 		return index;
-	}
-
-	
+	}	
 
 }

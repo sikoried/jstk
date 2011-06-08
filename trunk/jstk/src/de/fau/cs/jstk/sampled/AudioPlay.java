@@ -21,6 +21,7 @@
 */
 package de.fau.cs.jstk.sampled;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -146,27 +147,23 @@ public class AudioPlay implements Runnable {
 		if (mixerName == null) {
 			line = (SourceDataLine) AudioSystem.getLine(info);
 		} else {
-			// mixerName specified, use this Mixer to write to 
-			Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
+			// mixerName specified, use this Mixer to write to			
+			
 			Mixer.Info target = null;
-			for (Mixer.Info m : availableMixers)
-				// TODO: also respect the info whether mixer is for recording/playback
-				// otherwise, names can be ambiguous
-				if (m.getName().trim().equals(mixerName)){
-					if (target != null){
-						throw new IllegalArgumentException("found multiple matches for " + mixerName);
-					}
-					target = m;
-				}
+			try {
+				target = MixerUtil.getMixerInfoFromName(mixerName, false);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
 			
 			// If no target, fall back to default line
 			if (target != null)
 				line = (SourceDataLine) AudioSystem.getMixer(target).getLine(info);
 			else{
 				System.err.println("mixer not found: " + mixerName + ". Available mixers:");
-
 								
-				for (Mixer.Info m : availableMixers)
+				for (Mixer.Info m : getMixerList(null))
 					System.err.println(m.getName());
 				line = (SourceDataLine) AudioSystem.getLine(info);
 			}
@@ -257,6 +254,10 @@ public class AudioPlay implements Runnable {
 		return actualBufDur;
 	}
 	*/
+	
+	private static Mixer.Info [] getMixerList(AudioFormat af) {
+		return MixerUtil.getMixerList(af, false);
+	}
 	
 	/**
 	 * 
@@ -375,7 +376,9 @@ public class AudioPlay implements Runnable {
 	public static final String SYNOPSIS = 
 		"usage: sampled.AudioPlay [-m mixer-name] [-f format-string] [file1 ...]\n" +
 		"Play back the listed audio files. If required, use the specified mixer\n" +
-		"device. Specify a format string if referring to raw data (e.g. t:ssg/16)";
+		"device. Specify a format string if referring to raw data (e.g. t:ssg/16).\n" +
+		"WAV-Format should be automatically detected from the file header.\n" +
+		"Speex (*.spx) files must end with .spx.";
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length < 1) {
@@ -396,12 +399,17 @@ public class AudioPlay implements Runnable {
 		
 		// process files
 		for (int i = 0 + (mixer == null ? 0 : 2) + (format == null ? 0 : 2); i < args.length; ++i) {
-			System.err.println("Now playing " + args[i]);
-			AudioFileReader reader;
-			if (format == null)
-				reader = new AudioFileReader(args[i], true);
+			String file = args[i];
+			System.err.println("Now playing " + file);
+			AudioSource reader;
+			if (format == null){
+				if (file.endsWith(".spx"))
+					reader = new SpeexFileReader(new FileInputStream(file));
+				else
+					reader = new AudioFileReader(file, true);
+			}
 			else
-				reader = new AudioFileReader(args[i], RawAudioFormat.create(format), true);
+				reader = new AudioFileReader(file, RawAudioFormat.create(format), true);
 			
 			reader.setPreEmphasis(false, 1);
 			
