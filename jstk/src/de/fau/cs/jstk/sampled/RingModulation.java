@@ -25,17 +25,20 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * The SimpleScrambler applies a frequency warping (multiplication in the 
- * time domain and linear shift in the frequency domain respectively).
- * The scrambling frequency may be set on demand. Use the negative scrambling
- * frequency to de-scramble.
- * For speech it is advised to apply a bandpass filter of 300-3400 after (de-)
- * scrambling. 
+ * The RingModulation multiplies an input signal with a given carrier frequency,
+ * similar to frequency modulation. As a result, the input signal spectrum is
+ * "lifted" by the specified frequency and a mirror effect can be observed at
+ * the shifting frequency.<b/>
+ * Internally, the ring modulation is a complex multiplication of the input
+ * signal (only real part) with the carrier (only imaginary part).<b/>
+ * In combination with a low-pass filter up to the shifting frequency, a simple
+ * (voice) scrambling can be achieved which can be descrambled using the exact
+ * same modulation again.
  * 
  * @author sikoried
  *
  */
-public class SimpleScrambler implements AudioSource {
+public class RingModulation implements AudioSource {
 	private AudioSource source;
 	
 	/** 2*pi*(freq/samplerate) */
@@ -48,7 +51,7 @@ public class SimpleScrambler implements AudioSource {
 	 * @param source
 	 * @param freq
 	 */
-	public SimpleScrambler(AudioSource source, double freq) {
+	public RingModulation(AudioSource source, double freq) {
 		this.source = source;
 		setFrequency(freq);
 	}
@@ -99,10 +102,14 @@ public class SimpleScrambler implements AudioSource {
 	}
 	
 	public static final String SYNOPSIS = 
-		"usage: sampled.SimpleScrambler scrambling-freq [ band-start,band-end ] < in-ssg16 > out-ssg16";
+		"sikoried, 6/8/2011\n" +
+		"(De)Scramble an input ssg/16 signal and write it to stdout. This is a\n" +
+		"ring modulation of the signal with subsequent low-pass at the given scrambling\n" +
+		"frequency.\n\n" +
+		"usage: sampled.RingModulation scrambling-freq < in-ssg16 > out-ssg16";
 	
 	public static void main(String [] args) throws Exception {
-		if (args.length < 1 || args.length > 2) {
+		if (args.length != 1) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
@@ -112,27 +119,16 @@ public class SimpleScrambler implements AudioSource {
 		AudioFileReader afr = new AudioFileReader(System.in, raf, false);
 		
 		// scrambler
-		SimpleScrambler sc = new SimpleScrambler(afr, Double.parseDouble(args[0]));
+		RingModulation sc = new RingModulation(afr, Double.parseDouble(args[0]));
 		
-		AudioSource out = sc;
-		
-		if (args.length == 2) {
-			String [] spl = args[1].split(",");
-			if (spl.length != 2) {
-				System.err.println("wronf band pass filter format; needs to be start,end");
-				System.exit(1);
-			}
-			
-			double startf = Double.parseDouble(spl[0]);
-			double endf = Double.parseDouble(spl[1]);
-			out = new BandPassFilter(sc, startf, endf, 128);
-		}
+		// low-pass
+		BandPassFilter bpf = new BandPassFilter(sc, 0, Double.parseDouble(args[0]), 2048);
 		
 		double scale = Math.pow(2, raf.getBitRate() - 1) - 1;
 		double [] buf = new double [512];
 		byte [] bbuf = new byte [1024];
 		int r = 0;
-		while ((r = out.read(buf)) > 0) {
+		while ((r = bpf.read(buf)) > 0) {
 			ByteBuffer bb = ByteBuffer.wrap(bbuf);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 	 
