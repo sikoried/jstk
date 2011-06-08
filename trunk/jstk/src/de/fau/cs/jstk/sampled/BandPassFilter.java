@@ -93,7 +93,8 @@ public class BandPassFilter implements AudioSource {
 	 */
 	public BandPassFilter(AudioSource source, double [] bands, int fftsize) {
 		this.source = source;
-		initialize(bands, fftsize);
+		initialize(fftsize);
+		setFilterBands(bands);
 	}
 	
 	/**
@@ -115,13 +116,11 @@ public class BandPassFilter implements AudioSource {
 		System.arraycopy(filter, 0, this.filter, 0, filter.length);
 	}
 	
-	private void initialize(double [] bands, int fftsize) {
-		// we need 50% overlap triangular filters
-		window = new TriangularWindow(source, fftsize, fftsize / 2);
-		fft = new DoubleFFT_1D(window.getFrameSize());
-		
-		// initialize filter banks
-		filter = new double [window.getFrameSize()];
+	/**
+	 * Set the filter bands.
+	 * @param bands filter bands [2*i] till [2*i+1] Hz
+	 */
+	public void setFilterBands(double [] bands) {
 		double sr = source.getSampleRate();
 		double maxf = 0.;
 		for (int i = 1; i < filter.length / 2; ++i) {
@@ -139,12 +138,20 @@ public class BandPassFilter implements AudioSource {
 		// keep energy
 		filter[0] = 1.;
 		
-		// TODO: Why do we need that special treatment?
-		// special treatment for first coefficient
+		// special treatment for first coefficient due to FFT indexing
 		if (sr / 2. > maxf)
 			filter[1] = 0.;
 		else
 			filter[1] = 1.;
+	}
+	
+	private void initialize(int fftsize) {
+		// we need 50% overlap triangular filters
+		window = new TriangularWindow(source, fftsize, fftsize / 2);
+		fft = new DoubleFFT_1D(window.getFrameSize());
+		
+		// initialize filter banks
+		filter = new double [window.getFrameSize()];
 	}
 	
 	/**
