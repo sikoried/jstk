@@ -33,7 +33,7 @@ import java.util.concurrent.Semaphore;
  * - call processSamples(), e.g. from a recording thread. Should be fast.
  * - call update() as often as you will, from a different thread. Only then, you will see the
  *   changes made by the samples processed in the meantime. update() and processSamples() should be 
- *   synchronized, and care has been taken minimize blocking time. 
+ *   synchronized. Care has been taken to minimize blocking time of update(). 
  * 
  * @author hoenig
  */

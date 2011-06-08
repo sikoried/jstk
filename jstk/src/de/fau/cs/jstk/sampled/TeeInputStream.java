@@ -29,6 +29,9 @@ import java.io.OutputStream;
  * InputStream that branches off the data that is being read to another consumer (OutputStream),
  * much like the unix "tee" command.
  * 
+ * Useful e.g. when you read audio data from a stream and you have two consumers such as
+ * a AudioInputStream for actual playback and a client.dod.SoundLevelEstimator for displaying volume 
+ * 
  * @author hoenig
  */
 public class TeeInputStream extends InputStream{

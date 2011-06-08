@@ -61,8 +61,8 @@ public class AudioCapture implements AudioSource {
 	/** memorize the frame size */
 	private int fs = 0;
 	
-	private static int DEFAULT_SAMPLE_RATE = 16000;
-	private static int DEFAULT_BIT_RATE = 16;
+	private static final int DEFAULT_SAMPLE_RATE = 16000;
+	private static final int DEFAULT_BIT_RATE = 16;
 	
 	/** apply pre-emphasis? */
 	private boolean preemphasize = true;
@@ -157,20 +157,7 @@ public class AudioCapture implements AudioSource {
 		);
 		this.desiredBufDur = desiredBufDur;
 		initialize();
-		
-//		 isn't called when applet window or browser is closed
-//		Runtime.getRuntime().addShutdownHook(new Thread(){
-//			public void run(){
-//				System.err.println("calling tearDown...");
-//				try {
-//					tearDown();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//			}
-//		});
-//		
+
 	}		
 	
 	/**
@@ -226,17 +213,7 @@ public class AudioCapture implements AudioSource {
 		try {
 			if (mixerName != null) {
 				// query target mixer line
-				Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
-				Mixer.Info target = null;
-				for (Mixer.Info m : availableMixers)
-					// TODO: also respect the info whether mixer is for recording/playback
-					// otherwise, names can be ambiguous
-					if (m.getName().trim().equals(mixerName)){
-						if (target != null){
-							throw new IllegalArgumentException("found multiple matches for " + mixerName);
-						}						
-						target = m;
-					}
+				Mixer.Info target = MixerUtil.getMixerInfoFromName(mixerName, true);			
 				
 				if (target != null)
 					tdl = (TargetDataLine) AudioSystem.getMixer(target).getLine(info);
@@ -279,7 +256,7 @@ public class AudioCapture implements AudioSource {
 			
 			
 			tdl.start();
-		} catch (LineUnavailableException e) {
+		} catch (Exception e) {
 			throw new IOException("AudioCapture: exception when initializing", e);
 		}
 		
@@ -528,8 +505,8 @@ public class AudioCapture implements AudioSource {
 			System.exit(1);
 		}
 		
-		int sr = 0;
-		int br = 16;
+		int sr = DEFAULT_SAMPLE_RATE;
+		int br = DEFAULT_BIT_RATE;
 		
 		boolean ascii = false;
 		boolean listMixers = false;

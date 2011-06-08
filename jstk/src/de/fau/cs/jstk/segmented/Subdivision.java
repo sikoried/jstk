@@ -25,6 +25,12 @@ import java.io.Serializable;
 
 import org.w3c.dom.Node;
 
+/**
+ * Subdivision of a turn into an unit suitable for (dialog) training.
+ * Mostly but not always coincides with B3 boundaries (de.fau.cs.jstk.segmented.Boundary)
+ * @author hoenig
+ *
+ */
 public class Subdivision implements Serializable{
 	private static final long serialVersionUID = -8814031215182493871L;
 	
@@ -32,21 +38,17 @@ public class Subdivision implements Serializable{
 	 * the index of the word that initiates this Subdivision
 	 */
 	private int index;
-	
+		
 	/**
-	 * the index of the character that initiates this Subdivision in the orthographic
-	 * transcription of the Utterance
+	 * default (empty) constructor for XMLEncoder/Decoder.
 	 */
-	//private int firstCharacterInOrthography;
-	
 	public Subdivision(){
 		index = 0;
 		//firstCharacterInOrthography = 0;
 	}
 	
-	public Subdivision(int firstWord/*, int firstCharacterInOrthography*/){
+	public Subdivision(int firstWord){
 		this.setIndex(firstWord);
-		//this.setFirstCharacterInOrthography(firstCharacterInOrthography);
 	}
 	
 	public static Subdivision read(Node node) throws Exception{
@@ -58,13 +60,8 @@ public class Subdivision implements Serializable{
 		int firstWord = 
 			Integer.parseInt(node.getAttributes().getNamedItem("firstWord").getNodeValue());
 
-//		int firstCharacterInOrthography = 
-//			Integer.parseInt(node.getAttributes().getNamedItem("firstCharacterInOrthography").getNodeValue());
-				
 
-		//System.err.println("subdivision: " + firstWord + ", " + firstCharacterInOrthography);
-				
-		return new Subdivision(firstWord/*, firstCharacterInOrthography*/);				
+		return new Subdivision(firstWord);				
 	}	
 	
 	public void setIndex(int firstWord) {
@@ -73,12 +70,4 @@ public class Subdivision implements Serializable{
 	public int getIndex() {
 		return index;
 	}
-	
-	// obsolete: see Utterance.getOrthographyIndex
-//	public void setFirstCharacterInOrthography(int firstCharacterInOrthography) {
-//		this.firstCharacterInOrthography = firstCharacterInOrthography;
-//	}
-//	public int getFirstCharacterInOrthography() {
-//		return firstCharacterInOrthography;
-//	}
 }

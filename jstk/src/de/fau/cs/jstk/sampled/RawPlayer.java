@@ -33,9 +33,18 @@ import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
-import javax.sound.sampled.TargetDataLine;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
+/**
+ * 
+ * raw audio playback, i.e. without the detour of converting from double-samples (AudioSource)
+ * to signed shorts; for time-critical applications. 
+ * 
+ * use e.g. enableStressTest(0.95) to stress-test this component by actively waiting 95% of the time.  
+ *
+ * @author hoenig
+ *
+ */
 public class RawPlayer implements Runnable, LineListener{
 	
 	public interface PlayEventListener {
@@ -386,16 +395,6 @@ public class RawPlayer implements Runnable, LineListener{
 		// "Intel [plughw:0,0]" works much better than "Java Sound Audio Engine". 
 		// And the latter from time to time refuses to put out anything
 		//player.enableStressTest(0.98);
-		
-//		 outdated 
-//		Runtime.getRuntime().addShutdownHook(new Thread(){
-//			public void run() {
-//				System.err.println("Inside Add Shutdown Hook");
-//				player.stopPlaying();
-//				System.err.println("player stopped");
-//			}			
-//		});		
-//		
 		
 		player.start();		
 		

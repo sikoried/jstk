@@ -37,6 +37,12 @@ import org.xiph.speex.spi.SpeexAudioFileReader;
 
 import de.fau.cs.jstk.sampled.RawPlayer;
 
+/**
+ * provides a static method for reading a speex-file (*.spx, see http://www.speex.org)
+ * as an AudioInputStream, using org.xiph.speex.spi.Speex2PcmAudioInputStream
+ * @author hoenig
+ *
+ */
 public class SpeexPlayer {
 	private static final int OGG_HEADERSIZE = 27;
 	private static final int SPEEX_HEADERSIZE = 80;
@@ -87,47 +93,6 @@ public class SpeexPlayer {
 
 		if (args.length > 0)
 			mixer = args[0];
-
-		/*
-		SpeexAudioFileReader reader = new SpeexAudioFileReader();
-
-		InputStream is = new BufferedInputStream(System.in);
-
-		if (!is.markSupported())
-			throw new Error("mark unsupported");
-
-		is.mark(100000);
-		AudioFileFormat speexFormat = null;
-		try {
-			speexFormat = reader.getAudioFileFormat(is);
-		} catch (UnsupportedAudioFileException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		}
-		
-
-		System.err.println(speexFormat.toString());
-		
-		try {
-			is.reset();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return;
-		}
-
-		Speex2PcmAudioInputStream pcmStream = new Speex2PcmAudioInputStream(is, speexFormat.getFormat(), 0);
-
-		// speexFormat.getFormat() reports wrong *FrameRate*	
-
-		AudioInputStream ais = new AudioInputStream(pcmStream, 
-				new AudioFormat(speexFormat.getFormat().getSampleRate(), 16, 1, true, false), 
-				-1);
-				*/
 		
 		AudioInputStream ais;
 		try {
@@ -149,14 +114,6 @@ public class SpeexPlayer {
 		// "Intel [plughw:0,0]" works much better than "Java Sound Audio Engine". 
 		// And the latter from time to time refuses to put out anything
 		//player.enableStressTest(0.98);
-
-		Runtime.getRuntime().addShutdownHook(new Thread(){
-			public void run() {
-				System.err.println("Inside Add Shutdown Hook");
-				player.stopPlaying();
-				System.err.println("player stopped");
-			}			
-		});		
 
 		player.start();
 		

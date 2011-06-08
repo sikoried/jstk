@@ -25,7 +25,6 @@ package de.fau.cs.jstk.segmented;
 
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,7 +38,11 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-
+/**
+ * a collection of utterances, e.g. read by one speaker during one training session.
+ * @author hoenig
+ *
+ */
 public class UtteranceCollection implements Serializable{
 	private static final long serialVersionUID = -2577602064537299436L;
 	
@@ -158,7 +161,7 @@ public class UtteranceCollection implements Serializable{
 		return read(root);
 	}
 	
-	public int getNMainPhrases(){
+	public int getNSubdivisions(){
 		int n = 0;
 		for (Utterance u : getTurns()){
 			n += u.getSubdivisions().length;			
@@ -168,9 +171,12 @@ public class UtteranceCollection implements Serializable{
 	
 	public static void main(String[] args) {		
 		try {
-			UtteranceCollection session = UtteranceCollection.read(new BufferedInputStream(new FileInputStream(
+			UtteranceCollection session = UtteranceCollection.read(
+					new BufferedInputStream(
+					UtteranceCollection.class.getResource("/segmented/dialog.xml").openStream()));
+					//new BufferedInputStream(new FileInputStream(
 					//"pronunciation/test/dialog.xml")));
-			"/home/hoenig/ldisk/Stichproben/dod/dialogs/A2.1/dialog.xml")));
+			
 			
 			int i;
 			for (i = 0; i < session.getTurns().length; i++){

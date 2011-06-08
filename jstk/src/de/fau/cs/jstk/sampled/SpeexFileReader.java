@@ -34,6 +34,11 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import org.xiph.speex.spi.Speex2PcmAudioInputStream;
 import org.xiph.speex.spi.SpeexAudioFileReader;
 
+/**
+ * speex-file reader as an AudioSource (*.spx, see http://www.speex.org)
+ * @author hoenig
+ *
+ */
 public class SpeexFileReader implements AudioSource{
 
 	private AudioFormat audioFormat;
@@ -135,7 +140,8 @@ public class SpeexFileReader implements AudioSource{
 	}
 	
 	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		throw new Error("not supported");		
+		if (applyPreEmphasis)
+			throw new Error("preemphasis not supported");		
 	}
 
 	@Override
@@ -143,6 +149,6 @@ public class SpeexFileReader implements AudioSource{
 		if (!streamClosed) {
 			pcmStream.close();
 			streamClosed = true;			
-		}		
+		}
 	}
 }

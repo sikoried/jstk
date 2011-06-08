@@ -24,6 +24,11 @@ package de.fau.cs.jstk.sampled;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+/**
+ * simple class for converting samples between double and little endian signed 16 bit 
+ * @author hoenig
+ *
+ */
 public class Samples {
 	public static double [] signedLinearLittleShorts2samples(byte [] buf){
 		ByteBuffer bb = ByteBuffer.wrap(buf);

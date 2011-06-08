@@ -28,7 +28,10 @@ import java.util.List;
 import org.w3c.dom.Node;
 
 /**
- * a word as listed in a pronunciation dictionary, i.e. for english words lowercase unless it's a name.
+ * a word as listed in a pronunciation dictionary: 
+ * graphemes (i.e. for English in lowercase unless it's a name), 
+ * phonemes, and a possible phrase accent.
+ * 
  * @author hoenig
  *
  */

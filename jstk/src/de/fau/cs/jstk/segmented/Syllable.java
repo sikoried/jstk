@@ -25,6 +25,11 @@ import java.io.Serializable;
 
 import org.w3c.dom.Node;
 
+/**
+ * syllable information: position and length in phonemic transcription, stress.
+ * @author hoenig
+ *
+ */
 public class Syllable implements Serializable {
 	private static final long serialVersionUID = -8714844619781382351L;
 
@@ -47,6 +52,9 @@ public class Syllable implements Serializable {
 	/** the canonical lexical stress */
 	private SYLLABLE_STRESS stress = null;
 	
+	/**
+	 * default (empty) constructor for XMLEncoder/Decoder.
+	 */
 	public Syllable(){
 	}
 	
