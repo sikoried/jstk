@@ -40,7 +40,7 @@ import de.fau.cs.jstk.segmented.Boundary.BOUNDARIES;
  * @author hoenig
  *
  */
-public class Utterance implements Serializable{
+public class Utterance implements Serializable, Cloneable{
 	
 	private static final long serialVersionUID = 3535642214459508273L;
 
@@ -79,14 +79,21 @@ public class Utterance implements Serializable{
 	public Utterance(){
 	}
 	
-	public Utterance(String orthography, String speaker,
+	public Utterance(String orthography, String role,
 			Word [] words,
 			Boundary [] boundaries, Subdivision [] subdivisions) {
 		this.setOrthography(orthography);
+		// TODO
 		this.words = words;
-		this.setSpeaker(speaker);
+		this.setSpeaker(role);
 		this.boundaries = boundaries;
 		this.setSubdivisions(subdivisions);
+	}
+	
+	@Override
+	public Utterance clone(){
+		return new Utterance(orthography, role, 
+				words, boundaries, subdivisions);
 	}
 
 	static Utterance read(Node node, String speaker) throws Exception{
@@ -376,8 +383,7 @@ public class Utterance implements Serializable{
 			
 			System.out.printf("this o [%d] = %s, total = %s",
 					i, getSubdivisionOrthography(i), orthography);
-		}
-		
+		}		
 		
 		int firstWord;
 		if (subdivisions.length == 0)
@@ -406,15 +412,14 @@ public class Utterance implements Serializable{
 				break;
 		int lastBoundary = i;		
 		
-		Boundary [] newBoundaries = Arrays.copyOfRange(boundaries, firstBoundary, lastBoundary + 1);
-		for (Boundary b : newBoundaries){
-			b.setIndex(b.getIndex() - firstWord);
-		}
+		Boundary [] newBoundaries = new Boundary[lastBoundary - firstBoundary + 1];
+		for (i = firstBoundary; i <= lastBoundary; i++)
+			newBoundaries[i - firstBoundary] = new Boundary(boundaries[i].getType(), 
+					boundaries[i].getIndex() - firstWord);		 
 		
-		Subdivision [] newSubdivisions = Arrays.copyOfRange(subdivisions, first, last + 1);
-		for (Subdivision s : newSubdivisions){
-			s.setIndex(s.getIndex() - firstWord);
-		}
+		Subdivision [] newSubdivisions = new Subdivision[last - first + 1];
+		for (i = first; i <= last; i++)
+			newSubdivisions[i - first] = new Subdivision(subdivisions[i].getIndex() - firstWord);
 		
 		return new Utterance(orthography, getSpeaker(),
 				Arrays.copyOfRange(words,

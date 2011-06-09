@@ -27,6 +27,8 @@ import java.util.List;
 
 import org.w3c.dom.Node;
 
+import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
+
 /**
  * a word as listed in a pronunciation dictionary: 
  * graphemes (i.e. for English in lowercase unless it's a name), 
@@ -35,7 +37,7 @@ import org.w3c.dom.Node;
  * @author hoenig
  *
  */
-public class Word implements Serializable {
+public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	private static final long serialVersionUID = 8791266506748252565L;
 	private String graphemes = null;
 	
@@ -66,10 +68,18 @@ public class Word implements Serializable {
 	}
 	
 	public Word(String graphemes, Syllable [] syllables, Phoneme [] phonemes, PHRASE_ACCENT phraseAccent){
+		// TODO
 		this.setGraphemes(graphemes);
+		// TODO
 		this.setSyllables(syllables);
 		this.setPhonemes(phonemes);
 		this.setPhraseAccent(phraseAccent);
+	}
+	
+	@Override
+	public Word clone(){
+		System.out.println("Word.clone(): hi");
+		return new Word(graphemes, syllables, phonemes, phraseAccent);
 	}
 
 	public void setGraphemes(String graphemes) {
