@@ -26,12 +26,14 @@ package de.fau.cs.jstk.segmented;
 import java.io.Serializable;
 import org.w3c.dom.Node;
 
+import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
+
 /**
  * phrase boundary: smaller (B2) and larger (B3) breaks in a sentence
  * @author hoenig
  *
  */
-public class Boundary implements Serializable{
+public class Boundary implements Serializable, PubliclyCloneable{
 	
 	private static final long serialVersionUID = -5380280871782636847L;
 	public enum BOUNDARIES{
@@ -71,6 +73,10 @@ public class Boundary implements Serializable{
 	public Boundary(BOUNDARIES type, int index){
 		this.setType(type);
 		this.setIndex(index);
+	}
+	
+	public Boundary clone(){
+		return new Boundary(type, index);
 	}
 	
 	/**

@@ -33,6 +33,8 @@ import java.util.List;
 import org.w3c.dom.Node;
 
 import de.fau.cs.jstk.segmented.Boundary.BOUNDARIES;
+import de.fau.cs.jstk.util.ArrayUtils;
+import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
 
 /**
  * represents a turn, sentence etc: orthography with punctuation as displayed to the speaker,
@@ -40,7 +42,7 @@ import de.fau.cs.jstk.segmented.Boundary.BOUNDARIES;
  * @author hoenig
  *
  */
-public class Utterance implements Serializable, Cloneable{
+public class Utterance implements Serializable, PubliclyCloneable{
 	
 	private static final long serialVersionUID = 3535642214459508273L;
 
@@ -83,11 +85,11 @@ public class Utterance implements Serializable, Cloneable{
 			Word [] words,
 			Boundary [] boundaries, Subdivision [] subdivisions) {
 		this.setOrthography(orthography);
-		// TODO
-		this.words = words;
+
+		setWords(words);
 		this.setSpeaker(role);
-		this.boundaries = boundaries;
-		this.setSubdivisions(subdivisions);
+		setBoundaries(boundaries);
+		setSubdivisions(subdivisions);
 	}
 	
 	@Override
@@ -256,7 +258,7 @@ public class Utterance implements Serializable, Cloneable{
 	}
 
 	public void setSubdivisions(Subdivision [] subdivisions) {
-		this.subdivisions = subdivisions;
+		this.subdivisions = ArrayUtils.arrayClone(subdivisions);
 	}
 
 	public Subdivision [] getSubdivisions() {
@@ -264,7 +266,7 @@ public class Utterance implements Serializable, Cloneable{
 	}
 
 	public void setWords(Word [] words) {
-		this.words = words;
+		this.words = ArrayUtils.arrayClone(words);
 	}
 
 	public Word [] getWords() {
@@ -276,7 +278,7 @@ public class Utterance implements Serializable, Cloneable{
 	}
 
 	public void setBoundaries(Boundary[] boundaries) {
-		this.boundaries = boundaries;
+		this.boundaries = ArrayUtils.arrayClone(boundaries);
 	}
 	
 	/**
@@ -381,7 +383,7 @@ public class Utterance implements Serializable, Cloneable{
 		for (i = first; i <= last; i++){
 			orthography += getSubdivisionOrthography(i);
 			
-			System.out.printf("this o [%d] = %s, total = %s",
+			System.out.printf("this o [%d] = %s, total = %s\n",
 					i, getSubdivisionOrthography(i), orthography);
 		}		
 		
@@ -398,7 +400,7 @@ public class Utterance implements Serializable, Cloneable{
 		else
 			lastWord = subdivisions[last + 1].getIndex() - 1; 
 		
-		System.out.printf("firstWord=%d, lastWord=%d", firstWord, lastWord);
+		System.out.printf("firstWord=%d, lastWord=%d\n", firstWord, lastWord);
 		
 		// search for start of new boundaries
 		for (i = 0; i < boundaries.length; i++)

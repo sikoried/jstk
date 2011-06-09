@@ -25,12 +25,14 @@ import java.io.Serializable;
 
 import org.w3c.dom.Node;
 
+import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
+
 /**
  * syllable information: position and length in phonemic transcription, stress.
  * @author hoenig
  *
  */
-public class Syllable implements Serializable {
+public class Syllable implements Serializable, PubliclyCloneable {
 	private static final long serialVersionUID = -8714844619781382351L;
 
 	/**
@@ -62,6 +64,10 @@ public class Syllable implements Serializable {
 		this.setPosition(position);
 		this.setN_phonemes(n_phonemes);				
 		this.setStress(stress);
+	}
+	
+	public Syllable clone(){
+		return new Syllable(position, nPhonemes, stress);
 	}
 
 	public void setPosition(int position) {

@@ -51,5 +51,18 @@ public class ArrayUtilsTest {
 
 		
 	}
+	
+	@Test
+	public void arrayCloneStringTest(){
+		String [] orig = new String[]{"asdf"};
+		
+		// for Strings, this suffices:
+		String [] copy = orig.clone();
+		copy[0] = "aaa";
+		
+		Assert.assertEquals("asdf", orig[0]);
+		
+		
+	}
 
 }

@@ -25,13 +25,15 @@ import java.io.Serializable;
 
 import org.w3c.dom.Node;
 
+import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
+
 /**
  * Subdivision of a turn into an unit suitable for (dialog) training.
  * Mostly but not always coincides with B3 boundaries (de.fau.cs.jstk.segmented.Boundary)
  * @author hoenig
  *
  */
-public class Subdivision implements Serializable{
+public class Subdivision implements Serializable, PubliclyCloneable{
 	private static final long serialVersionUID = -8814031215182493871L;
 	
 	/**
@@ -49,6 +51,10 @@ public class Subdivision implements Serializable{
 	
 	public Subdivision(int firstWord){
 		this.setIndex(firstWord);
+	}
+	
+	public Subdivision clone(){
+		return new Subdivision(index);
 	}
 	
 	public static Subdivision read(Node node) throws Exception{
