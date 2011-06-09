@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.w3c.dom.Node;
 
+import de.fau.cs.jstk.util.ArrayUtils;
 import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
 
 /**
@@ -68,17 +69,15 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	}
 	
 	public Word(String graphemes, Syllable [] syllables, Phoneme [] phonemes, PHRASE_ACCENT phraseAccent){
-		// TODO
+		
 		this.setGraphemes(graphemes);
-		// TODO
-		this.setSyllables(syllables);
-		this.setPhonemes(phonemes);
+		setSyllables(syllables);
+		setPhonemes(phonemes);
 		this.setPhraseAccent(phraseAccent);
 	}
 	
 	@Override
-	public Word clone(){
-		System.out.println("Word.clone(): hi");
+	public Word clone(){		
 		return new Word(graphemes, syllables, phonemes, phraseAccent);
 	}
 
@@ -91,7 +90,7 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	}
 
 	public void setSyllables(Syllable [] syllables) {
-		this.syllables = syllables;
+		this.syllables = ArrayUtils.arrayClone(syllables);
 	}
 
 	public Syllable [] getSyllables() {
@@ -144,7 +143,7 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	}
 
 	public void setPhonemes(Phoneme [] phonemes) {
-		this.phonemes = phonemes;
+		this.phonemes = ArrayUtils.arrayClone(phonemes);
 	}
 
 	public Phoneme [] getPhonemes() {

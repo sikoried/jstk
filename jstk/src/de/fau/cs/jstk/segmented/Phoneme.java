@@ -25,12 +25,14 @@ import java.io.Serializable;
 
 import org.w3c.dom.Node;
 
+import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
+
 /**
  * phoneme identified by an IPA string (http://www.langsci.ucl.ac.uk/ipa/)
  * @author hoenig
  *
  */
-public class Phoneme implements Serializable {
+public class Phoneme implements Serializable, PubliclyCloneable {
 	private static final long serialVersionUID = -4536269674274469022L;
 	/**
 	 * IPA representation, e.g. "i", "iː" or "eɪ"
@@ -46,6 +48,10 @@ public class Phoneme implements Serializable {
 	
 	public Phoneme(String symbols){
 		this.symbols = symbols;
+	}
+	
+	public Phoneme clone(){
+		return new Phoneme(symbols);
 	}
 
 	public void setSymbols(String symbols) {

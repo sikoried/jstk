@@ -38,12 +38,15 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import de.fau.cs.jstk.util.ArrayUtils;
+import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
+
 /**
  * a collection of utterances, e.g. read by one speaker during one training session.
  * @author hoenig
  *
  */
-public class UtteranceCollection implements Serializable{
+public class UtteranceCollection implements Serializable, PubliclyCloneable{
 	private static final long serialVersionUID = -2577602064537299436L;
 	
 	private static enum SegmentAttributes {
@@ -56,7 +59,11 @@ public class UtteranceCollection implements Serializable{
 	}
 	
 	public UtteranceCollection(Utterance [] turns){
-		this.setTurns(turns);
+		setTurns(turns);
+	}
+	
+	public UtteranceCollection clone(){
+		return new UtteranceCollection(turns); 
 	}
 	
 	public static UtteranceCollection read(Node node) throws Exception {
@@ -204,8 +211,8 @@ public class UtteranceCollection implements Serializable{
 
 	}
 
-	public void setTurns(Utterance [] turns) {
-		this.turns = turns;
+	public void setTurns(Utterance [] turns) {	
+		this.turns = ArrayUtils.arrayClone(turns);
 	}
 
 	public Utterance [] getTurns() {

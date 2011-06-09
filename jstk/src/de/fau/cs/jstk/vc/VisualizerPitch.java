@@ -105,6 +105,7 @@ public class VisualizerPitch extends FileVisualizer {
 	protected void recalculate() {
 	}
 
+	@SuppressWarnings("unused") // please don't check in dead code ;)
 	@Override
 	protected void drawSignal(Graphics g) {
 		if (true) return;
