@@ -21,15 +21,13 @@
 */
 package de.fau.cs.jstk.segmented;
 
-import java.beans.XMLEncoder;
-import java.io.ByteArrayOutputStream;
-
 import org.junit.Assert;
 import org.junit.Test;
 
 import de.fau.cs.jstk.segmented.Boundary.BOUNDARIES;
 import de.fau.cs.jstk.segmented.Syllable.SYLLABLE_STRESS;
 import de.fau.cs.jstk.segmented.Word.PHRASE_ACCENT;
+import de.fau.cs.jstk.util.ArrayUtils;
 
 public class UtteranceTest {
 	
@@ -153,5 +151,28 @@ public class UtteranceTest {
 				new String(u2.toXML()),
 				new String(
 				u.getSubUtterance(1, 1).toXML()));
-	}	
+	}
+	
+	@Test
+	public void cloneTest(){
+		Word [] array = new Word[] {
+				new Word("i'm", new Syllable[]{new Syllable()}, 
+						new Phoneme[]{new Phoneme("aɪ"), new Phoneme("m")}, PHRASE_ACCENT.NONE),
+						new Word("not", new Syllable[]{new Syllable()}, 
+								new Phoneme[]{new Phoneme("n"), new Phoneme("ɑː"), new Phoneme("t")}, PHRASE_ACCENT.NONE)
+			};
+		
+		System.out.println("\ncloning array");
+		
+		//Word [] copy = array.clone();
+		Word [] copy = (Word[]) ArrayUtils.arrayClone(array);
+		
+		System.out.println("cloning array: done");
+		array[0].setGraphemes("blu");
+		
+		System.out.println(array[0].getGraphemes());
+		System.out.println(copy[0].getGraphemes());
+
+	
+	}
 }
