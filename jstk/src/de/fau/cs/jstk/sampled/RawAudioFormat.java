@@ -267,7 +267,14 @@ public class RawAudioFormat {
 		
 		try {
 			// try to determine wav header
-			fmt = new RawAudioFormat(AudioSystem.getAudioFileFormat(new File(fileName)).getFormat());
+			File f = new File(fileName);			
+			if (!f.exists()) {
+				throw new IOException("File '" + fileName + "' does not exist");
+			}
+			if (!f.canRead()) {
+				throw new IOException("Cannot read file '" + fileName + "'");
+			}
+			fmt = new RawAudioFormat(AudioSystem.getAudioFileFormat(f).getFormat());
 		} catch (UnsupportedAudioFileException e) {
 			// maybe it's a SPHERE header?
 			BufferedReader br = new BufferedReader(new FileReader(fileName));
