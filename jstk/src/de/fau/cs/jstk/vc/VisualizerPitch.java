@@ -67,8 +67,11 @@ public class VisualizerPitch extends FileVisualizer {
 		yMax = f0max;
 		ytics = 100;
 
-		if (audiosource != null) {
-			selected = new boolean[(int) (xMax / shift)];
+		//if (audiosource != null) {
+		//	selected = new boolean[(int) (xMax / shift)];
+		//}
+		if (pitchSource1 != null) {
+			selected = new boolean[pitchSource1.getBufferSize()];
 		}
 
 		f0PointsSelectedListeners = new Vector<F0PointsSelectedListener>();
@@ -81,16 +84,19 @@ public class VisualizerPitch extends FileVisualizer {
 		super.setBufferedAudioSource(source);
 
 		selected = null;
-		if (source != null) {
-			selected = new boolean[(int) (xMax / shift)];
-		}
 		changed = false;
 	}
-
+	
 	public void setBufferedPitchSources(BufferedFrameSource pitchSource1,
 			BufferedFrameSource pitchSource2) {
 		this.pitchSource1 = pitchSource1;
 		this.pitchSource2 = pitchSource2;
+
+		if (pitchSource1 != null) {
+			selected = new boolean[pitchSource1.getBufferSize()];
+			// System.err.println(pitchSource1.getBufferSize() + " pitch values");
+		}
+
 		changed = false;
 		draw();
 		repaint();
@@ -108,8 +114,14 @@ public class VisualizerPitch extends FileVisualizer {
 	@SuppressWarnings("unused") // please don't check in dead code ;)
 	@Override
 	protected void drawSignal(Graphics g) {
-		if (true) return;
 		double nshift = shift * samplerate / 1000;
+		xMax = audiosource.getBufferSize() - 1;
+		int c = (int) (xMax / nshift);
+
+		if ((selected == null) || (selected.length < c)) {
+			// System.err.println("resize pitch array: " + (selected == null ? 0 : selected.length) + " -> " + c);
+			selected = new boolean[c];
+		}
 
 		int firstFrame = (int) (xMin / nshift);
 		double lastSample = convertPXtoX(getWidth() - border_right);
@@ -135,13 +147,13 @@ public class VisualizerPitch extends FileVisualizer {
 				g.setColor(colorSignal);
 				g.drawOval(px - 1, py1 - 1, 3, 3);
 				if (py1 == py2) {
-					if (selected[i]) {
+					if ((i < selected.length) && selected[i]) {
 						g.fillOval(px - 1, py1 - 1, 3, 3);
 					}
 				} else {
 					g.setColor(colorSignal2);
 					g.drawOval(px - 1, py2 - 1, 3, 3);
-					if (selected[i]) {
+					if ((i < selected.length) && selected[i]) {
 						g.setColor(colorSignal2);
 						g.fillOval(px - 1, py2 - 1, 3, 3);					
 					}						
