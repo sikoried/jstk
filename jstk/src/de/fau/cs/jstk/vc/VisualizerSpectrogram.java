@@ -163,14 +163,6 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 			
 			if (i % 1000 == 0) {
 				Thread.yield();
-				/*
-				javax.swing.SwingUtilities.invokeLater(new Runnable(){
-					public void run(){
-						draw();
-						repaint();
-					}
-				});
-				*/
 			}
 			
 			// int sample = (int) (i * xPerPixel);
@@ -208,6 +200,13 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 			}
 		}
 		System.err.println("Spectrogram computation finished: " + i);
+		
+		javax.swing.SwingUtilities.invokeLater(new Runnable(){
+			public void run(){
+				draw();
+				repaint();
+			}
+		});
 	}
 
 	@Override
