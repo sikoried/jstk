@@ -189,7 +189,6 @@ public class PitchCorrector extends JFrame implements KeyListener,
 		playButton.setContentAreaFilled(false);
 		playButton.setBorderPainted(false);
 		playButton.setMargin(new Insets(0, 0, 0, 0));
-		;
 		playButton.setEnabled(false);
 		playButton.setMnemonic('p');
 		playButton.addActionListener(new ActionListener() {
@@ -246,7 +245,7 @@ public class PitchCorrector extends JFrame implements KeyListener,
 			pitchPanels[i].setLayout(new BorderLayout());
 			pitchPanels[i].add(pitchVisualizers[i], BorderLayout.CENTER);
 			pitchPanels[i].add(Box.createVerticalStrut(10), BorderLayout.SOUTH);
-			box.add(pitchPanels[i]);
+			box.add(pitchPanels[i]);			
 		}
 
 		transcriptionVisualizer = new VisualizerTranscription(
@@ -376,8 +375,14 @@ public class PitchCorrector extends JFrame implements KeyListener,
 		enableMenuItems(false);
 
 		setFocusable(true);
-		// pack();
 		setVisible(true);
+		
+		for (int i = 0; i < pitchDisplays; i++) {
+			if (!preferences.getBoolean("f0display" + i + ".visible")) {
+				viewPitchPanelItems[i].setSelected(false);
+			} 
+			showPitchPanel(i);
+		}
 	}
 
 	private JMenuItem newMenuItem(JMenu menu, String item) {
@@ -558,7 +563,9 @@ public class PitchCorrector extends JFrame implements KeyListener,
 			showPitchEstimator();
 			break;
 		case KeyEvent.VK_ESCAPE:
-			if (zoomItem.isSelected()) {
+			if ((audioPlay != null) && (audioPlay.isPlaying())) {
+				audioPlay.stop();
+			} else if (zoomItem.isSelected()) {
 				audioSignalVisualizer
 						.switchMode(VisualComponent.SELECTION_MODE);
 				powerVisualizer.switchMode(VisualComponent.SELECTION_MODE);
@@ -732,17 +739,11 @@ public class PitchCorrector extends JFrame implements KeyListener,
 			transcriptionVisualizer.disconnect(-1);
 			return;
 		}
-		if (source == viewPitchPanelItems[0]) {
-			showPitchPanel(0);
-			return;
-		}
-		if (source == viewPitchPanelItems[1]) {
-			showPitchPanel(1);
-			return;
-		}
-		if (source == viewPitchPanelItems[2]) {
-			showPitchPanel(2);
-			return;
+		for (int i = 0; i < pitchDisplays; i++) {
+			if (source == viewPitchPanelItems[i]) {
+				showPitchPanel(i);
+				return;
+			}
 		}
 		if (source == viewSpectrogramControlItem) {
 			showSpectrogramControl();
@@ -894,17 +895,15 @@ public class PitchCorrector extends JFrame implements KeyListener,
 		zoomItem.setEnabled(enable);
 	}
 
-	private void newTranscription(Transcription transcription)
-			throws IOException, UnsupportedAudioFileException {
+	private void newTranscription(Transcription transcription) {
 		try {
 			reader = new AudioFileReader(
 					preferences.getString("wavdir")
 							+ System.getProperty("file.separator")
 							+ list.getTurnName(), false);
 			reader.setPreEmphasis(false, 0);
-			BandPassFilter filteredSource = new BandPassFilter(reader, 0, 8000,
-					64);
-			source = new BufferedAudioSource(filteredSource);
+			//BandPassFilter filteredSource = new BandPassFilter(reader, 0, 8000, 64);
+			source = new BufferedAudioSource(reader);
 			audioSignalVisualizer.setBufferedAudioSource(source);
 			powerVisualizer.setBufferedAudioSource(source);
 			spectrogramVisualizer.setBufferedAudioSource(source);
@@ -989,9 +988,7 @@ public class PitchCorrector extends JFrame implements KeyListener,
 	}
 
 	public void newPitch(BufferedAudioSource audiosource) {
-		BufferedFrameSource source1 = null;
-		BufferedFrameSource source2 = null;
-		BufferedFrameSource source3 = null;
+		BufferedFrameSource sources[] = new BufferedFrameSource[pitchDisplays]; 
 		pitchsource = null;
 
 		String filename = list.getTurnName();
@@ -1000,30 +997,15 @@ public class PitchCorrector extends JFrame implements KeyListener,
 			filename = filename.substring(0, index);
 		}
 
-		try {
-			source1 = new BufferedFrameSource(new FrameFileReader(
-					preferences.getString("f0dir1")
+		for (int i = 0; i < pitchDisplays; i++) {
+			try {
+				sources[i] = new BufferedFrameSource(new FrameFileReader(
+					preferences.getString("f0dir" + i)
 							+ System.getProperty("file.separator") + filename
 							+ preferences.getString("f0suffix_original")));
-		} catch (IOException e) {
-			source1 = null;
-		}
-
-		try {
-			source2 = new BufferedFrameSource(new FrameFileReader(
-					preferences.getString("f0dir2")
-							+ System.getProperty("file.separator") + filename
-							+ preferences.getString("f0suffix_original")));
-		} catch (IOException e) {
-			source2 = null;
-		}
-		try {
-			source3 = new BufferedFrameSource(new FrameFileReader(
-					preferences.getString("f0dir3")
-							+ System.getProperty("file.separator") + filename
-							+ preferences.getString("f0suffix_original")));
-		} catch (IOException e) {
-			source3 = null;
+			} catch (IOException e) {
+				sources[i] = null;
+			}
 		}
 
 		try {
@@ -1033,34 +1015,20 @@ public class PitchCorrector extends JFrame implements KeyListener,
 							+ preferences.getString("f0suffix_corrected")));
 		} catch (IOException e) {
 			try {
-				pitchsource = new BufferedFrameSource(source1);
+				pitchsource = new BufferedFrameSource(sources[0]);
 			} catch (IOException e1) {
 				pitchsource = null;
 			}
 		}
 
-		if (source1 != null) {
-			pitchVisualizers[0].setBufferedAudioSource(audiosource);
-			pitchVisualizers[0].setBufferedPitchSources(source1, pitchsource);
-		} else {
-			pitchVisualizers[0].setBufferedAudioSource(null);
-			pitchVisualizers[0].setBufferedPitchSources(null, null);
-		}
-
-		if (source2 != null) {
-			pitchVisualizers[1].setBufferedAudioSource(audiosource);
-			pitchVisualizers[1].setBufferedPitchSources(source2, pitchsource);
-		} else {
-			pitchVisualizers[1].setBufferedAudioSource(null);
-			pitchVisualizers[1].setBufferedPitchSources(null, null);
-		}
-
-		if (source3 != null) {
-			pitchVisualizers[2].setBufferedAudioSource(audiosource);
-			pitchVisualizers[2].setBufferedPitchSources(source3, pitchsource);
-		} else {
-			pitchVisualizers[2].setBufferedAudioSource(null);
-			pitchVisualizers[2].setBufferedPitchSources(null, null);
+		for (int i = 0; i < pitchDisplays; i++) {
+			if (sources[i] != null) {
+				pitchVisualizers[i].setBufferedAudioSource(audiosource);
+				pitchVisualizers[i].setBufferedPitchSources(sources[i], pitchsource);
+			} else {
+				pitchVisualizers[i].setBufferedAudioSource(null);
+				pitchVisualizers[i].setBufferedPitchSources(null, null);
+			}
 		}
 	}
 
@@ -1287,6 +1255,7 @@ public class PitchCorrector extends JFrame implements KeyListener,
 			p.setVisible(false);
 		}
 		setMinimumSize(new Dimension(getSize().width, 100));
+		preferences.set("f0display" + panel + ".visible", String.valueOf(item.isSelected()));
 		pack();
 	}
 

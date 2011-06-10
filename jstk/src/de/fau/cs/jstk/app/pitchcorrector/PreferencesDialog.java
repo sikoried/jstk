@@ -153,7 +153,7 @@ public class PreferencesDialog extends JDialog implements ActionListener {
 		wavDirTextField.setText(preferences.getString("wavdir"));
 		for (int i = 0; i < pitchDisplays; i++) {
 			f0DirTextFields[i]
-					.setText(preferences.getString("f0dir" + (i + 1)));
+					.setText(preferences.getString("f0dir" + i));
 		}
 		f0DirTextFields[pitchDisplays].setText(preferences
 				.getString("f0dir_corrected"));
@@ -175,7 +175,7 @@ public class PreferencesDialog extends JDialog implements ActionListener {
 			preferences.set("wavdir", wavDirTextField.getText());
 			for (int i = 0; i < pitchDisplays; i++) {
 				preferences
-						.set("f0dir" + (i + 1), f0DirTextFields[i].getText());
+						.set("f0dir" + i, f0DirTextFields[i].getText());
 			}
 			preferences.set("f0dir_corrected",
 					f0DirTextFields[pitchDisplays].getText());

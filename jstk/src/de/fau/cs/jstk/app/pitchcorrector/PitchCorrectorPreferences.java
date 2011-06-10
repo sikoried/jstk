@@ -43,17 +43,25 @@ public class PitchCorrectorPreferences implements Preferences {
 		properties = new LinkedHashMap<String, String>();
 		properties.put("transcriptionFile", "");
 		properties.put("wavdir", "./WAV/");
+		properties.put("f0.displays", "3");		
+		properties.put("f0dir0", "./F0_AUTO/");
 		properties.put("f0dir1", "./F0_AUTO/");
 		properties.put("f0dir2", "./F0_AUTO/");
-		properties.put("f0dir3", "./F0_AUTO/");
+		properties.put("f0display0.visible", "true");		
+		properties.put("f0display1.visible", "true");		
+		properties.put("f0display2.visible", "true");		
 		properties.put("f0dir_corrected", "./F0_CORRECTED/");
 		properties.put("f0suffix_original", ".f0");
 		properties.put("f0suffix_corrected", ".f0.new");
 		properties.put("f0.shift", "10");
-		properties.put("f0.displays", "3");
 		properties.put("f0.windowLength", "16");
 		properties.put("f0.minimum", "50");
 		properties.put("f0.maximum", "600");
+		properties.put("spectrogram.windowType", "0");
+		properties.put("spectrogram.windowLength", "16");
+		properties.put("spectrogram.color", "false");
+		properties.put("spectrogram.brightness", "0.5");
+		properties.put("spectrogram.gamma", "1.0");
 		properties.put("mainWindow.x", "0");
 		properties.put("mainWindow.y", "0");
 		properties.put("mainWindow.width", "650");
@@ -98,6 +106,16 @@ public class PitchCorrectorPreferences implements Preferences {
 				System.err.println("Cannot interpret line '" + line + "'");
 			}
 		}
+		
+		int pitchDisplays = getInt("f0.displays");
+		for (int i = 0; i < pitchDisplays; i++) {
+			if (properties.get("f0dir" + i) == null) {
+				properties.put("f0dir" + i, "./F0_AUTO/");
+			}
+			if (properties.get("f0display" + i + ".visible") == null) {
+				properties.put("f0display" + i + ".visible", "true");
+			}
+		}
 	}
 	
 	public void save(String filename) throws IOException {
@@ -129,6 +147,14 @@ public class PitchCorrectorPreferences implements Preferences {
 			return Double.parseDouble(properties.get(key));
 		} catch (Exception e) {
 			return Double.parseDouble(defaults.get(key));
+		}
+	}
+
+	public boolean getBoolean(String key) {
+		try {
+			return Boolean.parseBoolean(properties.get(key));
+		} catch (Exception e) {
+			return Boolean.parseBoolean(defaults.get(key));
 		}
 	}
 
