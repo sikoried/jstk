@@ -46,13 +46,16 @@ public class ContrastBrightnessControl extends JComponent implements
 	private int dragging = 0;
 	private Vector<ContrastBrightnessListener> contrastBrightnessListeners;
 
-	public ContrastBrightnessControl() {
+	public ContrastBrightnessControl(double x, double y) {
 		addMouseListener(this);
 		addMouseMotionListener(this);
 
 		contrastBrightnessListeners = new Vector<ContrastBrightnessListener>();
 
 		setPreferredSize(new Dimension(200, 200));
+		
+		this.x = x;
+		this.y = y;
 	}
 
 	public int convertXtoPX(double x) {

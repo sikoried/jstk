@@ -49,6 +49,11 @@ public class TranscriberPreferences implements Preferences {
 		properties.put("f0.windowLength", "16");
 		properties.put("f0.minimum", "50");
 		properties.put("f0.maximum", "600");
+		properties.put("spectrogram.windowType", "0");
+		properties.put("spectrogram.windowLength", "16");
+		properties.put("spectrogram.color", "false");
+		properties.put("spectrogram.brightness", "0.5");
+		properties.put("spectrogram.gamma", "1.0");
 		properties.put("mainWindow.x", "0");
 		properties.put("mainWindow.y", "0");
 		properties.put("mainWindow.width", "650");
@@ -119,6 +124,14 @@ public class TranscriberPreferences implements Preferences {
 		}
 	}
 	
+	public boolean getBoolean(String key) {
+		try {
+			return Boolean.parseBoolean(properties.get(key));
+		} catch (Exception e) {
+			return Boolean.parseBoolean(defaults.get(key));
+		}
+	}
+
 	public double getDouble(String key) {
 		try {
 			return Double.parseDouble(properties.get(key));
