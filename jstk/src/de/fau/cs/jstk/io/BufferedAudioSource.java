@@ -134,7 +134,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 
 			if (stopRequest) {
 				stillReading = false;
-				System.err.println("Reading stopped");
+				// System.err.println("Reading stopped");
 				break;
 			}
 
@@ -153,7 +153,6 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 							.println("this case is not handled properly and should not have happened");
 				}
 				numSamples += more;
-				//informAudioBufferListeners();
 			}
 
 			if (index == buffer.length) {
@@ -162,7 +161,9 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 				System.arraycopy(save, 0, buffer, 0, save.length);
 			}
 			
-			System.err.println(numSamples + " samples available; " + more + " new samples");
+			Thread.yield();
+			
+			// System.err.println(numSamples + " samples available; " + more + " new samples");
 		}
 
 		stillReading = false;
@@ -302,7 +303,8 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 		if (stillReading) {
 			while ((index >= numSamples) && stillReading) {
 				try {
-					Thread.sleep(10);
+					// System.err.println("BufferedAudioSource: waiting until data availble...");
+					Thread.sleep(50);
 				} catch (InterruptedException e) {
 				}
 			}
@@ -482,7 +484,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 
 	@Override
 	public void run() {
-		System.err.println("Thread started: reading file");
+		// System.err.println("Thread started: reading file");
 		fillBuffer();
 	}
 
