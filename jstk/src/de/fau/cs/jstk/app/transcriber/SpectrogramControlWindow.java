@@ -71,8 +71,9 @@ public class SpectrogramControlWindow extends JFrame implements
 		panel.add(new JLabel("Window type"));
 		String[] windowTypes = { "Hamming", "Hann", "Rectangle" };
 		windowTypeComboBox = new JComboBox(windowTypes);
-		windowTypeComboBox.setSelectedIndex(0);
-		// windowTypeComboBox.setEnabled(false);
+		int window = preferences.getInt("spectrogram.windowType");
+		windowTypeComboBox.setSelectedIndex(window - 1);
+		spectrogramVisualizer.setWindowFunction(window);
 		windowTypeComboBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				setWindowType();
@@ -85,10 +86,11 @@ public class SpectrogramControlWindow extends JFrame implements
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT));
 		panel.add(new JLabel("Window length"));
 		String[] windowLengths = { "2", "4", "8", "16", "32", "64" };
+		double length = preferences.getDouble("spectrogram.windowLength");
 		windowLengthComboBox = new JComboBox(windowLengths);
-		windowLengthComboBox.setSelectedIndex(3);
+		windowLengthComboBox.setSelectedItem(String.valueOf((int) length));
+		spectrogramVisualizer.setWindowLength(length);
 		windowLengthComboBox.setEditable(true);
-		// windowLengthComboBox.setEnabled(false);
 		windowLengthComboBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				setWindowLength();
@@ -102,7 +104,14 @@ public class SpectrogramControlWindow extends JFrame implements
 		panel.add(new JLabel("Color spectrogram"));
 		String[] colors = { "color", "gray", };
 		colorSpectrogramComboBox = new JComboBox(colors);
-		colorSpectrogramComboBox.setSelectedIndex(1);
+		boolean color = preferences.getBoolean("spectrogram.color");
+		if (color) {
+			colorSpectrogramComboBox.setSelectedIndex(0);
+			spectrogramVisualizer.setColorSpectrogram(true);
+		} else {
+			colorSpectrogramComboBox.setSelectedIndex(1);			
+			spectrogramVisualizer.setColorSpectrogram(false);
+		}
 		colorSpectrogramComboBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				setColor();
@@ -117,7 +126,10 @@ public class SpectrogramControlWindow extends JFrame implements
 		box.add(panel);
 
 		panel = new JPanel();
-		contrastBrightnessControl = new ContrastBrightnessControl();
+		double gamma = preferences.getDouble("spectrogram.gamma");
+		double brightness = preferences.getDouble("spectrogram.brightness");
+		spectrogramVisualizer.setProperties(gamma, brightness);
+		contrastBrightnessControl = new ContrastBrightnessControl(brightness, gamma);
 		contrastBrightnessControl.addContrastBrightnessListener(this);
 		panel.add(contrastBrightnessControl);
 		box.add(panel);
@@ -125,6 +137,7 @@ public class SpectrogramControlWindow extends JFrame implements
 		c.add(box, BorderLayout.NORTH);
 
 		setAlwaysOnTop(true);
+		
 	}
 
 	private void hideWindow() {
@@ -133,24 +146,32 @@ public class SpectrogramControlWindow extends JFrame implements
 	}
 
 	private void setWindowType() {
-		spectrogramVisualizer.setWindowFunction(windowTypeComboBox.getSelectedIndex() + 1);
+		int window = windowTypeComboBox.getSelectedIndex() + 1;
+		spectrogramVisualizer.setWindowFunction(window);
+		preferences.set("spectrogram.windowType", String.valueOf(window));
 	}
 
 	private void setWindowLength() {
-		spectrogramVisualizer.setWindowLength(Double.parseDouble(windowLengthComboBox.getSelectedItem().toString()));
+		double length = Double.parseDouble(windowLengthComboBox.getSelectedItem().toString());
+		spectrogramVisualizer.setWindowLength(length);
+		preferences.set("spectrogram.windowLength", String.valueOf(length));
 	}
 
 	private void setColor() {
 		if (colorSpectrogramComboBox.getSelectedIndex() == 0) {
 			spectrogramVisualizer.setColorSpectrogram(true);
+			preferences.set("spectrogram.color", "true");
 		} else {
 			spectrogramVisualizer.setColorSpectrogram(false);
+			preferences.set("spectrogram.color", "false");
 		}
 	}
 
 	@Override
 	public void contrastBrightnessChanged(double contrast, double brightness) {
 		spectrogramVisualizer.setProperties(contrast, brightness);
+		preferences.set("spectrogram.gamma", String.valueOf(contrast));
+		preferences.set("spectrogram.brightness", String.valueOf(brightness));
 	}
 
 }

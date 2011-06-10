@@ -32,6 +32,8 @@ public interface Preferences {
 
 	public int getInt(String key);
 
+	public boolean getBoolean(String key);
+
 	public double getDouble(String key);
 
 	public String getString(String key);
