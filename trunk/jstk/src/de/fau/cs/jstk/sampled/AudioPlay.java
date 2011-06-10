@@ -344,7 +344,7 @@ public class AudioPlay implements Runnable {
 		try {
 			while (write() > 0) {
 				if (requestStop) {
-					System.err.println("AudioPlay forced to stop");
+					// System.err.println("AudioPlay forced to stop");
 					break;
 				}
 			}
@@ -370,6 +370,13 @@ public class AudioPlay implements Runnable {
 			}
 			requestStop = false;
 		}
+	}
+	
+	public boolean isPlaying() {
+		if ((playThread != null) && playThread.isAlive()) {			
+			return true;
+		}
+		return false;
 	}
 
 	
