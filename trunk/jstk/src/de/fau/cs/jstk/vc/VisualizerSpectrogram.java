@@ -74,6 +74,11 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 	@Override
 	protected void recalculate() {
 		stop();
+		if (spectrogram != null) {
+			for (int i = 0; i < spectrogram.length; i++) {
+				spectrogram[i] = null;
+			}
+		}
 		if (audiosource != null) {
 			computeThread = new Thread(this);
 			computeThread.start();
@@ -87,7 +92,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 
 	private void stop() {
 		if ((computeThread != null) && computeThread.isAlive()) {
-			System.err.print("Asking spectrogram calculation to stop... ");
+			//System.err.println("Asking spectrogram calculation to stop... ");
 			requestStop = true;
 			while (computeThread.isAlive()) {
 				try {
@@ -96,7 +101,6 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 				}
 			}
 			requestStop = false;
-			System.err.println("done");
 		}
 	}
 
@@ -109,7 +113,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 
 		BufferedAudioSourceReader as = audiosource.getReader();
 
-		System.err.println("Calculating spectrogram... " + xPerPixel);
+		// System.err.println("Calculating spectrogram... ");
 
 		Window window = Window.create(as, windowFunction, windowLength, 10);
 
@@ -118,6 +122,10 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 		int i = 0;
 		boolean finished = false;
 		int size = 0;
+		if (spectrogram != null) {
+			size = spectrogram.length;
+		}
+		
 		while (!finished) {
 			
 			if (i >= size) {
@@ -154,15 +162,23 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 			}
 			
 			if (i % 1000 == 0) {
-				System.err.println("Spectrum " + i);
+				Thread.yield();
+				/*
+				javax.swing.SwingUtilities.invokeLater(new Runnable(){
+					public void run(){
+						draw();
+						repaint();
+					}
+				});
+				*/
 			}
 			
 			// int sample = (int) (i * xPerPixel);
-			int sample = (int) (i * samplerate / 100);
+			int sample = (int) (i * (samplerate / 100));
 			double[] spectrum = VisualizerSpectrum.calculateSpectrum(as,
 					sample, samplerate, windowLength, fft_size, window, false);
 
-			if (i == 7000) {
+			if (i == -1) {
 				System.err.println();
 				System.err.println("sample: " + sample);
 				System.err.println("samplerate: " + samplerate);
@@ -176,7 +192,6 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 			}
 
 			for (int j = 0; j < spectrum.length; j++) {
-				spectrum[j] = Math.pow(spectrum[j], gamma);
 				if (spectrum[j] < min) {
 					min = spectrum[j];
 				}
@@ -221,7 +236,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 		int x1 = convertXtoPX(highlightedSectionStartSample);
 		int x2 = convertXtoPX(highlightedSectionEndSample);
 		xMax = audiosource.getBufferSize() - 1;
-		int size = (int) Math.ceil(xMax * 100.0 / samplerate);
+		//int size = (int) Math.ceil(xMax * 100.0 / samplerate);
 		
 		if (spectrogram == null) {
 			return;
@@ -229,13 +244,20 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 		
 
 		int i = (int) (xMin / xPerPixel);
-		System.err.println("HIER: " + xMax + " " + i + " " + size + " " + min + " " + max);
-		for (int x = border_left; (x < getWidth() - border_right) && (i < size); x++, i++) {
-			double spectrum[] = spectrogram[i];
+		double hMin = Math.pow(min, gamma);
+		double hMax = Math.pow(max, gamma);
+
+		for (int x = border_left; (x < getWidth() - border_right); x++, i++) {
+			int idx = (int) (convertPXtoX(x) / samplerate * 100);
+			if (idx >= spectrogram.length) {
+				break;
+			}
+			
+			double spectrum[] = spectrogram[idx];
 		    
 			if (spectrum == null) {
-				System.err.println("no spectrum for " + i);
-		    	continue;
+				// System.err.println("no spectrum for " + i);
+		    	break;
 		    }
 		    
 			boolean selected = false;
@@ -246,7 +268,8 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 
 			for (int j = 0; j <= h; j++) {
 				double v = getValue(spectrum, fft_size / 2 + 1, j * yMax / h);
-				int f = (int) ((v - min) * 255.0 / (max - min));
+				v = Math.pow(v, gamma);
+				int f = (int) ((v - hMin) * 255.0 / (hMax - hMin));
 
 				g.setColor(determineColor(f, selected));
 				g.drawLine(x, y0 - j, x, y0 - j);
@@ -331,7 +354,8 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 
 	public void setColorSpectrogram(boolean color) {
 		colorSpectrogram = color;
-		refresh();
+		draw();
+		repaint();
 	}
 
 	public void setWindowFunction(int function) {
@@ -352,7 +376,8 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 		if ((brightness >= 0.0f) && (brightness <= 1.0f)) {
 			this.brightness = brightness;
 		}
-		refresh();
+		draw();
+		repaint();
 	}
 
 	public boolean getColor() {

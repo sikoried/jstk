@@ -78,7 +78,7 @@ public abstract class VisualComponent extends JComponent implements
 	/**
 	 * number of samples shown per pixel
 	 */
-	public double xPerPixel = 160;
+	public double xPerPixel = 40;
 
 	/**
 	 * first x value that is shown in the component
@@ -216,6 +216,12 @@ public abstract class VisualComponent extends JComponent implements
 				|| (img.getHeight() < getHeight())) {
 			int w = roundUp(getWidth(), STEPS);
 			int h = roundUp(getHeight(), STEPS);
+			if (w < 10) { 
+				w = 10;
+			}
+			if (h < 10) {
+				h = 10;
+			}
 			img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
 			imgMouse = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
 		}

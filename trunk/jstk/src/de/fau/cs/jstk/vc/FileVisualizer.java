@@ -615,7 +615,7 @@ public abstract class FileVisualizer extends VisualComponent implements
 		xPerPixel *= factor;
 		checkSamplesPerPixel();
 		adjustScrollBar();
-		recalculate();
+		// recalculate();
 		draw();
 		repaint();
 	}
@@ -640,7 +640,7 @@ public abstract class FileVisualizer extends VisualComponent implements
 		checkSamplesPerPixel();
 		xMin = Math.min(i1, i2);
 		adjustScrollBar();
-		recalculate();
+		// recalculate();
 		draw();
 		repaint();
 	}
@@ -808,7 +808,7 @@ public abstract class FileVisualizer extends VisualComponent implements
 		this.isMarked = isMarked;
 		adjustScrollBar();
 		if (recalculate) {
-			recalculate();
+			// recalculate();
 		}
 		draw();
 		repaint();
@@ -826,6 +826,10 @@ public abstract class FileVisualizer extends VisualComponent implements
 	}
 	
 	public void mouseMoved(Object sender, int sample) {
+		if (imgMouse == null) {
+			return;
+		}
+		
 		Graphics g = imgMouse.getGraphics();
 		g.drawImage(img, 0, 0, null);
 		if (sample >= 0) {
