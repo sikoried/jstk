@@ -109,8 +109,6 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 			return;
 		}
 		
-		// shift = (xPerPixel * 1000.0 / samplerate);
-
 		BufferedAudioSourceReader as = audiosource.getReader();
 
 		// System.err.println("Calculating spectrogram... ");
@@ -130,7 +128,6 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 			
 			if (i >= size) {
 				xMax = audiosource.getBufferSize() - 1;
-				// size = (int) Math.ceil(xMax / xPerPixel);
 				size = (int) Math.ceil(xMax * 100.0 / samplerate);
 				if (spectrogram == null) {
 					if (size > 0) {
@@ -161,7 +158,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 				}
 			}
 			
-			if (i % 1000 == 0) {
+			if (i % 100 == 0) {
 				Thread.yield();
 			}
 			
