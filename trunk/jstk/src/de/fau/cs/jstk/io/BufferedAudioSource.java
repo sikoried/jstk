@@ -333,9 +333,9 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	 */
 	public double get(double index, int interpolation) {
 		if (stillReading) {
-			while ((index >= numSamples) && stillReading) {
+			while ((index+500 >= numSamples) && stillReading) {
 				try {
-					Thread.sleep(10);
+					Thread.sleep(50);
 				} catch (InterruptedException e) {
 				}
 			}
@@ -348,16 +348,16 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 		switch (interpolation) {
 		case LINEAR_INTERPOLATION:
 			int i1 = (int) index;
-			int i2 = i1 + 1;
 			if (i1 < 0) {
 				i1 = 0;
 			}
+			int i2 = i1 + 1;
 
 			int bufIdx1 = i1 >> BUFFER_SIZE_EXP;
 			int bufPos1 = i1 & (BUFFER_SIZE - 1);
 			int bufIdx2 = bufIdx1;
 			int bufPos2 = bufPos1 + 1;
-			if (bufPos2 >= BUFFER_SIZE) {
+			if (bufPos2 == BUFFER_SIZE) {
 				bufPos2 = 0;
 				bufIdx2++;
 			}
@@ -366,7 +366,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 				return buffer[bufIdx1][bufPos1];
 			}
 
-			double v = (index - i1) * buffer[bufIdx1][bufPos1] + (i2 - index)
+			double v = (i2 - index) * buffer[bufIdx1][bufPos1] + (index - i1)
 					* buffer[bufIdx2][bufPos2];
 			return v;
 		case SINC_INTERPOLATION:
@@ -375,8 +375,8 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 			if (i1 < 0) {
 				i1 = 0;
 			}
-			if (i2 >= buffer.length) {
-				i2 = buffer.length - 1;
+			if (i2 >= numSamples) {
+				i2 = numSamples - 1;
 			}
 			v = 0;
 			for (int i = i1; i <= i2; i++) {
