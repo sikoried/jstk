@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import javax.sound.sampled.UnsupportedAudioFileException;
+
 public class AudioFileListReader implements AudioSource {
 
 	private AudioFileReader current = null;
@@ -44,7 +46,7 @@ public class AudioFileListReader implements AudioSource {
 	private boolean cache = true;
 	
 	/** apply pre-emphasis? */
-	private boolean preemphasize = true;
+	private boolean preemphasize = false;
 	
 	/** pre-emphasis factor */
 	private double a = AudioFileReader.DEFAULT_PREEMPHASIS_FACTOR;
@@ -59,7 +61,7 @@ public class AudioFileListReader implements AudioSource {
 	 * 
 	 * @see RawAudioFormat.create
 	 */
-	public AudioFileListReader(String fileList, RawAudioFormat format, boolean cache) throws IOException {
+	public AudioFileListReader(String fileList, RawAudioFormat format, boolean cache) throws UnsupportedAudioFileException, IOException {
 		this.fileList = fileList;
 		this.format = format;
 		this.cache = cache;
@@ -71,7 +73,7 @@ public class AudioFileListReader implements AudioSource {
 	 * to the file list
 	 * @throws IOException
 	 */
-	private void initialize() throws IOException {
+	private void initialize() throws UnsupportedAudioFileException, IOException {
 		
 		// read the file list
 		BufferedReader br = new BufferedReader(new FileReader(fileList));
@@ -142,7 +144,11 @@ public class AudioFileListReader implements AudioSource {
 			
 			// load next file
 			current.tearDown();
-			current = new AudioFileReader(list.remove(), format, cache);
+			try {
+				current = new AudioFileReader(list.remove(), format, cache);
+			} catch (UnsupportedAudioFileException e) {
+				throw new IOException(e.toString());
+			}
 			current.setPreEmphasis(preemphasize, a);
 			
 			// read frame
@@ -153,7 +159,11 @@ public class AudioFileListReader implements AudioSource {
 				buf[i] = 0.;
 			
 			if (list.size() > 0) {
-				current = new AudioFileReader(list.remove(), format, cache);
+				try {
+					current = new AudioFileReader(list.remove(), format, cache);
+				} catch (UnsupportedAudioFileException e) {
+					throw new IOException(e.toString());
+				}
 				current.setPreEmphasis(preemphasize, a);
 			}
 			

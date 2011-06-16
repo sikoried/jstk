@@ -39,37 +39,30 @@ import javax.sound.sampled.SourceDataLine;
  * @author sikoried
  * @see de.fau.cs.jstk.app.ThreadedPlayer
  */
-public class AudioPlay implements Runnable {
+public class AudioPlay {
 	private SourceDataLine line;
 	
-	//private int bs;
 	private double [] doubleBuf = null;
-	private byte[] byteBuf = null;
+	private byte [] byteBuf = null;
 	private int fs;
 	
 	private String mixerName = null;
 	private AudioSource source = null;
 	
-	/// output bit rate
-	public static final int BIT_DEPTH = 16;
-	
-	/// buffer length in msec
-	//public static final int BUFLENGTH = 200;
-	
-	
-	/// in seconds
-	private double desiredBufDur = 0;
-	/// in seconds
-	//private double actualBufDur = 0;
-	
+	/** output bit rate */
+	public static final int BIT_RATE = 16;
+
 	private AudioFormat af;
+	
+	
 	private boolean lineOpened = false;
 
+	/** data scaling coefficient */
 	private double scale = 1.;
+
+	/** zero for default, milliseconds for manual buffer size */
+	private double manualBufferSize = 0.;
 	
-	private Thread playThread = null;
-	private boolean requestStop = false;
-			
 	/**
 	 * Creates a new AudioPlay object using the given AudioSource.
 	 * @param source
@@ -78,12 +71,7 @@ public class AudioPlay implements Runnable {
 	 */
 	public AudioPlay(AudioSource source) 
 		throws IOException, LineUnavailableException {
-		this(null, source, 0.0);
-	}
-	
-	public AudioPlay(String mixerName, AudioSource source) throws IOException,
-			LineUnavailableException {
-		this(mixerName, source, 0.0);
+		this(null, source, 0.);
 	}
 	
 	/**
@@ -91,37 +79,45 @@ public class AudioPlay implements Runnable {
 	 * is null or can't provide the DataLine, the default mixer is used.
 	 * 
 	 * @param mixerName name of mixer to use for play back (or null for default)
-	 * @param source where to read the data from 
-	 * @param desiredBufDur desired buffer length in seconds (= latency). 
-	 *        If 0.0, let SourceDataLine.open() decide. 
-	 * @param 
+	 * @param source where to read the data from
+	 * 
 	 * @throws IOException
 	 * @throws LineUnavailableException
 	 */
-	public AudioPlay(String mixerName, AudioSource source, double desiredBufDur)
+	public AudioPlay(String mixerName, AudioSource source)
+		throws IOException, LineUnavailableException {
+		this(mixerName, source, 0.);
+	}
+	
+	/**
+	 * Creates a new AudioPlay object and initializes it. If the desired mixer
+	 * is null or can't provide the DataLine, the default mixer is used.
+	 * 
+	 * @param mixerName name of mixer to use for play back (or null for default)
+	 * @param source where to read the data from
+	 * @param manualBufferSize 0 for default, milliseconds otherwise
+	 * 
+	 * @throws IOException
+	 * @throws LineUnavailableException
+	 */
+	public AudioPlay(String mixerName, AudioSource source, double manualBufferSize)
 		throws IOException, LineUnavailableException {
 		
 		this.mixerName = mixerName;
 		this.source = source;
-		this.desiredBufDur = desiredBufDur;
+		this.manualBufferSize = manualBufferSize;
 
 		initialize();
-//		 isn't called when applet window or browser is closed
-//		Runtime.getRuntime().addShutdownHook(new Thread(){
-//			public void run(){
-//				System.err.println("calling tearDown...");
-//				try {
-//					tearDown();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-//			}
-//		});
-//		
 	}
 
-	
+	/**
+	 * Assign a new AudioSource to the player. If the format matches the previous
+	 * one, the source is replaced. Otherwise, the whole output system is re-initialized.
+	 * 
+	 * @param source
+	 * @throws IOException
+	 * @throws LineUnavailableException
+	 */
 	public void setAudioSource(AudioSource source) throws IOException, LineUnavailableException {
 		if (this.source.getSampleRate() != source.getSampleRate()) {
 			line.stop();
@@ -140,7 +136,7 @@ public class AudioPlay implements Runnable {
 	 */
 	private void initialize() throws IOException, LineUnavailableException {
 		// standard linear PCM at 16 bit and the available sample rate
-		af = new AudioFormat(source.getSampleRate(), BIT_DEPTH, 1, true, false);
+		af = new AudioFormat(source.getSampleRate(), BIT_RATE, 1, true, false);
 		DataLine.Info info = new DataLine.Info(SourceDataLine.class, af);
 		
 		// No mixer specified, use default mixer
@@ -153,9 +149,8 @@ public class AudioPlay implements Runnable {
 			try {
 				target = MixerUtil.getMixerInfoFromName(mixerName, false);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}			
+			}
 			
 			// If no target, fall back to default line
 			if (target != null)
@@ -168,92 +163,46 @@ public class AudioPlay implements Runnable {
 				line = (SourceDataLine) AudioSystem.getLine(info);
 			}
 		}
-		
-		// open line later (see openLine) 
-		/*
-		if (desiredBufDur != 0){
-			int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
-				* af.getFrameSize();
-			line.open(af, desiredBufSize);
-			if (line.getBufferSize() != desiredBufSize){
-				System.out.println("could not set desiredBufDur = " + desiredBufDur + 
-						" which corresponds to a buffer size of " + desiredBufSize + ". Got bufSize = " + 
-						line.getBufferSize());
-			}
-		}
-		else
-			line.open(af);
-		//System.out.println("line.getBufferSize = " + line.getBufferSize());
-		line.start();
-		
-		// init the buffer		
-		//bs = (int) (BUFLENGTH * af.getSampleRate() / 1000);
-		int bytes = line.getBufferSize();
-		byteBuf = new byte [bytes];
-		doubleBuf = new double [bytes / af.getFrameSize()];
-		fs = af.getFrameSize();
-		
-		actualBufDur = bytes / af.getFrameSize() / af.getFrameRate();
-		
-		*/
-		
-		// System.err.println(String.format("bytes = %d, samples = %d\n", byteBuf.length, doubleBuf.length));
-		
-		/* -1 because of the assymetry of two's complement.
-		 * Example: for 16 bit depth, we need a scale of 32767, not 32768, because otherwise
-		 * we cannot represent the double value -1.0.
-		 */
-		scale = Math.pow(2, BIT_DEPTH - 1) - 1;
-		// System.err.println("scale = " + scale);
-	}
 	
+		scale = Math.pow(2, BIT_RATE - 1) - 1;
+	}
+
+	/**
+	 * Open the line (on demand call)
+	 * @throws LineUnavailableException
+	 */
 	private void openLine() throws LineUnavailableException{
 		lineOpened = true;
 		
-
 		try{
-			if (desiredBufDur != 0){
-				int desiredBufSize = (int)Math.round(desiredBufDur * af.getFrameRate())
+			if (manualBufferSize != 0.){
+				int desiredBufSize = (int) Math.round(manualBufferSize * af.getFrameRate())
 				* af.getFrameSize();
 
 
 				line.open(af, desiredBufSize);
 
 				if (line.getBufferSize() != desiredBufSize){
-					System.out.println("could not set desiredBufDur = " + desiredBufDur + 
-							" which corresponds to a buffer size of " + desiredBufSize + ". Got bufSize = " + 
+					System.err.println("could not set desiredBufDur = " + manualBufferSize + 
+							" which corresponds to a buffer size of " + manualBufferSize + ". Got bufSize = " + 
 							line.getBufferSize());
 				}
-			}
-			else
+			} else {
+				// otherwise use default buffer size
 				line.open(af);
-		}		
-		// important to catch IllegalArgumentException also!!
-		catch (IllegalArgumentException e){
+			}
+		} catch (IllegalArgumentException e){
 			throw new LineUnavailableException(e.getMessage());
 		}
 
-		//System.out.println("line.getBufferSize = " + line.getBufferSize());
 		line.start();
 		
 		// init the buffer		
-		//bs = (int) (BUFLENGTH * af.getSampleRate() / 1000);
 		int bytes = line.getBufferSize();
 		byteBuf = new byte [bytes];
 		doubleBuf = new double [bytes / af.getFrameSize()];
 		fs = af.getFrameSize();
-		
-		//actualBufDur = bytes / af.getFrameSize() / af.getFrameRate();
-		
-		
-		
 	}
-	
-	/* we do not know actualBufDur until we actually opened the line 
-	public double getActualBufDur(){
-		return actualBufDur;
-	}
-	*/
 	
 	private static Mixer.Info [] getMixerList(AudioFormat af) {
 		return MixerUtil.getMixerList(af, false);
@@ -275,11 +224,11 @@ public class AudioPlay implements Runnable {
 	 * @throws IOException
 	 */
 	public void tearDown() throws IOException {
-		//No, don't! line.flush();
-		// drain is likely to cause problems, too: line.drain();
+		// when tearing down, we need to drain and stop the line before closing 
+		// it; no drain means the end of the playback is very likely to be chop
+		line.drain();
 		line.stop();
 		line.close();
-		//source.tearDown(); DO NOT tear down the audiosource after play back!!! steidl
 	}
 
 	/**
@@ -294,10 +243,7 @@ public class AudioPlay implements Runnable {
 		// open only here, otherwise we block audio device all the time
 		if (!lineOpened)
 			openLine();
-		
-		//bytes = line.available();
-		//if (bytes > byteBuf.length)
-		//	throw new Error("argh!");
+
 		bytes = byteBuf.length;		
 		
 		int frames = bytes / fs / 2;
@@ -324,7 +270,6 @@ public class AudioPlay implements Runnable {
 		for (i = 0; i < frames; i++)					 
 			bb.putShort((short)(doubleBuf[i] * scale));		
 		
-		// System.out.println("that would be available, now that we have fetched the data: " + line.available());
 		readFrames = line.write(byteBuf, 0, readBytes);		
 		
 		return readFrames;
@@ -337,49 +282,7 @@ public class AudioPlay implements Runnable {
 			super.finalize();
 		}
 	}
-	
-	@Override
-	public void run() {
-		// play whole section
-		try {
-			while (write() > 0) {
-				if (requestStop) {
-					// System.err.println("AudioPlay forced to stop");
-					break;
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}		
-	}
-	
-	public void play() {
-		stop();
-		playThread = new Thread(this);
-		playThread.start();
-	}
-	
-	public void stop() {
-		if ((playThread != null) && playThread.isAlive()) {			
-			requestStop = true;
-			while (playThread.isAlive()) {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-				}
-			}
-			requestStop = false;
-		}
-	}
-	
-	public boolean isPlaying() {
-		if ((playThread != null) && playThread.isAlive()) {			
-			return true;
-		}
-		return false;
-	}
 
-	
 	public static final String SYNOPSIS = 
 		"usage: sampled.AudioPlay [-m mixer-name] [-f format-string] [file1 ...]\n" +
 		"Play back the listed audio files. If required, use the specified mixer\n" +

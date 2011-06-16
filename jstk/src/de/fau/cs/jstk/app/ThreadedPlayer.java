@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioPlay;
@@ -58,18 +59,14 @@ public class ThreadedPlayer implements Runnable {
 	/** is the player paused? */
 	private volatile boolean paused = false;
 
-	/** is a stop requested? */
-	private volatile boolean stopRequested = false;
-
 	/** is the playback finished? indicator to the player thread */
 	private volatile boolean finished = true;
 	
 	/**
-	 * Create a threaded player using the given audio player.
-	 * @param player
+	 * Initialize a ThreadedPlayer.
 	 */
-	public ThreadedPlayer(AudioPlay player) {
-		this.player = player;		
+	public ThreadedPlayer() {
+	
 	}
 
 	/**
@@ -77,34 +74,18 @@ public class ThreadedPlayer implements Runnable {
 	 * @param mixer null for default mixer (not advised)
 	 * @param format
 	 * @param file
+	 * @param desuredBufDur 0 for default, milliseconds otherwise
 	 * @throws IOException
+	 * @throws UnsupportedAudioFileException 
 	 */
-	public void setup(String mixer, RawAudioFormat format, File file) throws IOException {
-		setup(mixer, new AudioFileReader(file.getCanonicalPath(), format, true), 0.0);
-		/*
-		try {
-			if (isPlaying())
-				stop();
-			
-			player = new AudioPlay(mixer, new AudioFileReader(file.getCanonicalPath(), format, true));
-		} catch (LineUnavailableException e) {
-			throw new IOException("LineUnavailableException: " + e.toString());
-		}
-		*/
+	public void setup(String mixer, RawAudioFormat format, File file, double desiredBufDur) 
+		throws LineUnavailableException, IOException, UnsupportedAudioFileException {
+		setup(mixer, new AudioFileReader(file.getCanonicalPath(), format, true), desiredBufDur);
 	}
 	
-	public double setup(String mixer, RawAudioFormat format, InputStream inputStream, double desiredBufDur) throws IOException {
-		return setup(mixer, new AudioFileReader(inputStream, format, true), desiredBufDur);
-		/*
-		try {
-			if (isPlaying())
-				stop();			
-			player = new AudioPlay(mixer, new AudioFileReader(inputStream, format, true), desiredBufDur);
-		} catch (LineUnavailableException e) {
-			throw new IOException("LineUnavailableException: " + e.toString());
-		}
-		*/		
-		
+	public void setup(String mixer, RawAudioFormat format, InputStream inputStream, double desiredBufDur) 
+		throws LineUnavailableException, IOException {
+		setup(mixer, new AudioFileReader(inputStream, format, true), desiredBufDur);
 	}
 	
 	/**
@@ -112,71 +93,61 @@ public class ThreadedPlayer implements Runnable {
 	 * @param mixer null for default mixer (not advised)
 	 * @param format
 	 * @param data
+	 * @param desiredBufDur 0 for default, milliseconds otherwise
 	 * @throws IOException
 	 */
-	public double setup(String mixer, RawAudioFormat format, byte [] data) throws IOException {
-		return setup(mixer, new AudioFileReader(format, data), 0.0);
-		/*
-		try {
-			if (isPlaying())
-				stop();
-			
-			player = new AudioPlay(mixer, new AudioFileReader(format, data));
-		} catch (LineUnavailableException e) {
-			throw new IOException("LineUnavailableException: " + e.toString());
-		}
-		*/
+	public void setup(String mixer, RawAudioFormat format, byte [] data, double desiredBufDur) 
+		throws LineUnavailableException, IOException {
+		setup(mixer, new AudioFileReader(data, format), desiredBufDur);
 	}
 	
 	/**
 	 * Setup the ThreadedPlayer to play from the given AudioSource.
-     *
-	 * @param desiredBufDur buffer duration in seconds. Determines latency e.g. if 
-	 * you stop audio playback. Too small values (< 0.01?) will result in higher load and scrambled playback. 
+     * @param mixer
+     * @param source
+	 * @param desiredBufDur 0 for default, milliseconds otherwise
 	 */
-	public double setup(String mixer, AudioSource source, double desiredBufDur) throws IOException {
+	public void setup(String mixer, AudioSource source, double desiredBufDur) 
+		throws LineUnavailableException, IOException {
+		
 		try {
 			if (isPlaying())
 				stop();
-			
-			player = new AudioPlay(mixer, source, desiredBufDur);
-		} catch (LineUnavailableException e) {
-			throw new IOException("LineUnavailableException: " + e.toString());
+		} catch (InterruptedException e) {
+			throw new IOException(e.toString());
 		}
-		//return player.getActualBufDur();
-		// FIXME
-		return desiredBufDur;
+			
+		player = new AudioPlay(mixer, source, desiredBufDur);
 	}
 	
-	
 	/** 
-	 * (un)pause the recording; on pause, the recording continues, but is not
-	 * saved to the file.
+	 * pause/resume the playback
 	 *
 	 */
 	public void pause() {
-		if (!paused)	
-			notifyPause();
-		else
-			notifyStart();
-	
-		paused = !paused;
+		if (paused) {
+			thread = new Thread(this);
+			thread.start();
+			paused = false;
+		} else {
+			paused = true;
+		}
 	}
 
 	/**
-	 * Stop the playback. This method blocks until the playback thread died.
+	 * Stop the playback and tear down the source. This method blocks until the 
+	 * playback thread died. You might be looking for pause()!
 	 */
-	public void stop() {
-		stopRequested = true;
-		try {
-			if (thread != null)
-				thread.join();
-			else if (player != null)
-				player.tearDown();
-			thread = null;
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public void stop() throws InterruptedException, IOException {
+		// pause the playback and mark as finished
+		paused = finished = true;
+		
+		if (thread != null)
+			thread.join();
+		else if (player != null)
+			player.tearDown();
+		
+		thread = null;
 	}
 	
 	/**
@@ -188,44 +159,35 @@ public class ThreadedPlayer implements Runnable {
 			throw new IOException("Thread is still playing!");
 
 		thread = new Thread(this);
+		finished = false;
 		thread.start();
 	}
 
 	public void run() {
 		try {
-			finished = false;
-			// LineListeners should be used here: they fire a Start event at the actual
-			// time playback starts - hoenig
 			notifyStart();
 			
-			while (!stopRequested) {
-				if (paused) {
-					// FIXME: calling yield() in a loop doesn't seem to be a good idea
-					// see http://forums.sun.com/thread.jspa?threadID=167194
-					// -> sleep one buffer length?
-					// or rather wait() here and notify() in pause()?
-					Thread.yield();
-					continue;
-				}
-				if (player.write() <= 0)
+			while (!paused) {
+				if (player.write() <= 0) {
+					finished = true;
 					break;
+				}
 			}
 			
-			// free the device
-			player.tearDown();
+			// free the device if everything was played
+			if (finished) {
+				player.tearDown();
+				
+				thread = null;
+				paused = false;
+				notifyStop();
+			} else
+				notifyPause();
 		} catch (IOException e) {
 			System.err.println("ThreadedPlayer.run(): I/O error: " + e.toString());
 		} catch (Exception e) {
 			System.err.println("ThreadedPlayer.run(): " + e.toString());
-		} finally {
-			// note to main thread
-			thread = null;
-			finished = true;
-			stopRequested = false;
-			paused = false;
-			notifyStop();
-		}
-		
+		}		
 	}
 	
 	public void tearDown() throws IOException {
@@ -288,13 +250,18 @@ public class ThreadedPlayer implements Runnable {
 			System.exit(1);
 		}
 		
+		ThreadedPlayer play = new ThreadedPlayer();
+		
 		for (int i = 1; i < args.length; ++i) {
 			String file = args[i];
 			System.err.println("Hit [ENTER] to start playing " + file);
 			System.in.read();
 			
-			ThreadedPlayer play = new ThreadedPlayer(new AudioPlay(args[0], new AudioFileReader(file, RawAudioFormat.getRawAudioFormat("ssg/16"), true)));
+			play.setup(args[0], new AudioFileReader(file, RawAudioFormat.getRawAudioFormat("ssg/16"), true), 0.);
 			play.start();
+			
+			while (play.isPlaying())
+				Thread.yield();
 		}
 	}
 }

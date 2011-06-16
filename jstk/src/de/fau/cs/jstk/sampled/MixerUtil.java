@@ -10,6 +10,7 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
+import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class MixerUtil {
 
@@ -60,8 +61,8 @@ public class MixerUtil {
 	 */
 	public static Mixer.Info [] getMixerList(AudioFormat af, boolean forRecording) {
 		if (af != null){
-			System.err.println("AudioCapture.getMixerList: retrieving only mixers that work with format " + af + 
-					(forRecording ? " for recording" : " for playback"));
+//			System.err.println("AudioCapture.getMixerList: retrieving only mixers that work with format " + af + 
+//					(forRecording ? " for recording" : " for playback"));
 
 			Mixer.Info [] list = AudioSystem.getMixerInfo();
 			List<Mixer.Info> working = new LinkedList<Mixer.Info>();
@@ -72,12 +73,12 @@ public class MixerUtil {
 			for (Mixer.Info i : list) {
 				
 				Mixer mixer = AudioSystem.getMixer(i);
-				System.out.println(mixer.getMixerInfo().toString() + ": checking... with + " + af.toString());
+				// System.out.println(mixer.getMixerInfo().toString() + ": checking... with + " + af.toString());
 				if (!mixer.isLineSupported(
 						forRecording ? 
 								new Info(TargetDataLine.class) :
 									new Info(SourceDataLine.class))){
-					System.out.println(mixer.getMixerInfo().toString() + ": Not considering");
+					// System.out.println(mixer.getMixerInfo().toString() + ": Not considering");
 				
 					continue;
 				}
@@ -89,14 +90,7 @@ public class MixerUtil {
 					
 					dataline = (DataLine) mixer.getLine(lineInfo);
 					
-//					if (forRecording)
-//						((TargetDataLine)dataline).open(af);
-//					else
-//						((SourceDataLine)dataline).open(af);
-					
-					//dataline.start();
-					
-					System.out.println(mixer.getMixerInfo().toString() + ": OK");
+					// System.out.println(mixer.getMixerInfo().toString() + ": OK");
 					working.add(i);
 				} catch (Exception e) {		
 					System.out.println(mixer.getMixerInfo().toString() + ": Not ok");
@@ -126,20 +120,49 @@ public class MixerUtil {
 						forRecording ? 
 								new Info(TargetDataLine.class) :
 									new Info(SourceDataLine.class))){
-					System.out.println(mixer.getMixerInfo().toString() + " is suited for " + 
-							(forRecording ? "recording" : "playback"));
+					// System.out.println(mixer.getMixerInfo().toString() + " is suited for " + 
+					// 		(forRecording ? "recording" : "playback"));
 					rightTypes.add(i);
 				}
 				else{
-					System.out.println(mixer.getMixerInfo().toString() + " is NOT suited for " + 
-							(forRecording ? "recording" : "playback"));
-					
+					// System.out.println(mixer.getMixerInfo().toString() + " is NOT suited for " + 
+					//		(forRecording ? "recording" : "playback"));
 				}
-				
 			}
 
 			Mixer.Info [] dummy = new Mixer.Info[0];
 			return rightTypes.toArray(dummy);			
+		}
+	}
+
+
+	public static final String SYNOPSIS = 
+		"sikoried 6/16/2011\n" +
+		"usage: sampled.MixerUtil format-template1 [format-template2 ...]";
+	
+	public static void main(String [] args) {
+		if (args.length < 1) {
+			System.err.println(SYNOPSIS);
+			System.exit(1);
+		}
+		
+		for (String s : args) {
+			try {
+				RawAudioFormat raf = RawAudioFormat.getRawAudioFormat(s);
+				AudioFormat af = new AudioFormat(raf.getSampleRate(), raf.getBitRate(), 1, raf.signed, !raf.littleEndian);
+				Mixer.Info [] list1 = getMixerList(af, false);
+				Mixer.Info [] list2 = getMixerList(af, true);
+				
+				System.out.println("playback on " + s + ":");
+				for (Mixer.Info mi : list1) 
+					System.out.println(mi.getName());
+					
+				System.out.println("\nrecording on " + s + ":");
+				for (Mixer.Info mi : list2) 
+					System.out.println(mi.getName());
+			} catch (UnsupportedAudioFileException e) { 
+				System.err.println("format template " + s + " is not supported");
+			}
 		}
 	}
 }

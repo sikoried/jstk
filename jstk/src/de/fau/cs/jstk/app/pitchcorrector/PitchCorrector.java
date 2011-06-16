@@ -36,7 +36,6 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -52,6 +51,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JTextField;
 
+import de.fau.cs.jstk.app.ThreadedPlayer;
 import de.fau.cs.jstk.app.transcriber.AutocorrelationWindow;
 import de.fau.cs.jstk.app.transcriber.JFrame;
 import de.fau.cs.jstk.app.transcriber.PitchEstimatorWindow;
@@ -64,8 +64,6 @@ import de.fau.cs.jstk.app.transcriber.WindowClosedListener;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedFrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
-import de.fau.cs.jstk.sampled.AudioPlay;
-import de.fau.cs.jstk.sampled.BandPassFilter;
 import de.fau.cs.jstk.vc.F0Point;
 import de.fau.cs.jstk.vc.FileVisualizer;
 import de.fau.cs.jstk.vc.FrameFileReader;
@@ -157,7 +155,7 @@ public class PitchCorrector extends JFrame implements KeyListener,
 
 	private Preferences preferences;
 	private int pitchDisplays;
-	private AudioPlay audioPlay;
+	private ThreadedPlayer audioPlay;
 
 	public PitchCorrector(String title) throws Exception {
 		super(title, "mainWindow");
@@ -564,7 +562,11 @@ public class PitchCorrector extends JFrame implements KeyListener,
 			break;
 		case KeyEvent.VK_ESCAPE:
 			if ((audioPlay != null) && (audioPlay.isPlaying())) {
-				audioPlay.stop();
+				try {
+					audioPlay.stop();
+				} catch (Exception e) {
+					System.err.println(e.toString());
+				}
 			} else if (zoomItem.isSelected()) {
 				audioSignalVisualizer
 						.switchMode(VisualComponent.SELECTION_MODE);
@@ -1212,26 +1214,24 @@ public class PitchCorrector extends JFrame implements KeyListener,
 
 	private void play(int start, int end) {
 		try {
-			if (audioPlay != null) {
+			if (audioPlay == null)
+				audioPlay = new ThreadedPlayer();
+			
+			if (audioPlay.isPlaying())
 				audioPlay.stop();
-				audioPlay.setAudioSource(source.getReader(start, end - start + 1));
-			} else {
-				audioPlay = new AudioPlay(source.getReader(start, end
-					- start + 1));
-			}
+			audioPlay.setup(null, source.getReader(start, end - start + 1), 0.);
+			audioPlay.start();
 
-			// play whole section
-			//while (audioPlay.write() > 0) {
-			//}
-			audioPlay.play();
-
-		} catch (IOException e) {
-			JOptionPane.showMessageDialog(this, e.getMessage(), "File error",
-					JOptionPane.ERROR_MESSAGE);
 		} catch (LineUnavailableException e) {
 			JOptionPane.showMessageDialog(this, e.getMessage(), "Audio error",
 					JOptionPane.ERROR_MESSAGE);
-		}
+		} catch (InterruptedException e) {
+			JOptionPane.showMessageDialog(this, e.getMessage(), "Thread error",
+					JOptionPane.ERROR_MESSAGE);
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(this, e.getMessage(), "File error",
+					JOptionPane.ERROR_MESSAGE);
+		} 
 	}
 
 	public void insertWord() {
