@@ -123,6 +123,9 @@ public class BandPassFilter implements AudioSource {
 	public void setFilterBands(double [] bands) {
 		double sr = source.getSampleRate();
 		double maxf = 0.;
+		for (int i = 0; i < filter.length; ++i)
+			filter[i] = 0.;
+		
 		for (int i = 1; i < filter.length / 2; ++i) {
 			double f = (double) i * (sr / filter.length);
 			for (int j = 0; j < bands.length; j += 2) {
