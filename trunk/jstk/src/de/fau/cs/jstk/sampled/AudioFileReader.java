@@ -71,11 +71,10 @@ public final class AudioFileReader implements AudioSource {
 	/** did we close the stream yet? */
 	private boolean streamClosed = false;
 	
-	/** scale factor (dependent on the bit rate)
-	 * e.g. 1/32767 for 16-bit samples 
-	 * */	
+	/** scale factor (dependent on the bit rate) e.g. 1/32767 for 16-bit samples */	
 	private double scale = 0;
-	/// scale_help = minimal signed value, e.g. -32768 for 16-bit samples 
+	
+	/** scale_help = minimal signed value, e.g. -32768 for 16-bit samples */ 
 	private double scale_help = 0;
 	
 	/**
@@ -88,10 +87,7 @@ public final class AudioFileReader implements AudioSource {
 	 */
 	public AudioFileReader(String fileName, boolean cacheFile)
 		throws UnsupportedAudioFileException, IOException {
-		this.cacheFile = cacheFile;
-		format = RawAudioFormat.getRawAudioFormatFromFile(fileName);
-		this.fileName = fileName;
-		loadFile(new FileInputStream(fileName));
+		this(fileName, null, cacheFile);
 	}
 	
 	/**
@@ -106,44 +102,40 @@ public final class AudioFileReader implements AudioSource {
 	 * @see RawAudioFormat.create
 	 */
 	public AudioFileReader(String fileName, RawAudioFormat format, boolean cacheFile)
-		throws IOException {
+		throws UnsupportedAudioFileException, IOException {
 		
-		try {
-			if (format == null)
-				format = new RawAudioFormat(AudioSystem.getAudioFileFormat(
-						new File(fileName)).getFormat());
-		} catch (UnsupportedAudioFileException e) {
-			throw new IOException(
-					"AudioFileRedaer(): couldn't determine file type!");
-		}		 
+		if (format == null)
+			format = new RawAudioFormat(AudioSystem.getAudioFileFormat(new File(fileName)).getFormat());
+		 
 		this.format = format;
-		
 		this.cacheFile = cacheFile;
 		this.fileName = fileName;
 		loadFile(new FileInputStream(fileName));
 	}
 	
-	public AudioFileReader(InputStream is, RawAudioFormat format,
-			boolean cacheFile) throws IOException {		
+	/**
+	 * Construct an AudioFileReader using a custom RawAudioFormat and read from 
+	 * the ready InputStream
+	 * @param is
+	 * @param format
+	 * @param cacheFile
+	 * @throws IOException
+	 */
+	public AudioFileReader(InputStream is, RawAudioFormat format, boolean cacheFile) 
+		throws IOException {		
 		this.format = format;
 		this.cacheFile = cacheFile;
 		loadFile(is);
 	}
 	
-	public AudioFileReader(InputStream is, RawAudioFormat format,
-			boolean cacheFile, boolean applyPreEmphasis) throws IOException {
-		this(is, format, cacheFile);
-		setPreEmphasis(applyPreEmphasis, DEFAULT_PREEMPHASIS_FACTOR);
-	}
-	
 	/**
 	 * Construct an AudioFileReader which reads from an already available byte
 	 * array.
-	 * @param format RawAudioFormat describing the data
 	 * @param data byte array with read audio data
+	 * @param format RawAudioFormat describing the data
 	 * @throws IOException
 	 */
-	public AudioFileReader(RawAudioFormat format, byte [] data)
+	public AudioFileReader(byte [] data, RawAudioFormat format)
 		throws IOException {
 		this.format = format;
 		loadArray(data);
@@ -530,8 +522,6 @@ public final class AudioFileReader implements AudioSource {
 			afr = new AudioFileReader(file, true);
 		else
 			afr = new AudioFileReader(file, RawAudioFormat.create(format), true);
-		
-		//afr.setPreEmphasis(false, 0.0);
 		
 		System.err.println(afr);
 		
