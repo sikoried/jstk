@@ -135,14 +135,15 @@ public class ThreadedPlayer implements Runnable {
 	 * playback thread died. You might be looking for pause()!
 	 */
 	public void stop() throws InterruptedException, IOException {
-		// pause the playback and mark as finished
-		paused = finished = true;
+		// make sure that the player is marked for tear down
+		finished = true;
+		
+		// trigger stop in the thread
+		paused = true;		
 		
 		if (thread != null)
 			thread.join();
-		else if (player != null)
-			player.tearDown();
-		
+				
 		thread = null;
 	}
 	
