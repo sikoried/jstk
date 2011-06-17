@@ -51,7 +51,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JTextField;
 
-import de.fau.cs.jstk.app.ThreadedPlayer;
 import de.fau.cs.jstk.app.transcriber.AutocorrelationWindow;
 import de.fau.cs.jstk.app.transcriber.JFrame;
 import de.fau.cs.jstk.app.transcriber.PitchEstimatorWindow;
@@ -64,6 +63,7 @@ import de.fau.cs.jstk.app.transcriber.WindowClosedListener;
 import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedFrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
+import de.fau.cs.jstk.sampled.ThreadedPlayer;
 import de.fau.cs.jstk.vc.F0Point;
 import de.fau.cs.jstk.vc.FileVisualizer;
 import de.fau.cs.jstk.vc.FrameFileReader;
