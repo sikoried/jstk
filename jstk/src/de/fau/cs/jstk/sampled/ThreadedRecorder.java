@@ -19,7 +19,7 @@
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
 */
-package de.fau.cs.jstk.app;
+package de.fau.cs.jstk.sampled;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -31,8 +31,6 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
-import de.fau.cs.jstk.sampled.AudioCapture;
-import de.fau.cs.jstk.sampled.RawAudioFormat;
 
 
 

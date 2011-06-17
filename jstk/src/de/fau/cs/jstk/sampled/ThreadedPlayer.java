@@ -19,7 +19,7 @@
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
 */
-package de.fau.cs.jstk.app;
+package de.fau.cs.jstk.sampled;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,10 +30,6 @@ import java.util.List;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import de.fau.cs.jstk.sampled.AudioFileReader;
-import de.fau.cs.jstk.sampled.AudioPlay;
-import de.fau.cs.jstk.sampled.AudioSource;
-import de.fau.cs.jstk.sampled.RawAudioFormat;
 
 public class ThreadedPlayer implements Runnable {
 

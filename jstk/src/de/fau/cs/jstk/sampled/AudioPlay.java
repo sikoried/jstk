@@ -37,7 +37,7 @@ import javax.sound.sampled.SourceDataLine;
  * Use the AudioPlay class to play back audio files on a certain device. Is used
  * by bin.ThreadedPlayer
  * @author sikoried
- * @see de.fau.cs.jstk.app.ThreadedPlayer
+ * @see de.fau.cs.jstk.sampled.ThreadedPlayer
  */
 public class AudioPlay {
 	private SourceDataLine line;
