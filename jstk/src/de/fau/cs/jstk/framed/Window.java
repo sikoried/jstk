@@ -277,7 +277,7 @@ public abstract class Window implements FrameSource {
 	 * @return
 	 * @throws MalformedParameterStringException
 	 */
-	public static Window create(AudioSource source, String parameterString)
+	public static Window create(AudioSource source, String parameterString, boolean samples)
 			throws MalformedParameterStringException {
 		if (parameterString == null)
 			return new HammingWindow(source);
@@ -287,11 +287,11 @@ public abstract class Window implements FrameSource {
 				int length = Integer.parseInt(help[1]);
 				int shift = Integer.parseInt(help[2]);
 				if (help[0].equals("hamm"))
-					return new HammingWindow(source, length, shift, false);
+					return new HammingWindow(source, length, shift, samples);
 				else if (help[0].equals("hann"))
-					return new HannWindow(source, length, shift, false);
+					return new HannWindow(source, length, shift, samples);
 				else if (help[0].equals("rect"))
-					return new RectangularWindow(source, length, shift, false);
+					return new RectangularWindow(source, length, shift, samples);
 				else
 					throw new MalformedParameterStringException(
 							"unknown window");

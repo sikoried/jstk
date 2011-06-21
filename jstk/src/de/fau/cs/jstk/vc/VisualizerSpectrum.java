@@ -60,7 +60,7 @@ public class VisualizerSpectrum extends VisualComponent {
 			samplerate = source.getSampleRate();
 			xMax = samplerate / 2;
 			audiosource = source.getReader();
-			window = Window.create(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10, false);
 			enabled = true;
 		}
 	}
@@ -72,7 +72,7 @@ public class VisualizerSpectrum extends VisualComponent {
 		if (source != null) {
 			samplerate = source.getSampleRate();
 			audiosource = source.getReader();
-			window = Window.create(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10, false);
 			enabled = true;
 		}
 		draw();
@@ -87,7 +87,7 @@ public class VisualizerSpectrum extends VisualComponent {
 			this.windowType = windowType;
 			if (audiosource != null) {
 				window = Window.create(audiosource, windowType, windowLength,
-						10);
+						10, false);
 				changed = true;
 			}
 		}

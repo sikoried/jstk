@@ -155,7 +155,7 @@ public class SyllableNucleiDetector implements FrameSource {
 	 *            time in milliseconds
 	 */
 	protected void initializeWindow(String parameterString) throws Exception {
-		window = Window.create(asource, parameterString);
+		window = Window.create(asource, parameterString, false);
 		output = window;
 	}
 

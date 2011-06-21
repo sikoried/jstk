@@ -57,7 +57,7 @@ public class VisualizerAutocorrelation extends VisualComponent {
 		if (source != null) {
 			samplerate = source.getSampleRate();
 			audiosource = source.getReader();
-			window = Window.create(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10, false);
 			enabled = true;
 		}
 
@@ -74,7 +74,7 @@ public class VisualizerAutocorrelation extends VisualComponent {
 		if (source != null) {
 			samplerate = source.getSampleRate();
 			audiosource = source.getReader();
-			window = Window.create(source, windowType, windowLength, 10);
+			window = Window.create(source, windowType, windowLength, 10, false);
 			enabled = true;
 		}
 		draw();
@@ -88,7 +88,7 @@ public class VisualizerAutocorrelation extends VisualComponent {
 			this.windowLength = windowLength;
 			this.windowType = windowType;
 			if (audiosource != null) {
-				window = Window.create(audiosource, windowType, windowLength, 10);
+				window = Window.create(audiosource, windowType, windowLength, 10, false);
 			}
 			changed = true;
 		}

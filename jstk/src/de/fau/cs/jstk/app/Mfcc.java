@@ -87,7 +87,7 @@ public class Mfcc implements FrameSource {
 	}
 	
 	private void initializeWindow(String parameterString) throws Exception {
-		window = Window.create(asource, parameterString);
+		window = Window.create(asource, parameterString, false);
 	    output = window;
 	}
 	

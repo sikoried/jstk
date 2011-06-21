@@ -135,9 +135,17 @@ public class ParallelUbmGmm {
 		public void run() {
 			Job current = null;
 			try {
+				Mixture speaker = new Mixture(ubm);
 				while ((current = jobDistributor.next()) != null) {
 					
-					Mixture speaker = new Mixture(new FileInputStream(current.getModelFile()));
+					// Mixture speaker = new Mixture(new FileInputStream(current.getModelFile()));
+					FrameSource spmean = new FrameInputStream(current.getModelFile());
+					double [] sv = new double [spmean.getFrameSize()];
+					spmean.read(sv);
+					
+					for (int i = 0; i < speaker.nd; ++i)
+						System.arraycopy(sv, i*speaker.fd, speaker.components[i].mue, 0, speaker.fd);
+					
 					FrameSource source = new FrameInputStream(current.getFeatureFile());
 					
 					double [] buf = new double [source.getFrameSize()];

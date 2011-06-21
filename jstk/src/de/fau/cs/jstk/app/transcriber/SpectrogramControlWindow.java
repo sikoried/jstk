@@ -86,7 +86,7 @@ public class SpectrogramControlWindow extends JFrame implements
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT));
 		panel.add(new JLabel("Window length"));
 		String[] windowLengths = { "2", "4", "8", "16", "32", "64" };
-		double length = preferences.getDouble("spectrogram.windowLength");
+		int length = preferences.getInt("spectrogram.windowLength");
 		windowLengthComboBox = new JComboBox(windowLengths);
 		windowLengthComboBox.setSelectedItem(String.valueOf((int) length));
 		spectrogramVisualizer.setWindowLength(length);
@@ -152,7 +152,7 @@ public class SpectrogramControlWindow extends JFrame implements
 	}
 
 	private void setWindowLength() {
-		double length = Double.parseDouble(windowLengthComboBox.getSelectedItem().toString());
+		int length = Integer.parseInt(windowLengthComboBox.getSelectedItem().toString());
 		spectrogramVisualizer.setWindowLength(length);
 		preferences.set("spectrogram.windowLength", String.valueOf(length));
 	}
