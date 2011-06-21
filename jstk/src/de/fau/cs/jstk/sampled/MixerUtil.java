@@ -3,10 +3,10 @@ package de.fau.cs.jstk.sampled;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.Line.Info;
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.Line.Info;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
 import javax.sound.sampled.TargetDataLine;
@@ -24,6 +24,9 @@ public class MixerUtil {
 	 * @throws Exception for multiple matches
 	 */
 	public static Mixer.Info getMixerInfoFromName(String mixerName, boolean forRecording) throws Exception{
+		if (mixerName == null)
+			return AudioSystem.getMixer(null).getMixerInfo();
+		
 		Mixer.Info [] availableMixers = AudioSystem.getMixerInfo();
 		
 		Mixer.Info info = null;

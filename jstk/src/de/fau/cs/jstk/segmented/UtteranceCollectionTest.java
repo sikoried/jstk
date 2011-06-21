@@ -68,7 +68,17 @@ public class UtteranceCollectionTest {
 		Assert.assertEquals(PHRASE_ACCENT.PRIMARY, collection.getTurns()[0].getWords()[3].getPhraseAccent());
 
 		//this assumes UTF-8 encoding of source files! 
-		Assert.assertEquals("ɑː", collection.getTurns()[2].getWords()[1].getPhonemes()[1].getSymbols());	
+		Assert.assertEquals("ɑː", collection.getTurns()[2].getWords()[1].getPhonemes()[1].getSymbols());
+		
+		Assert.assertEquals("Speaker 1", collection.getTurns()[0].getRole());
+		Assert.assertEquals("Speaker 2", collection.getTurns()[1].getRole());
+		Assert.assertEquals("sentence1", collection.getTurns()[0].getSegmentTrack());
+		Assert.assertEquals("sentence2", collection.getTurns()[1].getSegmentTrack());
+		
+		Assert.assertEquals("123", collection.getTurns()[0].getSegmentId());
+		Assert.assertEquals("456", collection.getTurns()[0].getSegmentRev());
+		
+		Assert.assertEquals("789.wav", collection.getTurns()[0].getSegmentFilename());
 	}
 
 //	@Test

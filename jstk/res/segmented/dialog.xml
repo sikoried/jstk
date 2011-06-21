@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <recordingSessionAnnotation ID="0" NAME="recordingName" ANNOVERSION="0.1" ANNOFORMAT="XML" LASTEDITED="0">
-<textsegment speaker="Speaker 1" NR="-1" ID="-1" TRACK="sentence1" REV="-1">
+<textsegment speaker="Speaker 1" NR="-1" ID="123" TRACK="sentence1" REV="456" FILENAME="789.wav">
 <utterance>
 <orthography>What should we do tonight?</orthography>
 <subdivision firstWord="0"></subdivision>

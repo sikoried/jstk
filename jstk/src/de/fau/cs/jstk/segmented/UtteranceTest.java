@@ -54,7 +54,7 @@ public class UtteranceTest {
 								new Phoneme[]{new Phoneme("x")}, PHRASE_ACCENT.NONE)
 				},
 				new Boundary[]{new Boundary(BOUNDARIES.B3, 4)},
-				new Subdivision[]{new Subdivision(0), new Subdivision(4)});
+				new Subdivision[]{new Subdivision(0), new Subdivision(4)}, null, null, null, null);
 	}
 	
 	public static Utterance getExamplePart1(){
@@ -72,7 +72,7 @@ public class UtteranceTest {
 								new Phoneme[]{new Phoneme("x")}, PHRASE_ACCENT.NONE)						
 				},				
 				new Boundary[0],
-				new Subdivision[]{new Subdivision(0)});
+				new Subdivision[]{new Subdivision(0)}, null, null, null, null);
 	}
 	
 	public static Utterance getExamplePart2(){
@@ -91,7 +91,7 @@ public class UtteranceTest {
 								new Phoneme[]{new Phoneme("x")}, PHRASE_ACCENT.NONE)
 				},
 				new Boundary[0],
-				new Subdivision[]{new Subdivision(0)});
+				new Subdivision[]{new Subdivision(0)}, null, null, null, null);
 	}
 	
 	@Test
