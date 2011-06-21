@@ -71,7 +71,7 @@ public class RawCapturer implements Runnable, LineListener{
 	
 	double desiredBufSize;
 	
-	Mixer.Info mixer;
+	private Mixer.Info mixer;
 	
 	boolean stressTestEnabled = false;	
 	double activeSleepRatio;
@@ -104,19 +104,23 @@ public class RawCapturer implements Runnable, LineListener{
 		thread.setName("RawPlayer");
 		this.desiredBufSize = desiredBufSize;
 		
-		mixer = null;
-		if (mixerName != null){			
-			
-			try {
-				mixer = MixerUtil.getMixerInfoFromName(mixerName, true);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			if (mixer == null)
-				System.err.println("Error: could not find mixer " + mixerName);			
+		setMixer(null);
+
+		try {
+			setMixer(MixerUtil.getMixerInfoFromName(mixerName, true));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+
+		if (getMixer() == null)
+			System.err.println("Error: could not find mixer " + mixerName);			
+
+		System.out.println(String.format("mixer: Description = %s, Name = %s, Vendor = %s, Version = %s",
+				getMixer().getDescription(),
+				getMixer().getName(),
+				getMixer().getVendor(),
+				getMixer().getVersion()));
 	}
 	
 	public void dispose(){
@@ -134,7 +138,7 @@ public class RawCapturer implements Runnable, LineListener{
 		os = null;
 		format = null;
 		
-		mixer = null;
+		setMixer(null);
 		
 		if (shutdownHook != null)
 			Runtime.getRuntime().removeShutdownHook(shutdownHook);
@@ -238,16 +242,16 @@ public class RawCapturer implements Runnable, LineListener{
 			return;
         }
 		
-		System.err.println("opening: " + mixer);
+		System.err.println("opening: " + getMixer());
 		
 		try {
 			/* according to the doc, AudioSystem.getMixer should be able to handle null,
 			 * but experiment seems to disprove that.  
 			 */
-			if (mixer == null)
+			if (getMixer() == null)
 				line = (TargetDataLine) AudioSystem.getLine(info);
 			else
-				line = (TargetDataLine) AudioSystem.getMixer(mixer).getLine(info);
+				line = (TargetDataLine) AudioSystem.getMixer(getMixer()).getLine(info);
 
 			if (desiredBufSize != 0.0)			
 				line.open(format, 
@@ -327,8 +331,7 @@ public class RawCapturer implements Runnable, LineListener{
 						notifyFailure(exception);			
 					}					
 				};
-				new Thread(runnable).start();
-				
+				new Thread(runnable).start();				
 			
 				// end, but do not drain!
 				System.err.println("trying to stop...");
@@ -371,7 +374,7 @@ public class RawCapturer implements Runnable, LineListener{
 		if (!le.getLine().equals(line))
 			return;
 		
-		System.err.println("RawCapturer: update: "+ le);
+		System.err.println("RawCapturer: update: " + le);
 		
 		if (le.getType() == LineEvent.Type.START)
 			notifyStart();
@@ -407,9 +410,17 @@ public class RawCapturer implements Runnable, LineListener{
 
 		capturer.start();		
 		
-		// i.e. forever, unless interrupted (see addShutdownHook above)
+		// i.e. forever, unless interrupted (see addShutdownHook of RawCapturer)
 		capturer.join();
 		System.err.println("joined");
+	}
+
+	public void setMixer(Mixer.Info mixer) {
+		this.mixer = mixer;
+	}
+
+	public Mixer.Info getMixer() {
+		return mixer;
 	}
 }
 

@@ -26,7 +26,6 @@ package de.fau.cs.jstk.segmented;
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.LinkedList;
@@ -35,7 +34,6 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import de.fau.cs.jstk.util.ArrayUtils;
@@ -49,9 +47,7 @@ import de.fau.cs.jstk.util.ArrayUtils.PubliclyCloneable;
 public class UtteranceCollection implements Serializable, PubliclyCloneable{
 	private static final long serialVersionUID = -2577602064537299436L;
 	
-	private static enum SegmentAttributes {
-		NR, ID, TRACK, REV, FILENAME, SPEAKER
-	}
+
 	
 	private Utterance [] turns = null;
 
@@ -81,7 +77,7 @@ public class UtteranceCollection implements Serializable, PubliclyCloneable{
 					+ attributeValue);
 		}
 		Node textsegment = node.getFirstChild();
-		Node utteranceNode;
+		//Node utteranceNode;
 		//String orthography, speaker;
 		//List<Boundary> boundaries = null;
 		 
@@ -95,45 +91,8 @@ public class UtteranceCollection implements Serializable, PubliclyCloneable{
 				throw new Exception("expecting node textsegment, got "
 						+ nodeName);
 			
-			utteranceNode = textsegment.getFirstChild();
-			nodeName = utteranceNode.getNodeName();
-			if (nodeName.equals("#text")) {
-				utteranceNode = utteranceNode.getNextSibling();
-				nodeName = utteranceNode.getNodeName();
-			}
-			nodeName = utteranceNode.getNodeName();
-			if (!nodeName.equals("utterance")) {
-				throw new Exception("expecting node utterance, got " + nodeName);
-			}
+			Utterance utterance = Utterance.read(textsegment);			
 			
-			Utterance utterance = Utterance.read(utteranceNode, null);
-
-			NamedNodeMap attributes = textsegment.getAttributes();
-			for (int i = 0; i < attributes.getLength(); i++) {
-				Node item = attributes.item(i);
-				switch (SegmentAttributes.valueOf(item.getLocalName().toUpperCase())) {
-				case NR:
-					break;
-				case ID:
-					utterance.setSegmentId(item.getNodeValue());
-					break;
-				case TRACK:
-					utterance.setSegmentTrack(item.getNodeValue());
-					break;
-				case REV:
-					utterance.setSegmentRev(item.getNodeValue());
-					break;
-				case FILENAME:
-					utterance.setSegmentFilename(item.getNodeValue());
-					break;
-				case SPEAKER:
-					utterance.setSpeaker(item.getNodeValue());
-					break;
-				default:
-					throw new Exception("Unknown textsegment attribute: " + item.getNodeName());
-				}
-			}
-
 			turns.add(utterance);			
 			textsegment = textsegment.getNextSibling();
 		}
@@ -192,8 +151,7 @@ public class UtteranceCollection implements Serializable, PubliclyCloneable{
 			}
 			
 			{
-				XMLEncoder e = new XMLEncoder(
-						new FileOutputStream("Test.xml"));
+				XMLEncoder e = new XMLEncoder(System.out);
 				e.writeObject(session);
 				e.close();				
 			}

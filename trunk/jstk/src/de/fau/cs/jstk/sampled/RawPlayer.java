@@ -72,7 +72,7 @@ public class RawPlayer implements Runnable, LineListener{
 	
 	double desiredBufSize;
 	
-	Mixer.Info mixer;
+	private Mixer.Info mixer;
 	
 	boolean stressTestEnabled = false;	
 	double activeSleepRatio;
@@ -89,7 +89,7 @@ public class RawPlayer implements Runnable, LineListener{
 
 	public RawPlayer(AudioInputStream ais, String mixerName){
 		this(ais, mixerName, 0.0);
-	}	
+	}
 	
 	/**
 	 * set up player. no lines are occupied until start() is called.
@@ -105,19 +105,24 @@ public class RawPlayer implements Runnable, LineListener{
 		thread.setName("RawPlayer");
 		this.desiredBufSize = desiredBufSize;
 			 
-		mixer = null;
+		setMixer(null);
 		System.err.println("searching for mixerName " + mixerName);
-		if (mixerName != null){
-			try {
-				mixer = MixerUtil.getMixerInfoFromName(mixerName, false);
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			if (mixer == null)
-				System.err.println("could not find mixer " + mixerName);			
+		try {
+			setMixer(MixerUtil.getMixerInfoFromName(mixerName, false));
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+
+		if (getMixer() == null)
+			System.err.println("could not find mixer " + mixerName);			
+
+		System.out.println(String.format("mixer: Description = %s, Name = %s, Vendor = %s, Version = %s",
+				getMixer().getDescription(),
+				getMixer().getName(),
+				getMixer().getVendor(),
+				getMixer().getVersion()));
+	
 	}	
 
 	public void dispose(){
@@ -134,7 +139,7 @@ public class RawPlayer implements Runnable, LineListener{
 		thread = null;
 		ais = null;
 		
-		mixer = null;
+		setMixer(null);
 		if (shutdownHook != null)
 			Runtime.getRuntime().removeShutdownHook(shutdownHook);
 		shutdownHook = null;
@@ -229,14 +234,15 @@ public class RawPlayer implements Runnable, LineListener{
 			return;
         }
 		 
+		// get and open Line
 		try {
 			/* according to the doc, AudioSystem.getMixer should be able to handle null,
 			 * but experiment seems to disprove that (at least for capturing, but we do it here as well)  
 			 */
-			if (mixer == null)
+			if (getMixer() == null)
 				line = (SourceDataLine) AudioSystem.getLine(info);
 			else
-				line = (SourceDataLine) AudioSystem.getMixer(mixer).getLine(info);
+				line = (SourceDataLine) AudioSystem.getMixer(getMixer()).getLine(info);
 
 			if (desiredBufSize != 0.0){					
 			
@@ -249,7 +255,7 @@ public class RawPlayer implements Runnable, LineListener{
 		/* no sufficient: 
 		 *		catch (LineUnavailableException e) {
 		 *
-		 * we also gett java.lang.IllegalArgumentException: Line unsupported,
+		 * we also get java.lang.IllegalArgumentException: Line unsupported,
 		 * which needs not to be catched, but we better do!
 		 */
 		catch (Exception e) {
@@ -401,5 +407,13 @@ public class RawPlayer implements Runnable, LineListener{
 		player.join();
 		System.err.println("joined");
 
+	}
+
+	public void setMixer(Mixer.Info mixer) {
+		this.mixer = mixer;
+	}
+
+	public Mixer.Info getMixer() {
+		return mixer;
 	}
 }

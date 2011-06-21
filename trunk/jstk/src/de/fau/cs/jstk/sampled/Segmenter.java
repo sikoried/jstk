@@ -206,6 +206,10 @@ public class Segmenter {
 		return -1.0;		
 	}
 	
+	/**
+	 * 
+	 * @return true if any saturation has been observed
+	 */
 	public boolean hasSaturation(){
 		return hasSaturation(0.0);
 	}
@@ -461,7 +465,8 @@ public class Segmenter {
 		try {
 			mutex.acquire();
 		} catch (InterruptedException e) {			
-			e.printStackTrace();		
+			e.printStackTrace();
+			return;
 		}		
 		
 		energy.addAll(tmpEnergy);

@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import de.fau.cs.jstk.segmented.Boundary.BOUNDARIES;
@@ -46,6 +47,10 @@ public class Utterance implements Serializable, PubliclyCloneable{
 	
 	private static final long serialVersionUID = 3535642214459508273L;
 
+	private static enum SegmentAttributes {
+		NR, ID, TRACK, REV, FILENAME, SPEAKER
+	}
+	
 	/**
 	 * The utterance as displayed to the user/learner: with capitalization, punctuation etc.
 	 */
@@ -83,23 +88,92 @@ public class Utterance implements Serializable, PubliclyCloneable{
 	
 	public Utterance(String orthography, String role,
 			Word [] words,
-			Boundary [] boundaries, Subdivision [] subdivisions) {
+			Boundary [] boundaries, Subdivision [] subdivisions,
+			String segmentId, String segmentTrack, String segmentRev, String segmentFilename) {
 		this.setOrthography(orthography);
 
 		setWords(words);
-		this.setSpeaker(role);
+		this.setRole(role);
 		setBoundaries(boundaries);
 		setSubdivisions(subdivisions);
+		this.segmentId = segmentId;
+		this.segmentTrack = segmentTrack;
+		this.segmentRev = segmentRev;
+		this.segmentFilename = segmentFilename;
 	}
 	
 	@Override
-	public Utterance clone(){
-		return new Utterance(orthography, role, 
-				words, boundaries, subdivisions);
+	public Utterance clone(){// throws CloneNotSupportedException{
+		//return new Utterance(orthography, role,
+				//words, boundaries, subdivisions, segmentId, segmentTrack, segmentRev, segmentFilename);
+		
+		Utterance newUtterance;
+		try {
+			newUtterance = (Utterance) super.clone();
+		} catch (CloneNotSupportedException e) {
+			throw new AssertionError(e);
+		}
+		
+		// need deep array-copies:
+		newUtterance.setWords(words);
+		newUtterance.setBoundaries(boundaries);
+		newUtterance.setSubdivisions(subdivisions);
+		
+		return newUtterance;
 	}
 
-	static Utterance read(Node node, String speaker) throws Exception{
-		String nodeName = node.getNodeName();
+	static Utterance read(Node textsegmentNode) throws Exception{
+		String nodeName = textsegmentNode.getNodeName();
+		
+		if (nodeName.equals("#text")) {
+			textsegmentNode = textsegmentNode.getNextSibling();
+			nodeName = textsegmentNode.getNodeName();
+		}		
+		if (!nodeName.equals("textsegment"))
+			throw new Exception("expecting node textsegment, got "
+					+ nodeName);
+
+		NamedNodeMap attributes = textsegmentNode.getAttributes();
+		String segmentId = null;
+		String segmentTrack = null;
+		String segmentRev = null;
+		String segmentFilename = null;
+		String speaker = null;
+		for (int i = 0; i < attributes.getLength(); i++) {
+			Node item = attributes.item(i);
+			switch (SegmentAttributes.valueOf(item.getLocalName().toUpperCase())) {
+			case NR:
+				break;
+			case ID:
+				segmentId = item.getNodeValue();
+				break;
+			case TRACK:
+				segmentTrack = item.getNodeValue();
+				break;
+			case REV:
+				segmentRev = item.getNodeValue();
+				break;
+			case FILENAME:
+				segmentFilename = item.getNodeValue();
+				break;
+			case SPEAKER:
+				speaker = item.getNodeValue();
+				break;
+			default:
+				throw new Exception("Unknown textsegment attribute: " + item.getNodeName());
+			}
+		}
+
+		Node utteranceNode = textsegmentNode.getFirstChild();
+		nodeName = utteranceNode.getNodeName();
+		if (nodeName.equals("#text")) {
+			utteranceNode = utteranceNode.getNextSibling();
+			nodeName = utteranceNode.getNodeName();
+		}
+		nodeName = utteranceNode.getNodeName();
+		if (!nodeName.equals("utterance")) {
+			throw new Exception("expecting node utterance, got " + nodeName);
+		}		
 		
 		if (!nodeName.equals("utterance"))
 			throw new Exception("Expecting node name utterance, got " + nodeName);			
@@ -109,34 +183,33 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		List<Boundary> boundaries = new LinkedList<Boundary>();
 		List<Subdivision> subdivisions = new LinkedList<Subdivision>();
 		List<Word> words = new LinkedList<Word>();
-		node = node.getFirstChild();
+		utteranceNode = utteranceNode.getFirstChild();
 		
-		
-		while (node != null) {
-			nodeName = node.getNodeName();
+		while (utteranceNode != null) {
+			nodeName = utteranceNode.getNodeName();
 			if (nodeName.equals("#text")){
-				node = node.getNextSibling();				
+				utteranceNode = utteranceNode.getNextSibling();				
 				continue;
 			}
 			else if (nodeName.equals("orthography")) {
-				orthography = node.getTextContent();
+				orthography = utteranceNode.getTextContent();
 			}
 
 			else if (nodeName.equals("boundary")){				
-				boundaries.add(Boundary.read(node));
+				boundaries.add(Boundary.read(utteranceNode));
 			}
 
 			else if (nodeName.equals("subdivision")){				
-				subdivisions.add(Subdivision.read(node));
+				subdivisions.add(Subdivision.read(utteranceNode));
 			}
 			else if (nodeName.equals("word")){
-				words.add(Word.read(node));
+				words.add(Word.read(utteranceNode));
 			}
 			else{
 				throw new Exception("unexpected node name in utterance: " + nodeName);
 			}
 
-			node = node.getNextSibling();
+			utteranceNode = utteranceNode.getNextSibling();
 		}
 		//System.out.println("orthography = " + orthography + ", speaker = " + speaker);
 		
@@ -147,7 +220,8 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		return new Utterance(orthography, speaker,
 				words.toArray(wordDummy),
 				boundaries.toArray(boundaryDummy),
-				subdivisions.toArray(subdivisionDummy));
+				subdivisions.toArray(subdivisionDummy),
+				segmentId, segmentTrack, segmentRev, segmentFilename);
 	}
 	
 	public void setOrthography(String orthography) {
@@ -210,14 +284,6 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		}		
 		System.err.println("position = " + position);
 		return position;
-	}
-
-	public void setSpeaker(String speaker) {
-		this.setRole(speaker);
-	}
-
-	public String getSpeaker() {
-		return getRole();
 	}
 	
 	// FIXME
@@ -423,11 +489,16 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		for (i = first; i <= last; i++)
 			newSubdivisions[i - first] = new Subdivision(subdivisions[i].getIndex() - firstWord);
 		
-		return new Utterance(orthography, getSpeaker(),
+		return new Utterance(orthography, getRole(),
 				Arrays.copyOfRange(words,
 						firstWord, lastWord + 1),		
 				newBoundaries,
-				newSubdivisions);				
+				newSubdivisions,
+				segmentId, segmentTrack,
+				// TODO
+				null,//segmentRev, 
+				null//segmentFilename
+				);
 	}
 	
 //	public void setPhraseAccents(PhraseAccent [] phraseAccents) {
