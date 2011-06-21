@@ -29,16 +29,10 @@ public class TriangularWindow extends Window {
 		super(source);
 	}
 	
-	public TriangularWindow(AudioSource source, double windowLength, double shiftLength) {
-		super(source, windowLength, shiftLength);
-	}
-	
-	public TriangularWindow(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
-		super(source, numberSamplesWindow, numberSamplesShift);
+	public TriangularWindow(AudioSource source, int length, int shift, boolean samples) {
+		super(source, length, shift, samples);
 	}
 
-	
-	@Override
 	protected double[] initWeights() {
 		double [] w = new double [nsw];
 		for (int i = 0; i < nsw/2; i++) {

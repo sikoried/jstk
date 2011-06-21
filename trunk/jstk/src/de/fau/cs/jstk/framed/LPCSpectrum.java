@@ -222,7 +222,7 @@ public class LPCSpectrum implements FrameSource {
 				RawAudioFormat.create(args.length > 2 ? args[1] : "f:" + args[0]), 
 				true);
 		
-		Window w = new HammingWindow(as, 25, 10);
+		Window w = new HammingWindow(as, 25, 10, false);
 		AutoCorrelation acf = new FastACF(w);
 		FrameSource lpc = new LPCSpectrum(acf, Integer.parseInt(args[args.length == 3 ? 2 : 1]));
 		

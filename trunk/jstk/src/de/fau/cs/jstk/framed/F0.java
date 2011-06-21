@@ -187,7 +187,7 @@ public class F0 implements FrameSource {
 				RawAudioFormat.create(args.length > 2 ? args[1] : "f:" + args[0]), 
 				true);
 		
-		Window w = new HammingWindow(as, 25, 10);
+		Window w = new HammingWindow(as, 25, 10, false);
 		AutoCorrelation ac = new FastACF(w);
 		F0 f0 = new F0(ac, as.getSampleRate(), Integer.parseInt(args[1]));
 		

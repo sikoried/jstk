@@ -175,7 +175,7 @@ public class FastACF implements AutoCorrelation {
 		AudioSource as = new de.fau.cs.jstk.sampled.AudioFileReader(args[0],
 				RawAudioFormat.create(args.length > 1 ? args[1] : "f:"
 						+ args[0]), true);
-		Window window = new HammingWindow(as, 25, 10);
+		Window window = new HammingWindow(as, 25, 10, false);
 		FastACF acf = new FastACF(window);
 		
 		System.err.println(as);
