@@ -54,7 +54,7 @@ public class VisualizerPower extends FileVisualizer {
 		int frameSize = windowLength * samplerate / 1000;
 		final double C2 = 10 * Math.log10(frameSize);
 		double[] frame = new double[frameSize];
-		Window window = Window.create(audiosource, Window.RECTANGULAR_WINDOW, windowLength, 10);
+		Window window = Window.create(audiosource, Window.RECTANGULAR_WINDOW, windowLength, 10, false);
 		int i = 0;
 		
 		for (; i < width; i++) {

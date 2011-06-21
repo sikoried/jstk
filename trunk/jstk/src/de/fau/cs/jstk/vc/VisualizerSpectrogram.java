@@ -37,7 +37,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 	private double max = 0;
 	private int fft_size = 64;
 	private int windowFunction = Window.HAMMING_WINDOW;
-	private double windowLength = 16;
+	private int windowLength = 16;
 	private boolean colorSpectrogram = false;
 	private double brightness = 0.5;
 	private double gamma = 1.0;
@@ -113,7 +113,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 
 		// System.err.println("Calculating spectrogram... ");
 
-		Window window = Window.create(as, windowFunction, windowLength, 10);
+		Window window = Window.create(as, windowFunction, windowLength, 10, false);
 
 		min = 0.0;
 		max = 0.0;
@@ -359,7 +359,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 		refresh();
 	}
 
-	public void setWindowLength(double length) {
+	public void setWindowLength(int length) {
 		windowLength = length;
 		fft_size = determineFFTSize();
 		refresh();
