@@ -116,7 +116,7 @@ public class Formants implements FrameSource {
 				RawAudioFormat.create(args.length > 2 ? args[1] : "f:" + args[0]), 
 				true);
 		
-		Window wnd = new HammingWindow(as, 25, 10);
+		Window wnd = new HammingWindow(as, 25, 10, false);
 		AutoCorrelation acf = new FastACF(wnd);
 		LPCSpectrum lpc = new LPCSpectrum(acf);
 		Formants fs = new Formants(lpc, as.getSampleRate(), Integer.parseInt(args[args.length == 3 ? 2 : 1]));

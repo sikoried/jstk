@@ -150,7 +150,7 @@ public class BandPassFilter implements AudioSource {
 	
 	private void initialize(int fftsize) {
 		// we need 50% overlap triangular filters
-		window = new TriangularWindow(source, fftsize, fftsize / 2);
+		window = new TriangularWindow(source, fftsize, fftsize / 2, true);
 		fft = new DoubleFFT_1D(window.getFrameSize());
 		
 		// initialize filter banks

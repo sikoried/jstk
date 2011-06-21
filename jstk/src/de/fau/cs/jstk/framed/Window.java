@@ -37,10 +37,10 @@ public abstract class Window implements FrameSource {
 	public static final int RECTANGULAR_WINDOW = 3;
 
 	/** frame length in ms */
-	private double wl = 16;
+	private int wl;
 
 	/** frame shift in ms */
-	private double ws = 10;
+	private int ws;
 
 	/** number of samples in window */
 	protected int nsw;
@@ -54,12 +54,11 @@ public abstract class Window implements FrameSource {
 	/**
 	 * Create a default Hamming windos (16ms size, 10ms shift)
 	 * 
-	 * @param source
-	 *            AudioSource to read from
+	 * @param source AudioSource to read from
 	 */
 	public Window(AudioSource source) {
 		this.source = source;
-		updateNumerOfSamples();
+		setWindowSpecs(16, 10, false);
 	}
 
 	public FrameSource getSource() {
@@ -70,23 +69,13 @@ public abstract class Window implements FrameSource {
 	 * Create a Window using given frame shift length
 	 * 
 	 * @param source AudioSource to read from
-	 * @param windowLength Frame length in milli-seconds
-	 * @param shiftLength Shift length in milli-seconds
+	 * @param length 
+	 * @param shift
+	 * @param samples set true if specifying quantities as samples, or false for milliseconds
 	 */
-	public Window(AudioSource source, double windowLength, double shiftLength) {
+	public Window(AudioSource source, int length, int shift, boolean samples) {
 		this.source = source;
-		setWindowSpecs(windowLength, shiftLength);
-	}
-	
-	/**
-	 * Create a Window using given number of samples in Window and shift.
-	 * @param source
-	 * @param numberSamplesWindow
-	 * @param numberSamplesShift
-	 */
-	public Window(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
-		this.source = source;
-		setWindowSpecs(numberSamplesWindow, numberSamplesShift);
+		setWindowSpecs(length, shift, samples);
 	}
 
 	/**
@@ -99,55 +88,51 @@ public abstract class Window implements FrameSource {
 		return nsw;
 	}
 
-	public double getShift() {
+	public int getShift() {
 		return ws;
 	}
 
-	private void setWindowSpecs(double windowLength, double shiftLength) {
-		wl = windowLength;
-		ws = shiftLength;
-
-		// can't be longer than frame length
-		if (ws > wl)
-			ws = wl;
-
-		updateNumerOfSamples();
-	}
+	private void setWindowSpecs(int length, int shift, boolean samples) {
+		int sr = source.getSampleRate();
+		
+		// shift can't be larger than length
+		if (shift > length)
+			shift = length;
+		
+		if (samples) {
+			// quantities are actual samples
+			nsw = length;
+			nss = shift;
+			
+			// compute length in ms
+			wl = nsw * 1000 / sr;
+			ws = nss * 1000 / sr;
+			
+		} else {
+			// quantities are milliseconds
+			wl = length;
+			ws = shift;
 	
-	private void setWindowSpecs(int numberSamplesWindow, int numberSamplesShift) {
-		if (numberSamplesShift > numberSamplesWindow)
-			numberSamplesShift = numberSamplesWindow;
-		
-		int sr = source.getSampleRate();
-		nsw = numberSamplesWindow;
-		nss = numberSamplesShift;
-		
-		wl = nsw * 1000. / sr;
-		ws = nss * 1000. / sr;
-		
+			// compute buffer sizes
+			nsw = (int) (sr * wl / 1000.);
+			nss = (int) (sr * ws / 1000.);
+			
+			// can't be longer than frame length
+			if (ws > wl)
+				ws = wl;
+		}
+
+		// (re-)allocate buffers
 		rb = new double [nsw];
 		rb_helper = new double [nss];
 		cind = -1;
 		
+		// init weights
 		w = initWeights();
 	}
 
-	private void updateNumerOfSamples() {
-		int sr = source.getSampleRate();
-		nsw = (int) (sr * wl / 1000.);
-		nss = (int) (sr * ws / 1000.);
-
-		// re-allocate ring buffer to correct size, reset current index
-		rb = new double [nsw];
-		rb_helper = new double [nss];
-		cind = -1;
-
-		// initialize the weights
-		w = initWeights();
-	}
-
-	public int getNumberOfFramesPerSecond() {
-		return (int) (1000. / ws);
+	public double getNumberOfFramesPerSecond() {
+		return 1000. / ws;
 	}
 
 	/** ring buffer for internal storage of the signal */
@@ -302,11 +287,11 @@ public abstract class Window implements FrameSource {
 				int length = Integer.parseInt(help[1]);
 				int shift = Integer.parseInt(help[2]);
 				if (help[0].equals("hamm"))
-					return new HammingWindow(source, length, shift);
+					return new HammingWindow(source, length, shift, false);
 				else if (help[0].equals("hann"))
-					return new HannWindow(source, length, shift);
+					return new HannWindow(source, length, shift, false);
 				else if (help[0].equals("rect"))
-					return new RectangularWindow(source, length, shift);
+					return new RectangularWindow(source, length, shift, false);
 				else
 					throw new MalformedParameterStringException(
 							"unknown window");
@@ -316,16 +301,15 @@ public abstract class Window implements FrameSource {
 		}
 	}
 	
-	public static Window create(AudioSource source, int windowType,
-			double windowLength, double shift) {
+	public static Window create(AudioSource source, int windowType, int windowLength, int shift, boolean samples) {
 		switch (windowType) {
 		case Window.RECTANGULAR_WINDOW:
-			return new RectangularWindow(source, windowLength, shift);
+			return new RectangularWindow(source, windowLength, shift, samples);
 		case Window.HANN_WINDOW:
-			return new HannWindow(source, windowLength, shift);
+			return new HannWindow(source, windowLength, shift, samples);
 		case Window.HAMMING_WINDOW:
 		default:
-			return new HammingWindow(source, windowLength, shift);
+			return new HammingWindow(source, windowLength, shift, samples);
 		}
 	}
 
@@ -341,7 +325,7 @@ public abstract class Window implements FrameSource {
 		AudioSource as = new de.fau.cs.jstk.sampled.AudioFileReader(args[0],
 				RawAudioFormat.create(args.length > 1 ? args[1] : "f:"
 						+ args[0]), true);
-		Window window = new HammingWindow(as, 25, 10);
+		Window window = new HammingWindow(as, 25, 10, false);
 
 		System.err.println(as);
 		System.err.println(window);

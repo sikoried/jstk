@@ -34,12 +34,8 @@ public class HammingWindow extends Window {
 		super(source);
 	}
 	
-	public HammingWindow(AudioSource source, double windowLength, double shiftLength) {
-		super(source, windowLength, shiftLength);
-	}
-	
-	public HammingWindow(AudioSource source, int numberSamplesWindow, int numberSamplesShift) {
-		super(source, numberSamplesWindow, numberSamplesShift);
+	public HammingWindow(AudioSource source, int length, int shift, boolean samples) {
+		super(source, length, shift, samples);
 	}
 	
 	protected double [] initWeights() {
