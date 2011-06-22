@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -58,11 +59,13 @@ public class RawCapturer implements Runnable, LineListener{
 
 	private Set<CaptureEventListener> dependents = new HashSet<CaptureEventListener>();
 	
-	Thread thread;
+	Thread thread = null;
 	
 	boolean firsttime = true;
 	
 	boolean stopped = false;
+	
+	Semaphore stopMutex = new Semaphore(1);
 	
 	OutputStream os;
 	AudioFormat format;
@@ -101,7 +104,7 @@ public class RawCapturer implements Runnable, LineListener{
 		this.os = os;
 		this.format = format;
 		thread = new Thread(this);
-		thread.setName("RawPlayer");
+		thread.setName("RawCapturer");
 		this.desiredBufSize = desiredBufSize;
 		
 		setMixer(null);
@@ -123,7 +126,7 @@ public class RawCapturer implements Runnable, LineListener{
 				getMixer().getVersion()));
 	}
 	
-	public void dispose(){
+	public void dispose(boolean shutdownInProgress){
 		stopCapturing();
 		
 		if (line != null)
@@ -140,8 +143,10 @@ public class RawCapturer implements Runnable, LineListener{
 		
 		setMixer(null);
 		
-		if (shutdownHook != null)
+		if (shutdownHook != null && !shutdownInProgress){
+			System.err.println("RawCapturer.dispose: removing shutdownHook");
 			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		}
 		shutdownHook = null;
 
 	}
@@ -185,9 +190,7 @@ public class RawCapturer implements Runnable, LineListener{
 	public void start(){
 		Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread(){
 			public void run() {
-				// to avoid "java.lang.IllegalStateException: Shutdown in progress"
-				// in dispose()
-				//shutdownHook = null;
+				
 				System.err.println("RawCapturer: Inside Shutdown Hook: stopping capturing...");
 				stopCapturing();
 				System.err.println("capturing stopped");
@@ -206,31 +209,35 @@ public class RawCapturer implements Runnable, LineListener{
 	}
 	
 	public void stopCapturing(){
-		if (stopped)
+		try {
+			stopMutex.acquire();
+		} catch (InterruptedException e1) {
+			System.err.println("stopCapturing: interrupted");
 			return;
+		}		
+		
+		if (stopped){
+			stopMutex.release();
+			return;
+		}			
 		
 		// the stop() sometime hangs quite a while!?!
 		System.err.println("stopCapturing: line.stop()...");
 		line.stop();
 		System.err.println("stopCapturing: ... line.stop() done");
 		
-//		// FIXME
-//		try {
-//			Thread.sleep(100);
-//		} catch (InterruptedException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
-//		System.exit(1);
-//		
+		stopMutex.release();
+		
 		// let's only stop as soon as we are notified by update() 
 		//stopped = true;
 		try {
-			thread.join();
+			if (thread != null)
+				thread.join();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
+		
 	}
 
 	@Override
@@ -356,17 +363,15 @@ public class RawCapturer implements Runnable, LineListener{
 //			line.drain();
 //		}
 //		System.err.println("line.stop()");
-//		line.stop();
-		if (true){//stopped){
-			System.err.println("line.flush()");
-			line.flush();
-		}
+//		line.stop();		
+		
+		System.err.println("line.flush()");
+		line.flush();
+
 		System.err.println("line.close()");
 		line.close();		
 		
-		System.err.println("leaving");
-
-				
+		System.err.println("leaving");				
 	}
 	
 	@Override

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -65,6 +66,8 @@ public class RawPlayer implements Runnable, LineListener{
 	boolean firsttime = true;
 	
 	boolean stopped = false;
+	
+	Semaphore stopMutex = new Semaphore(1);
 	
 	AudioInputStream ais;
 	
@@ -125,7 +128,7 @@ public class RawPlayer implements Runnable, LineListener{
 	
 	}	
 
-	public void dispose(){
+	public void dispose(boolean shutdownInProgress){
 		stopPlaying();
 		
 		if (line != null)
@@ -140,7 +143,7 @@ public class RawPlayer implements Runnable, LineListener{
 		ais = null;
 		
 		setMixer(null);
-		if (shutdownHook != null)
+		if (shutdownHook != null && !shutdownInProgress)
 			Runtime.getRuntime().removeShutdownHook(shutdownHook);
 		shutdownHook = null;
 		
@@ -193,7 +196,9 @@ public class RawPlayer implements Runnable, LineListener{
 	public void start(){
 		Runtime.getRuntime().addShutdownHook(shutdownHook  = new Thread(){
 			public void run() {
+				
 				System.err.println("RawPlayer: Inside Shutdown Hook: stopping player...");
+				
 				stopPlaying();
 				System.err.println("player stopped");
 			}			
@@ -210,19 +215,29 @@ public class RawPlayer implements Runnable, LineListener{
 		}
 	}
 	
-	public void stopPlaying(){
-		if (stopped)
+	public void stopPlaying(){		
+		try {
+			stopMutex.acquire();
+		} catch (InterruptedException e1) {
+			System.err.println("stopPlaying: interrupted");
 			return;
+		}
+		if (stopped){
+			stopMutex.release();
+			return;
+		}		
 		
 		stopped = true;
+		
+		stopMutex.release();
+		
 		try {
 			thread.join();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
+		}		
 		
-		// TODO: remove Listeners?
 	}
 
 	@Override

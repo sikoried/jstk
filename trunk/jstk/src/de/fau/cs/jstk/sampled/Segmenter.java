@@ -268,7 +268,9 @@ public class Segmenter {
 		try {
 			mutex.acquire();
 		} catch (InterruptedException e) {			
-			e.printStackTrace();
+			//e.printStackTrace();
+			System.err.println("Segmenter.processSamples: interrupted");
+			return;
 		}		
 		
 		if (leftOverSamples != null){
