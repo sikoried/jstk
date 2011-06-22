@@ -274,6 +274,8 @@ public abstract class Window implements FrameSource {
 	 * @param source
 	 * @param parameterString
 	 *            "hamm|hann|rect,length-ms,shift-ms"
+	 * @param samples set true if specifying quantities as samples, or false for milliseconds
+	 * FIXME: samples is redundant as parameterString says "length-ms,shift-ms
 	 * @return
 	 * @throws MalformedParameterStringException
 	 */
