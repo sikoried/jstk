@@ -274,12 +274,10 @@ public abstract class Window implements FrameSource {
 	 * @param source
 	 * @param parameterString
 	 *            "hamm|hann|rect,length-ms,shift-ms"
-	 * @param samples set true if specifying quantities as samples, or false for milliseconds
-	 * FIXME: samples is redundant as parameterString says "length-ms,shift-ms
 	 * @return
 	 * @throws MalformedParameterStringException
 	 */
-	public static Window create(AudioSource source, String parameterString, boolean samples)
+	public static Window create(AudioSource source, String parameterString)
 			throws MalformedParameterStringException {
 		if (parameterString == null)
 			return new HammingWindow(source);
@@ -289,11 +287,11 @@ public abstract class Window implements FrameSource {
 				int length = Integer.parseInt(help[1]);
 				int shift = Integer.parseInt(help[2]);
 				if (help[0].equals("hamm"))
-					return new HammingWindow(source, length, shift, samples);
+					return new HammingWindow(source, length, shift, false);
 				else if (help[0].equals("hann"))
-					return new HannWindow(source, length, shift, samples);
+					return new HannWindow(source, length, shift, false);
 				else if (help[0].equals("rect"))
-					return new RectangularWindow(source, length, shift, samples);
+					return new RectangularWindow(source, length, shift, false);
 				else
 					throw new MalformedParameterStringException(
 							"unknown window");

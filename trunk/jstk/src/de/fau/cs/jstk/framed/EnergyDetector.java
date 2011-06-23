@@ -206,7 +206,7 @@ public class EnergyDetector implements FrameSource {
 		
 		try {
 			AudioSource as = new AudioFileReader(fileName, RawAudioFormat.create(sFormat), true);
-			Window wnd = Window.create(as, sWindow, false);
+			Window wnd = Window.create(as, sWindow);
 			
 			double [] buf = new double [wnd.getFrameSize()];
 			
@@ -295,7 +295,7 @@ public class EnergyDetector implements FrameSource {
 		for (Pair<String, String> file : files) {
 			
 			AudioSource as = new AudioFileReader(file.a, RawAudioFormat.create(sFormat), true);
-			Window wnd = Window.create(as, sWindow, false);
+			Window wnd = Window.create(as, sWindow);
 				
 			double [] buf = new double [wnd.getFrameSize()];
 			

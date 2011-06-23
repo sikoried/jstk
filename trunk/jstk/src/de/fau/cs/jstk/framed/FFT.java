@@ -204,7 +204,7 @@ public class FFT extends SpectralTransformation implements FrameSource {
 		String outFile = (args.length > 3 ? args[3] : null);
 		
 		AudioSource as = new de.fau.cs.jstk.sampled.AudioFileReader(inFile, RawAudioFormat.create(sFormat), true);
-		Window w = Window.create(as, sWindow, false);
+		Window w = Window.create(as, sWindow);
 		FrameSource spec = new FFT(w);
 		
 		FrameOutputStream fw = (outFile == null ? null : new FrameOutputStream(spec.getFrameSize(), new File(outFile)));
