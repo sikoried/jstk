@@ -22,6 +22,7 @@
 package de.fau.cs.jstk.lm;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -50,8 +51,11 @@ public class FixedSequences implements LanguageModel {
 	/** list of used silence tokens (used to match hypotheses to allowed sequences) */
 	private HashSet<Tokenization> silences;
 	
-	/** list of root nodes for the possible sequences */
-	private List<TreeNode> roots = new LinkedList<TreeNode>();
+	/** list of first LST in the sequences */
+	private List<TokenTree> firstw = new LinkedList<TokenTree>();
+	
+	/** list of last LST in the sequences */
+	private List<TokenTree> lastw = new LinkedList<TokenTree>();
 	
 	/** list of Token sequences for the allowed Tokenization sequences */
 	private List<String []> seqs = new LinkedList<String []>();
@@ -65,6 +69,7 @@ public class FixedSequences implements LanguageModel {
 	public FixedSequences(Tokenizer tok, TokenHierarchy th, String [] silences) 
 		throws OutOfVocabularyException {
 		this.tok = tok;
+		this.th = th;
 		this.silences = new HashSet<Tokenization>();
 		for (String s : silences)
 			this.silences.add(tok.getWordTokenization(s));
@@ -77,10 +82,6 @@ public class FixedSequences implements LanguageModel {
 	 */
 	public void addSequence(String transcription) 
 		throws OutOfVocabularyException {
-		// remove silence words, if present! otherwise they would be required
-		for (Tokenization s : silences)
-			transcription = transcription.replaceAll("\\b" + s.word + "\\b", "");
-		
 		// tokenize the transcription
 		String [] tok = transcription.trim().split("\\s+");
 		
@@ -88,47 +89,65 @@ public class FixedSequences implements LanguageModel {
 		seqs.add(tok);
 
 		// now build word trees and link correspondingly
-		TokenTree prev = null, init = null;
+		TokenTree prev = null;
 		for (int i = 0; i < tok.length; ++i) {
-			// build silence tree with optional silences
-			TokenTree tree = new TokenTree(treeId++);
-			for (Tokenization s : silences)
-				tree.addToTree(s, th.tokenizeWord(s.sequence), 0.5f / silences.size());
+			// ignore silence tokens, these will be treatet in a special way
+			if (silences.contains(new Tokenization(tok[i])))
+				continue;
 			
 			// build word tree
+			TokenTree tree = new TokenTree(treeId++);
 			Tokenization t = this.tok.getWordTokenization(tok[i]);
-			tree.addToTree(t, th.tokenizeWord(t.sequence), 0.5f);
-			
-			// factorize
-			tree.factor();
-			
-			// now link the silences as a loop
-			for (TreeNode n : tree.leaves())
-				if (silences.contains(n.word))
-					n.setLst(tree.root);
-			
-			// link the previous words to the new tree
-			if (prev != null)
-				for (TreeNode n : tree.leaves())
-					if (!silences.contains(n.word))
-						n.setLst(tree.root);
-			else
-				init = tree;
+			tree.addToTree(t, th.tokenizeWord(t.sequence), 1.f);
+						
+			if (prev != null) {
+				// build silence tree with optional silences
+				TokenTree silt = new TokenTree(treeId++);
+				for (Tokenization s : silences)
+					silt.addToTree(s, th.tokenizeWord(s.sequence), 1.f / silences.size()).setLst(tree.root);
+				
+				// link the previous words to the silence and the new tree
+				for (TreeNode n : prev.leaves()) {
+					n.setLst(silt.root);
+					n.addLst(tree.root);
+				}
+			} else {
+				// this was the first tree, so remember the root
+				firstw.add(tree);
+			}
 			
 			prev = tree;
 		}
 		
-		// build trailing silence tree with optional silences
-		TokenTree trail = new TokenTree(treeId++);
+		lastw.add(prev);
+	}
+	
+	/**
+	 * Generate the fixed network for beam forced alignment.
+	 */
+	public TreeNode generateNetwork() {
+		// beginning LST (silence + first words
+		TokenTree begs = new TokenTree(treeId++);
 		for (Tokenization s : silences)
-			trail.addToTree(s, th.tokenizeWord(s.sequence), 1.f / silences.size());
+			begs.addToTree(s, th.tokenizeWord(s.sequence), 1.f / silences.size());
 		
-		for (TreeNode n : prev.leaves())
-			if (!silences.contains(n.word))
-				n.setLst(trail.root);
+		// link in the initial words of the sequences
+		for (TokenTree fw : firstw)
+			for (TreeNode n : fw.root.children)
+				begs.root.addChild(n);
+				
+		// ending silence
+		TokenTree ends = new TokenTree(treeId++);
+		for (Tokenization s : silences)
+			ends.addToTree(s, th.tokenizeWord(s.sequence), 1.f / silences.size());
 		
-		// add the initial root to the sequence list
-		roots.add(init.root);
+		// link all last words of the sequences to the silence
+		for (TokenTree lw : lastw) {
+			for (TreeNode l : lw.leaves())
+				l.addLst(ends.root);
+		}
+		
+		return begs.root;
 	}
 	
 	/**
@@ -147,19 +166,24 @@ public class FixedSequences implements LanguageModel {
 				String [] ref = seqs.get(i);
 				
 				// sanitize the candidate word sequence by removing the adequate silences
-				List<String> clean = new LinkedList<String>();
+				List<String> cleanr = new LinkedList<String>();
+				for (String t : ref) 
+					if (!silences.contains(new Tokenization(t)))
+						cleanr.add(t);
+				
+				List<String> cleanh = new LinkedList<String>();
 				for (Hypothesis hi : cand)
 					if (!silences.contains(hi.node.word))
-						clean.add(hi.node.word.word);
-								
-				if (clean.size() != ref.length)
+						cleanh.add(hi.node.word.word);
+		
+				if (cleanh.size() != cleanr.size())
 					continue;
 				
-				String [] can = clean.toArray(new String [clean.size()]);
 				boolean match = true;
-				for (int j = 0; j < ref.length && j < can.length && match; ++j) {
-					match &= can[j].equals(ref[j]);
-				}
+				Iterator<String> cri = cleanr.iterator();
+				Iterator<String> chi = cleanh.iterator();
+				while (cri.hasNext() && chi.hasNext() && match)
+					match &= cri.next().equals(chi.next());
 			
 				if (match)
 					return h;
@@ -167,23 +191,5 @@ public class FixedSequences implements LanguageModel {
 		}
 		
 		return null;
-	}
-	
-	/**
-	 * Generate the fixed network for beam forced alignment.
-	 * @param tokenizer (null; all info is already present)
-	 * @param hierarchy (null; all info is already present)
-	 * @param sils (null; all info is already present)
-	 */
-	public TreeNode generateNetwork() {
-		
-		TreeNode root = new TreeNode(treeId++);
-		
-		for (TreeNode r : roots) {
-			for (TreeNode c : r.children)
-				root.addChild(c);
-		}
-		
-		return root;
 	}
 }

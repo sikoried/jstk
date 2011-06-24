@@ -164,7 +164,7 @@ public class Aligner {
 		Distributor distributor;
 		CountDownLatch latch;
 		
-		int bs;
+		int bs, bi;
 		double bw;
 		String silences;
 		
@@ -180,11 +180,12 @@ public class Aligner {
 		 * @param bs size of the beam
 		 * @param latch count-down latch for thread synchronization
 		 */
-		BWorker(Tokenizer tok, TokenHierarchy th, Distributor d, int bs, double bw, String silences, CountDownLatch latch) {
+		BWorker(Tokenizer tok, TokenHierarchy th, Distributor d, int beam_size, int beam_incr, double bw, String silences, CountDownLatch latch) {
 			this.tok = tok;
 			this.th = th;
 			this.distributor = d;
-			this.bs = bs;
+			this.bs = beam_size;
+			this.bi = beam_incr;
 			this.bw = bw;
 			this.silences = silences;
 			this.latch = latch;
@@ -194,6 +195,7 @@ public class Aligner {
 			try {
 				Turn t;
 				while ((t = distributor.next()) != null) {
+					logger.info(t.fileName);
 					
 					// generate decoding tree
 					FixedSequences forced = new FixedSequences(tok, th, silences.split("\\s++"));
@@ -211,20 +213,29 @@ public class Aligner {
 					while (fs.read(buf))
 						obs.add(buf.clone());
 					
-					// init the decoder
-					Iterator<double []> it = obs.iterator();
-					dec.initialize(bs, bw, it.next());
-
-					while (it.hasNext())
-						dec.step(it.next());
+					int beam = 0;
+					Hypothesis h0 = null;
 					
-					// remove active non-final states
-					dec.pruneActiveHypotheses();
-					
-					MetaAlignment ma;
-					Hypothesis h0 = forced.findBestForcedAlignment(dec.getBestHypotheses(0));
+					while (beam < bs && h0 == null) {
+						// increase beam size
+						beam += bi;
+						if (beam > bi)
+							logger.info("re-trying with beam size = " + beam);
+						
+						// init the decoder
+						Iterator<double []> it = obs.iterator();
+						dec.initialize(beam, bw, it.next());
+	
+						while (it.hasNext())
+							dec.step(it.next());
+						
+						// remove active non-final states
+						dec.pruneActiveHypotheses();
+						h0 = forced.findBestForcedAlignment(dec.getBestHypotheses(0));
+					}
 					
 					// generate the MetaAlignment
+					MetaAlignment ma;
 					if (h0 == null) {
 						// fall back to real viterbi
 						logger.info("Aligner.BWorker.run(): " + t.fileName + " no best hypothesis, falling back to regular Viterbi!");
@@ -272,7 +283,9 @@ public class Aligner {
 		"  Do a beam alignment instead of a true Viterbi alignment with given optional\n" +
 		"  silence symbols (usually \"sil nv\"). This option is incompatible with --linear!\n" +
 		"--beam-size <num>\n" +
-		"  Set the beam size to the given number of active hypotheses (default: 100)\n" +
+		"  Set the maximum beam size for decoding (default: 1000)\n" +
+		"--beam-incr <num>\n" +
+		"  Increase the beam size by <num> for each retry (default: 100)\n" + 
 		"--silent\n" +
 		"  Do not produce debug output.\n";
 	
@@ -294,8 +307,9 @@ public class Aligner {
 		int p = Runtime.getRuntime().availableProcessors();
 		
 		boolean beam = false;
-		int bs = 10000;
-		double bw = Double.MAX_VALUE;
+		int beam_size = 1000;
+		int beam_incr = 100;
+		double beam_width = Double.MAX_VALUE;
 		String sils = null;
 		
 		// parse args
@@ -332,7 +346,9 @@ public class Aligner {
 				sils = args[++i];
 			}
 			else if (args[i].equals("--beam-size"))
-				bs = Integer.parseInt(args[++i]);
+				beam_size = Integer.parseInt(args[++i]);
+			else if (args[i].equals("--beam-incr"))
+				beam_incr = Integer.parseInt(args[++i]);
 			else
 				throw new Exception("Aligner.main(): invalid argument \"" + args[i] + "\"");
 		}
@@ -360,7 +376,7 @@ public class Aligner {
 			conf.loadCodebook(new File(fCodebook));
 			
 			if (beam)
-				threads[j] = new BWorker(conf.tok, conf.th, dist, bs, bw, sils, latch);
+				threads[j] = new BWorker(conf.tok, conf.th, dist, beam_size, beam_incr, beam_width, sils, latch);
 			else
 				threads[j] = new Worker(conf.tok, conf.th, dist, forcedInsteadOfLinear, latch);
 		}

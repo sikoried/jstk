@@ -71,8 +71,9 @@ public class TokenTree {
 	 * @param word Tokenization
 	 * @param sequence Token sequence to represent the Tokenisation
 	 * @param prob language model probability
+	 * @return leaf node of the newly inserted trace
 	 */
-	public void addToTree(Tokenization word, Token [] sequence, float prob) {
+	public TreeNode addToTree(Tokenization word, Token [] sequence, float prob) {
 		TreeNode target = root, inspect = root;
 		for (Token tok : sequence) {
 			// check if there is a matching token on this level
@@ -95,6 +96,8 @@ public class TokenTree {
 		// add the leaf
 		TreeNode child = new TreeNode(target, word, prob);
 		target.addChild(child);
+		
+		return child;
 	}
 	
 	/**
@@ -190,7 +193,7 @@ public class TokenTree {
 	}
 	
 	/**
-	 * Get a list of leaves
+	 * Get a list of leaves (ignores LST links!)
 	 * @return
 	 */
 	public List<TreeNode> leaves() {
@@ -208,8 +211,10 @@ public class TokenTree {
 			if (c.isWordNode())
 				li.add(c);
 			
-			for (TreeNode t : c.children)
-				agenda.push(t);
+			for (TreeNode t : c.children) {
+				if (!t.isRootNode())
+					agenda.push(t);
+			}
 		}
 		
 		return li;
@@ -318,39 +323,50 @@ public class TokenTree {
 	 */
 	public static String traverseNetwork(TreeNode root, String indent) {
 		StringBuffer sb = new StringBuffer();
+		NumberFormat fmt = new DecimalFormat("#0.0000");
 		
 		HashSet<TreeNode> visited = new HashSet<TreeNode>();
 		Stack<Pair<TreeNode, Integer>> agenda = new Stack<Pair<TreeNode, Integer>>();
 		
-		// DFS search
+		// the top agenda is for LST roots
 		agenda.add(new Pair<TreeNode, Integer>(root, 0));
-		NumberFormat fmt = new DecimalFormat("#0.0000");
 		while (agenda.size() > 0) {
+			// get next tree
 			Pair<TreeNode, Integer> p = agenda.pop();
-			
-			// this can be true if it is a LST root node that has already been printed
-			if (visited.contains(p.a))
-				continue;
 			
 			// mark as visited
 			visited.add(p.a);
 			
-			// do correct indent
-			for (int i = 0; i < p.b; ++i)
-				sb.append(indent);
+			// now explore the tree with a local agenda
+			Stack<Pair<TreeNode, Integer>> local = new Stack<Pair<TreeNode, Integer>>();
+			local.add(p);
 			
-			// print TreeNode
-			sb.append(p.a + " F=" + fmt.format(p.a.f));
-			if (p.a.isWordNode())
-				for (TreeNode c : p.a.children) {
-					sb.append(" LST=" + c);
+			while (local.size() > 0) {
+				Pair<TreeNode, Integer> l = local.pop();
+				
+				// do correct indent
+				for (int i = 0; i < l.b; ++i)
+					sb.append(indent);
+			
+				// print TreeNode
+				sb.append(l.a + " F=" + fmt.format(l.a.f));
+				if (l.a.isWordNode()) {
+					for (TreeNode c : l.a.children) {
+						sb.append(" LST=" + c);
+					}
 				}
 			
-			sb.append("\n");
+				sb.append("\n");
 			
-			for (TreeNode n : p.a.children) {
-				if (!visited.contains(n))
-					agenda.push(new Pair<TreeNode, Integer>(n, p.b + 1));
+				// add children
+				for (TreeNode n : l.a.children) {
+					if (n.isRootNode()) {
+						// LSTs are treatet separately
+						if (!visited.contains(n))
+							agenda.push(new Pair<TreeNode, Integer>(n, p.b));
+					} else
+						local.push(new Pair<TreeNode, Integer>(n, l.b + 1));
+				}
 			}
 		}
 		
