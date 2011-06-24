@@ -77,7 +77,7 @@ public class MetaAlignment {
 				throw new IllegalArgumentException("missing transcription in line " + line);
 			
 			fileName = trim.substring(0, pos);
-			transcription = trim.substring(pos + 1);
+			transcription = "<sil> " + trim.substring(pos + 1) + " <sil>";
 			
 			this.inDir = inDir;
 			this.outDir = outDir;
