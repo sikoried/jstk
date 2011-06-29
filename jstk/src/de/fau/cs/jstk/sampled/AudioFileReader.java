@@ -25,6 +25,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -104,8 +105,14 @@ public final class AudioFileReader implements AudioSource {
 	public AudioFileReader(String fileName, RawAudioFormat format, boolean cacheFile)
 		throws UnsupportedAudioFileException, IOException {
 		
-		if (format == null)
-			format = new RawAudioFormat(AudioSystem.getAudioFileFormat(new File(fileName)).getFormat());
+		if (format == null) {
+			File fl = new File(fileName);
+			if (!fl.exists())
+				throw new FileNotFoundException(fileName);
+			else if (!fl.canRead())
+				throw new IOException("could not read from " + fileName);
+			format = new RawAudioFormat(AudioSystem.getAudioFileFormat(fl).getFormat());
+		}
 		 
 		this.format = format;
 		this.cacheFile = cacheFile;
