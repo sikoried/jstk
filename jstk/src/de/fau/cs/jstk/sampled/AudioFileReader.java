@@ -108,9 +108,9 @@ public final class AudioFileReader implements AudioSource {
 		if (format == null) {
 			File fl = new File(fileName);
 			if (!fl.exists())
-				throw new FileNotFoundException(fileName);
+				throw new FileNotFoundException("File not found: " + fileName);
 			else if (!fl.canRead())
-				throw new IOException("could not read from " + fileName);
+				throw new IOException("File not readable: " + fileName);
 			format = new RawAudioFormat(AudioSystem.getAudioFileFormat(fl).getFormat());
 		}
 		 
