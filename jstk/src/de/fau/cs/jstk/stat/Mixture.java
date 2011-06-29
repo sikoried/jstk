@@ -507,6 +507,8 @@ public final class Mixture {
 		"    mixtures, use an in/out list containing lines with input and output file separated by\n" +
 		"    whitespace. Each output frame consists of the overall mixture score followed by the\n" +
 		"    individual component scores without the priors.\n" +
+		"  E <codebook> <wt-ascii> [in-out-list]\n" + 
+		"    Same as 'e', but use mixture weights in ascii file\n" +
 		"  s <pmc> [in-out-list | in-list out-file | [< in > out]]\n" +
 		"    Transform mixture densities to supervectors. Use the pipe operators ( < in > out) for\n" +
 		"    a single transformation. If you want to process multiple mixtures, use an in/out list\n" +
@@ -528,6 +530,7 @@ public final class Mixture {
 		String smode = args[0];
 		
 		Mode mode = Mode.DISPLAY;
+		String weightfile = null;
 		
 		if (smode.equals("d"))
 			mode = Mode.DISPLAY;
@@ -537,7 +540,10 @@ public final class Mixture {
 			mode = Mode.FROMASCII;
 		else if (smode.equals("e"))
 			mode = Mode.EVALUATE;
-		else if (smode.equals("s"))
+		else if (smode.equals("E")) {
+			mode = Mode.EVALUATE;
+			weightfile = args[1];
+		} else if (smode.equals("s"))
 			mode = Mode.SV;
 		else if (smode.equals("t"))
 			mode = Mode.MNAP;
@@ -571,6 +577,21 @@ public final class Mixture {
 			// read codebook
 			Mixture cb = Mixture.readFromFile(new File(args[1]));
 			
+			// load weigths
+			if (weightfile != null) {
+				Scanner sc = new Scanner(new File(weightfile));
+				double sum = 0.;
+				for (Density d : cb.components) {
+					d.apr = sc.nextDouble();
+					sum += d.apr;
+				}
+				
+				for (Density d : cb.components) {
+					d.apr /= sum;
+					d.update();
+				}
+			}
+			
 			// buffers
 			double [] x = new double [cb.fd];
 			double [] p = new double [cb.nd + 1];
@@ -578,11 +599,11 @@ public final class Mixture {
 			LinkedList<String> inlist = new LinkedList<String>();
 			LinkedList<String> outlist = new LinkedList<String>();
 			
-			if (args.length == 2) {
+			if ((weightfile == null && args.length == 2) || (weightfile != null && args.length == 3)) {
 				// read and write from stdin
 				inlist.add(null);
 				outlist.add(null);
-			} else if (args.length == 3) {
+			} else if ((weightfile == null && args.length == 3) || (weightfile != null && args.length == 4)) {
 				// read list
 				BufferedReader lr = new BufferedReader(new FileReader(args[2]));
 				String line = null;
