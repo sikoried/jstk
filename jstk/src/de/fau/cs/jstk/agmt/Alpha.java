@@ -23,11 +23,13 @@ package de.fau.cs.jstk.agmt;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 
 import de.fau.cs.jstk.util.Pair;
@@ -169,36 +171,80 @@ public final class Alpha implements AgreementMeasure {
 	}
 
 	public static final String SYNOPSIS = 
-		"Usage: Alpha rater1 rater2 <rater3 ...>";
+		"sikoried, 6/29/2011\n" +
+		"Compute Krippendorff's Alpha on the given rater files. Each file may contain\n" +
+		"several raters, use - to read from stdin. Set missing observations to 'nan'\n\n" +
+		"usage: agmt.Alpha file1 [file2 ...]";
 
 	public static void main(String[] args) {
-		if (args.length < 2) {
-			System.out.println(Alpha.SYNOPSIS);
-			System.exit(0);
+		if (args.length < 1) {
+			System.err.println(Alpha.SYNOPSIS);
+			System.exit(1);
 		}
-
-		double[][] data = new double[args.length][];
-
-		// read in data:
+		
+		LinkedList<String> names = new LinkedList<String>();
+		double [][] data = new double [0][];
+		
+		// read in data files
 		for (int i = 0; i < args.length; ++i) {
 			try {
-				BufferedReader in = new BufferedReader(
-						args[i].equals("-") ? new InputStreamReader(System.in)
-								: new FileReader(args[i]));
-				ArrayList<Double> vals = new ArrayList<Double>();
+				BufferedReader in = null;
+				if (args[i].equals("-")) {
+					in = new BufferedReader(new InputStreamReader(System.in));
+					args[i] = "stdin";
+				} else
+					in = new BufferedReader(new FileReader(args[i]));
+				LinkedList<LinkedList<Double>> vals = new LinkedList<LinkedList<Double>>();
+				
 				String l;
-				while ((l = in.readLine()) != null)
-					vals.add(new Double(l));
+				int ln = 0;
+				while ((l = in.readLine()) != null) {
+					String [] split = l.split("\\s+");
+					if (ln == 0) {
+						for (int j = 0; j < split.length; ++j) {
+							names.add(args[i] + ":" + j);
+							vals.add(new LinkedList<Double>());
+						}
+					} else if (vals.size() != split.length)
+						throw new IOException("Incomplete data at " + args[i] + ":" + ln);
+					ln++;
+					
+					for (int j = 0; j < split.length; ++j) {
+						if (split[j].equals("nan"))
+							vals.get(j).add(Double.MAX_VALUE);
+						else
+							vals.get(j).add(new Double(split[j]));
+					}
+				}
 				in.close();
 
-				data[i] = new double[vals.size()];
-				for (int j = 0; j < vals.size(); ++j)
-					data[i][j] = vals.get(j).doubleValue();
-			} catch (Exception e) {
-				System.out.println(e);
+				// new data array will need more columns!
+				double [][] ndata = new double [data.length + vals.size()][];
+				
+				// transfer old stuff
+				for (int j = 0; j < data.length; ++j)
+					ndata[j] = data[j];
+				
+				int k = data.length;
+				for (LinkedList<Double> lld : vals) {
+					double [] hlp = new double [lld.size()];
+					for (int j = 0; j < lld.size(); ++j)
+						hlp[j] = lld.get(j).doubleValue();
+					ndata[k++] = hlp;
+				}
+				
+				data = ndata;
+			} catch (IOException e) {
+				System.err.println(e);
 				e.printStackTrace();
 			}
 		}
+		
+		if (data.length < 2) {
+			System.err.println("You need to specify at least two raters!");
+			System.exit(1);
+		} else
+			System.err.println("Read " + data.length + " raters with " + data[0].length + " ratings each");
 
 		Alpha alpha1 = new Alpha(new NominalMetric(true));
 		Alpha alpha2 = new Alpha(new IntervalMetric());
