@@ -21,7 +21,7 @@
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
  */
-package de.fau.cs.jstk.sampled;
+package de.fau.cs.jstk.sampled.filters;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,6 +34,8 @@ import java.util.List;
 import java.util.Scanner;
 
 import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.sampled.AudioFileReader;
+import de.fau.cs.jstk.sampled.AudioSource;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 /**

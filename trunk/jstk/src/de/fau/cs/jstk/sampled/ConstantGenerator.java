@@ -31,7 +31,7 @@ public class ConstantGenerator extends Synthesizer {
 		super();
 	}
 	
-	public ConstantGenerator(int duration) {
+	public ConstantGenerator(long duration) {
 		super(duration);
 	}
 	
@@ -40,7 +40,7 @@ public class ConstantGenerator extends Synthesizer {
 		this.constant = constant;
 	}
 	
-	public ConstantGenerator(int duration, double constant) {
+	public ConstantGenerator(long duration, double constant) {
 		super(duration);
 		this.constant = constant;
 	}

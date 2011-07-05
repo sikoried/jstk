@@ -19,7 +19,7 @@
 	You should have received a copy of the GNU General Public License
 	along with the JSTK. If not, see <http://www.gnu.org/licenses/>.
 */
-package de.fau.cs.jstk.sampled;
+package de.fau.cs.jstk.sampled.filters;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -27,6 +27,9 @@ import java.nio.ByteOrder;
 import de.fau.cs.jstk.framed.TriangularWindow;
 import de.fau.cs.jstk.framed.Window;
 import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.sampled.AudioFileReader;
+import de.fau.cs.jstk.sampled.AudioSource;
+import de.fau.cs.jstk.sampled.RawAudioFormat;
 import edu.emory.mathcs.jtransforms.fft.DoubleFFT_1D;
 
 /**
