@@ -24,16 +24,19 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import de.fau.cs.jstk.sampled.filters.Butterworth;
+
 /**
- * The RingModulation multiplies an input signal with a given carrier frequency,
- * similar to frequency modulation. As a result, the input signal spectrum is
- * "lifted" by the specified frequency and a mirror effect can be observed at
- * the shifting frequency.<b/>
- * Internally, the ring modulation is a complex multiplication of the input
- * signal (only real part) with the carrier (only imaginary part).<b/>
+ * The (ring) modulation multiplies an input signal (waveform) with a given 
+ * carrier frequency. As a result, the input signal spectrum is "lifted" by the 
+ * specified frequency and a mirror effect can be observed at the shifting 
+ * frequency.<b/>
+ * 
  * In combination with a low-pass filter up to the shifting frequency, a simple
- * (voice) scrambling can be achieved which can be descrambled using the exact
- * same modulation again.
+ * (voice) scrambling can be achieved that can be reversed using the exact same 
+ * modulation scheme.<b/>
+ * 
+ * The frequency is synthesized as a sinus wave.
  * 
  * @author sikoried
  *
@@ -71,11 +74,8 @@ public class RingModulation implements AudioSource {
 			return r;
 		
 		/** 
-		 * The actual (de)scrambling is a complex multiplication of the signal
-		 * with the target frequency as 
-		 *   buf[k] = buf[k] * exp(2*pi*i*(freq/rate)*k)
-		 * but can be simplified to the real part as 
-		 *  buf[i] = buf[i] * cos(2*pi*(freq/rate)*k)
+		 * The (ring) modulation is a simple multiplication of the waveform with
+		 * the carrier frequency.
 		 */
 		for (int i = 0; i < r; ++i) {
 			ind++;
@@ -106,7 +106,7 @@ public class RingModulation implements AudioSource {
 		"(De)Scramble an input ssg/16 signal and write it to stdout. This is a\n" +
 		"ring modulation of the signal with subsequent low-pass at the given scrambling\n" +
 		"frequency.\n\n" +
-		"usage: sampled.RingModulation scrambling-freq < in-ssg16 > out-ssg16";
+		"usage: sampled.RingModulation scrambling-freq < in-ssg8 > out-ssg8";
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length != 1) {
@@ -115,20 +115,20 @@ public class RingModulation implements AudioSource {
 		}
 		
 		// file
-		RawAudioFormat raf = RawAudioFormat.getRawAudioFormat("ssg/16");
+		RawAudioFormat raf = RawAudioFormat.getRawAudioFormat("ssg/8");
 		AudioFileReader afr = new AudioFileReader(System.in, raf, false);
 		
 		// scrambler
 		RingModulation sc = new RingModulation(afr, Double.parseDouble(args[0]));
 		
 		// low-pass
-		BandPassFilter bpf = new BandPassFilter(sc, 0, Double.parseDouble(args[0]), 2048);
+		Butterworth bwf2 = new Butterworth(sc, 25, 300, Double.parseDouble(args[0]), true);
 		
 		double scale = Math.pow(2, raf.getBitRate() - 1) - 1;
 		double [] buf = new double [512];
 		byte [] bbuf = new byte [1024];
 		int r = 0;
-		while ((r = bpf.read(buf)) > 0) {
+		while ((r = bwf2.read(buf)) > 0) {
 			ByteBuffer bb = ByteBuffer.wrap(bbuf);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 	 
