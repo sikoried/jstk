@@ -415,6 +415,110 @@ public class Butterworth extends IIRFilter {
 		return a;
 	}
 
+	/**
+	 * Compute the order and natural frequency of a Butterworth filter. Ported 
+	 * from python's SCIPY scipy/signal/filter_design.py
+	 * 
+	 * @param fp pass band corner frequency in radians (2. * Hz / samplef)
+	 * @param fs stop band corner frequency in radians (2. * Hz / samplef)
+	 * @param loss max loss in pass band, typically 3 (dB)
+	 * @param attn attenuation in the stop band, typically 60 (dB)
+	 * @return order (as int) and natural frequency
+	 */
+	public static double [] ord(double fp, double fs, double loss, double attn) {
+		// warp frequencies
+	    double wfp = Math.tan(fp*Math.PI / 2.);
+	    double wfs = Math.tan(fs*Math.PI / 2.);
+
+	    double nat = (fs > fp ? wfs / wfp : wfp / wfs);
+
+	    // dB...
+	    double gpass = Math.pow(10, .1 * loss);
+	    double gstop = Math.pow(10, .1 * attn);
+	    
+	    double [] res = new double [2];
+	    
+	    // n = ...
+	    res[0] = Math.ceil(Math.log10((gstop - 1.) / (gpass - 1.)) / (2. * Math.log10(nat)));
+	    
+	    // Wn = ...
+	    res[1] = nat / Math.pow(Math.pow(10, .1 * attn) - 1., (1. / (2.*res[0])));
+	    
+	    if (fs > fp)
+	        res[1] = res[1] * wfp;
+	    else
+	        res[1] = wfp / res[1];
+	    
+	    res[1] = (2. / Math.PI)*Math.atan(res[1]);
+
+	    return res;
+	}
+	
+	/**
+	 * Compute the order and natural frequency of a Butterworth filter. Ported 
+	 * from python's SCIPY scipy/signal/filter_design.py. Note that the band
+	 * stop implementation lacks an optimization for the filter order, so the 
+	 * order is usually too high and the first coefficient is inaccurate.
+	 * 
+	 * @param fp pass band corner frequencies in radians (2. * Hz / samplef)
+	 * @param fs stop band corner frequencies in radians (2. * Hz / samplef)
+	 * @param loss max loss in pass band, typically 3 (dB)
+	 * @param attn attenuation in the stop band, typically 60 (dB)
+	 * @return order (as int) and natural frequencies
+	 */
+	public static double [] ord(double [] fp, double [] fs, double loss, double attn) {
+		// warp frequencies
+	    double [] wfp = new double [] { Math.tan(fp[0]*Math.PI / 2.), Math.tan(fp[1]*Math.PI / 2.) };
+	    double [] wfs = new double [] { Math.tan(fs[0]*Math.PI / 2.), Math.tan(fs[1]*Math.PI / 2.) };
+
+	    // stop band filter if the first pass frequency is lower then the first stop frequency
+	    boolean stop = fp[0] < fs[0];
+	    
+	    double [] nat2 = new double [2];
+	    if (stop) {
+	    	nat2[0] = (wfs[0] * (wfp[0]-wfp[1])) / (wfs[0]*wfs[0] - wfp[0]*wfp[1]);
+	    	nat2[1] = (wfs[1] * (wfp[0]-wfp[1])) / (wfs[1]*wfs[1] - wfp[0]*wfp[1]);
+	    } else {
+	    	nat2[0] = (wfs[0]*wfs[0] - wfp[0]*wfp[1]) / (wfs[0] * (wfp[0]-wfp[1]));
+	    	nat2[1] = (wfs[1]*wfs[1] - wfp[0]*wfp[1]) / (wfs[1] * (wfp[0]-wfp[1]));
+	    }
+
+	    double nat = Math.min(Math.abs(nat2[0]), Math.abs(nat2[1]));
+	    
+	    // dB...
+	    double gpass = Math.pow(10, .1 * loss);
+	    double gstop = Math.pow(10, .1 * attn);
+	    
+	    double [] res = new double [3];
+	    
+	    // n = ...
+	    res[0] = Math.ceil(Math.log10((gstop - 1.) / (gpass - 1.)) / (2. * Math.log10(nat)));
+	    
+	    // Wn = ...
+	    double W0 = nat / Math.pow(Math.pow(10, .1 * attn) - 1., (1. / (2.*res[0])));
+	    if (stop) {
+	    	// Wn = ...
+	    	res[1] = Math.abs(((wfp[1] - wfp[0]) + Math.sqrt(Math.pow(wfp[1] - wfp[0], 2.) + 4.*W0*W0 * wfp[0] * wfp[1])) / (2.*W0));
+	        res[2] = Math.abs(((wfp[1] - wfp[0]) - Math.sqrt(Math.pow(wfp[1] - wfp[0], 2.) + 4.*W0*W0 * wfp[0] * wfp[1])) / (2.*W0));		   
+	    } else {
+	        res[1] = Math.abs(-W0 * (wfp[1]-wfp[0]) / 2.0 + Math.sqrt(W0*W0 / 4. * Math.pow(wfp[1]-wfp[0], 2.) + wfp[0]*wfp[1]));
+	        res[2] = Math.abs( W0 * (wfp[1]-wfp[0]) / 2.0 + Math.sqrt(W0*W0 / 4. * Math.pow(wfp[1]-wfp[0], 2.) + wfp[0]*wfp[1]));
+	    }
+	    
+	    // sort ascending
+	    if (res[1] > res[2]) {
+	    	double temp = res[1];
+	    	res[1] = res[2];
+	    	res[2] = temp;
+	    }
+	    
+	    // unwarp
+	    res[1] = (2. / Math.PI)*Math.atan(res[1]);
+	    res[2] = (2. / Math.PI)*Math.atan(res[2]);
+
+	    return res;
+	}
+	
 	public String toString() {
 		return "Butterworth filter n = " + n + " " + super.toString();
 	}
