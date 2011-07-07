@@ -194,7 +194,7 @@ public class RawPlayer implements Runnable, LineListener{
 	}
 	
 	public void start(){
-		Runtime.getRuntime().addShutdownHook(shutdownHook  = new Thread(){
+		Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread(){
 			public void run() {
 				
 				System.err.println("RawPlayer: Inside Shutdown Hook: stopping player...");
@@ -317,7 +317,7 @@ public class RawPlayer implements Runnable, LineListener{
 			} catch (IOException e) {				
 				e.printStackTrace();
 				
-				exception  = e;			
+				exception = e;			
 				Runnable runnable = new Runnable(){
 					@Override
 					public void run() {
@@ -407,7 +407,7 @@ public class RawPlayer implements Runnable, LineListener{
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			return;
-		}				
+		}
 		
 		System.err.println("format = " + ais.getFormat());
 		

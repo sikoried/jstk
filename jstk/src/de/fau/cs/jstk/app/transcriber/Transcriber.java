@@ -56,7 +56,7 @@ import de.fau.cs.jstk.io.BufferedAudioSource;
 import de.fau.cs.jstk.io.BufferedFrameSource;
 import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioPlay;
-import de.fau.cs.jstk.sampled.BandPassFilter;
+import de.fau.cs.jstk.sampled.filters.BandPassFilter;
 import de.fau.cs.jstk.vc.F0Point;
 import de.fau.cs.jstk.vc.FileVisualizer;
 import de.fau.cs.jstk.vc.FrameFileReader;
