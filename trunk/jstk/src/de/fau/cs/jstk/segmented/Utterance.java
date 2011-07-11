@@ -308,7 +308,7 @@ public class Utterance implements Serializable, PubliclyCloneable{
 	public String getSubdivisionOrthography(int i) throws Exception {
 		int startIndex, endIndex;
 
-		System.err.println("getSubdivisionOrthography: subdivision " + i);
+//		System.err.println("getSubdivisionOrthography: subdivision " + i);
 		
 		startIndex = getSubdivisions()[i].getIndex();
 		if (i == getSubdivisions().length - 1)
@@ -316,9 +316,9 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		else
 			endIndex = getSubdivisions()[i + 1].getIndex();
 		
-		System.err.println("startIndex = " + startIndex);
-		System.err.println("endIndex = " + endIndex);
-		System.err.println("strlen = " + getOrthography().length());				
+//		System.err.println("startIndex = " + startIndex);
+//		System.err.println("endIndex = " + endIndex);
+//		System.err.println("strlen = " + getOrthography().length());				
 		
 		return getOrthography(startIndex, endIndex);
 	}

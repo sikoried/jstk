@@ -461,15 +461,15 @@ public class Segmenter {
 		return 10.0 * Math.log10(energy + baseEnergy);
 	}
 	
-	public void update(){		
+	public void update() throws InterruptedException{		
 		
 		// fetch new data, synchronized
-		try {
+//		try {
 			mutex.acquire();
-		} catch (InterruptedException e) {			
-			e.printStackTrace();
-			return;
-		}		
+//		} catch (InterruptedException e) {			
+//			e.printStackTrace();
+//			return;
+//		}		
 		
 		energy.addAll(tmpEnergy);
 		tmpEnergy.clear();
