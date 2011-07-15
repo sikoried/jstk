@@ -211,6 +211,7 @@ public class ViterbiBeamSearch {
 	 * Prune all hypotheses which are NOT in final state
 	 */
 	public void pruneActiveHypotheses() {
+		expanded.clear();
 		while (active.size() > 0) {
 			Hypothesis h = active.remove(0);
 			
@@ -389,6 +390,7 @@ public class ViterbiBeamSearch {
 		public Hypothesis(TreeNode root) {
 			p = null;
 			node = root;
+			nullhyp = true;
 		}
 		
 		/**
@@ -690,18 +692,21 @@ public class ViterbiBeamSearch {
 					for (int i = 0; i < qstar.length; ++i)
 						qstar[i] = sseq.remove(0);
 					
-					// generate alignment
-					Alignment a = new Alignment(node.token.hmm, null, qstar);
-					algs.add(a);
-										
+					if (qstar.length < node.token.hmm.ns) {
+						System.err.println("Error: Alignment is shorter than model!");
+					} else {
+						// generate alignment
+						Alignment a = new Alignment(node.token.hmm, null, qstar);
+						algs.add(a);
+					}
+					
 					// reset the pointers
 					sseq = new LinkedList<Integer>();
 					node = h.node;
 				}
 				
 				// build state sequence
-				if (trace.size() > 0)
-					sseq.add((int) h.s);
+				sseq.add((int) h.s);
 			}
 			
 			// there is an unfinished state sequence

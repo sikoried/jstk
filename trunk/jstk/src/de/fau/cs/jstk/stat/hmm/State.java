@@ -60,9 +60,32 @@ public abstract class State {
 	public abstract void discard();
 	
 	/**
-	 * Absorb and discard the accumulator of another state.
+	 * Propagate the sufficient statistics of the referenced state to this
+	 * instance.
+	 * @param source state to obtain the sufficient statistics 
 	 */
-	public abstract void absorb(State source);
+	public abstract void propagate(State source);
+	
+	/**
+	 * Interpolate the sufficient statistics with the sufficient statistics of
+	 * the referenced state with a given basic interpolation weight.
+	 * @param source
+	 * @param rho
+	 */
+	public abstract void interpolate(State source, double rho);
+	
+	/**
+	 * Interpolate the local parameters (!) with the referenced ones
+	 * @param wt this = wt * source + (1 - wt) * this
+	 * @param source
+	 */
+	public abstract void pinterpolate(double wt, State source);
+	
+	/**
+	 * Return the accumulated gamma value
+	 * @return
+	 */
+	public abstract double gamma();
 	
 	/**
 	 * Re-estimate the state parameters from the current accumulator and delete
@@ -104,7 +127,7 @@ public abstract class State {
 	
 	/**
 	 * Save the current State to the given ObjectOutputStream
-	 * @param oos
+	 * @param os
 	 * @throws IOException
 	 */
 	abstract void write(OutputStream os) throws IOException;

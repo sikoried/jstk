@@ -40,6 +40,8 @@ public class CState extends State {
 	/** codebook for this state */
 	Mixture cb = null;
 	
+	private double ga = 0.;
+	
 	/** cache for mixture posteriors */
 	private transient double [] p;
 	
@@ -90,6 +92,7 @@ public class CState extends State {
 	 */
 	public void init() {
 		cb.init();
+		ga = 0.;
 	}
 
 	/**
@@ -104,6 +107,9 @@ public class CState extends State {
 		cb.evaluate(x);
 		cb.posteriors(p);
 		
+		// sum up all gammas for later interpolation
+		ga += gamma;
+		
 		// for all densities...
 		for (int j = 0; j < cb.nd; ++j) {
 			// gamma_t(i,k)
@@ -111,28 +117,45 @@ public class CState extends State {
 		}
 	}
 	
-	/**
-	 * Absorb the given state's accumulator and delete if afterwards.
-	 */
-	public void absorb(State source) {
-		CState state = (CState) source;	
-		
-		// absorb the statistics
-		cb.absorb(state.cb);
+	public double gamma() {
+		return ga;
 	}
 	
 	/**
-	 * Reestimate this state's codebook and discard the accumulator.
+	 * Absorb the given state's accumulator and delete if afterwards.
+	 */
+	public void propagate(State source) {
+		CState state = (CState) source;	
+		
+		// absorb the statistics
+		cb.propagate(state.cb);
+	}
+	
+	/**
+	 * Interpolate the local sufficient statistics with the ones from the
+	 * referenced state.
+	 */
+	public void interpolate(State source, double rho) {
+		CState state = (CState) source;
+		cb.interpolate(state.cb, rho / (rho + ga));
+	}
+	
+	public void pinterpolate(double wt, State source) {
+		cb.pinterpolate(wt, ((CState) source).cb);
+	}
+	
+	/**
+	 * Reestimate this state's codebook.
 	 */
 	public void reestimate() {
 		cb.reestimate();
-		cb.discard();
 	}
 	
 	/**
 	 * Discard the current accumulator.
 	 */
 	public void discard() {
+		ga = 0.;
 		cb.discard();
 	}
 	

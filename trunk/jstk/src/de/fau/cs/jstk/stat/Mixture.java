@@ -34,6 +34,8 @@ import java.nio.ByteOrder;
 import java.util.LinkedList;
 import java.util.Scanner;
 
+import org.apache.log4j.Logger;
+
 import de.fau.cs.jstk.app.MNAP;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
@@ -49,7 +51,7 @@ import de.fau.cs.jstk.util.Pair;
  *
  */
 public final class Mixture {
-	// private static Logger logger = Logger.getLogger(Mixture.class);
+	private static Logger logger = Logger.getLogger(Mixture.class);
 	
 	/** number of densities */
 	public int nd;
@@ -285,12 +287,40 @@ public final class Mixture {
 	}
 	
 	/**
-	 * Absorb and discard the accumulator of the given MixtureDensity
+	 * Propagate the sufficient statistics of the referenced source to the local
+	 * accumulator
 	 * @param source
 	 */
-	public void absorb(Mixture source) {
+	public void propagate(Mixture source) {
 		for (int i = 0; i < nd; ++i)
-			components[i].absorb(source.components[i]);
+			components[i].propagate(source.components[i]);
+	}
+	
+	/**
+	 * Interpolate the local sufficient statistics with the referenced one's
+	 * @param source
+	 * @param weight
+	 */
+	public void interpolate(Mixture source, double weight) {
+		for (int i = 0; i < nd; ++i)
+			components[i].interpolate(source.components[i], weight);
+	}
+	
+	/**
+	 * Interpolate the local parameters (!) with the referenced ones
+	 * 
+	 * @param weight this = weight * source + (1 - weight) * this
+	 * @param source
+	 */
+	public void pinterpolate(double weight, Mixture source) {
+		double sum = 0.;
+		for (int i = 0; i < nd; ++i) {
+			components[i].pinterpolate(weight, source.components[i]);
+			sum += components[i].apr;
+		}
+		
+		for (Density d : components)
+			d.apr /= sum;
 	}
 	
 	/**
@@ -304,6 +334,11 @@ public final class Mixture {
 			if (d.accu == null)
 				return;
 			sum += d.accu.apr;
+		}
+		
+		if (sum == 0.) {
+			logger.warn("no accumulated statistics, aborting reestimation!");
+			return;
 		}
 		
 		// update the components and set new weight
@@ -696,10 +731,8 @@ public final class Mixture {
 				// read list
 				BufferedReader lr = new BufferedReader(new FileReader(args[2]));
 				String line = null;
-				int i = 1;
 				while ((line = lr.readLine()) != null) {
 					inlist.add(line.trim());
-					i++;
 				}
 				singleOutFile = args[3];
 			} else {

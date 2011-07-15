@@ -158,18 +158,37 @@ public abstract class Density {
 	 * If there is no current accumulator, initialize one
 	 */
 	public void init() {
-		if (accu != null)
+		if (accu != null) {
+			logger.info("accumulator already present, ignoring request");
 			return;
+		}
 		accu = new Accumulator();
 	}
 	
 	/**
-	 * Absorb the accumulator of the given Density
+	 * Propagate the sufficient statistics of the given Density to the local
+	 * stats
 	 * @param d
 	 */
-	public void absorb(Density d) {
-		if (d.accu != null)
-			accu.absorb(d.accu);
+	public void propagate(Density d) {
+		accu.propagate(d.accu);
+	}
+	
+	public void interpolate(Density d, double weight) {
+		accu.interpolate(d.accu, weight);
+	}
+	
+	/**
+	 * Interpolate the local parameters (!) with the referenced ones. 
+	 * @param weight this = weight * source + (1 - weight) * this
+	 * @param source
+	 */
+	public void pinterpolate(double weight, Density source) {
+		apr = weight * source.apr + (1 - weight) * apr;
+		Arithmetics.interp1(mue, source.mue, weight);
+		Arithmetics.interp1(cov, source.cov, weight);
+		
+		update();
 	}
 	
 	/**
@@ -266,7 +285,7 @@ public abstract class Density {
 		 * Add the referenced accumulator's scores to this one's.
 		 * @param source
 		 */
-		void absorb(Accumulator source) {
+		void propagate(Accumulator source) {
 			if (source.n == 0)
 				return;
 			
@@ -277,9 +296,15 @@ public abstract class Density {
 			apr += source.apr;
 			Arithmetics.vadd2(mue, source.mue);
 			Arithmetics.vadd2(cov, source.cov);
+		}
+		
+		void interpolate(Accumulator source, double weight) {
+			if (source.n == 0)
+				return;
 			
-			// flush source to prevent further absorbtion
-			source.flush();
+			apr = weight * source.apr + (1. - weight) * apr;
+			Arithmetics.interp1(mue, source.mue, weight);
+			Arithmetics.interp1(cov, source.cov, weight);
 		}
 		
 		/**
@@ -289,6 +314,10 @@ public abstract class Density {
 			n = 0;
 			Arrays.fill(mue, 0.);
 			Arrays.fill(cov, 0.);
+		}
+		
+		public String toString() {
+			return "Density.Accumulator n = " + n + " apr = " + apr; 
 		}
 	}
 	

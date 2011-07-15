@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.stat.Mixture;
+import de.fau.cs.jstk.util.Arithmetics;
 
 
 /**
@@ -56,8 +57,7 @@ public final class SCState extends State {
 	/** cached mixture posterior */
 	double [] p;
 	
-	/** accumulator for the weights */
-	double [] caccu = null;
+	Accumulator a;
 	
 	/**
 	 * Create a new semi-continuous state using the given codebook.
@@ -129,17 +129,45 @@ public final class SCState extends State {
 		return b;
 	}
 
+	public double gamma() {
+		if (a == null)
+			return 0.;
+		else
+			return a.gamma;
+	}
+	
+	private class Accumulator {
+		long frames = 0;
+		double gamma = 0.;
+		double [] c = new double [SCState.this.c.length];
+		
+		void propagate(Accumulator source) {
+			if (source.frames == 0)
+				return;
+			
+			frames += source.frames;
+			gamma += source.gamma;
+			
+			Arithmetics.vadd2(c,  source.c);
+		}
+		
+		void interpolate(Accumulator source, double rho) {
+			double r = rho / (rho + gamma);
+			
+			gamma = r * source.gamma + (1. - r) * gamma;
+			Arithmetics.interp1(c, source.c, r);
+		}
+	}
+	
 	/**
 	 * Initialize the internal accumulator. As the codebook is shared, only
-	 * the weight accumulator is initialized and a request for accumulator
-	 * initialization is sent to the codebook.
+	 * the state dependent accumulators are initialized.
 	 */
 	public void init() {
-		caccu = new double [c.length];
+		if (a != null)
+			logger.warn("replacing existing accumulator!");
 		
-		// we can call this any time, since the codebook must not allocate a new
-		// accumulator in presence of an older one!
-		cb.init();
+		a = new Accumulator();
 	}
 	
 	/**
@@ -149,6 +177,10 @@ public final class SCState extends State {
 		// save your breath
 		if (gamma == 0.)
 			return;
+		
+		// collect statistics
+		a.frames++;
+		a.gamma += gamma;
 		
 		// evaluate codebook, compute posteriors
 		cb.evaluate2(x);
@@ -161,7 +193,7 @@ public final class SCState extends State {
 			gamma2 = gamma * p[j];
 			
 			// caccu is state-dependent!
-			caccu[j] += gamma2;
+			a.c[j] += gamma2;
 			
 			// this is the sum over all states, as the cb and its accu are shared!
 			cb.accumulate(gamma2, x, j);
@@ -169,45 +201,47 @@ public final class SCState extends State {
 	}
 	
 	/**
-	 * Absorb the given state's accumulator and delete it afterwards.
+	 * Propagate the sufficient statistics of the referenced SCState to the 
+	 * local accumulator.
 	 */
-	public void absorb(State source) {
-		SCState state = (SCState) source;
-		
-		// absorb the statistics
-		for (int i = 0; i < c.length; ++i)
-			caccu[i] += state.caccu[i];
-		
-		cb.absorb(state.cb);
+	public void propagate(State source) {
+		a.propagate(((SCState )source).a);
+	}
+	
+	/** 
+	 * Interpolate the sufficient statistics of the referenced SCState with 
+	 * the local accumulator.
+	 */
+	public void interpolate(State source, double rho) {
+		a.interpolate(((SCState) source).a, rho);
 	}
 
+	public void pinterpolate(double wt, State source) {
+		Arithmetics.interp1(c, ((SCState) source).c, wt);
+		Arithmetics.makesumto1(c);
+	}
+	
 	/**
-	 * Re-estimate this state's parameters from the accumulator and, if
-	 * necessary, re-estimate the shared codebook. After the re-estimation, the
-	 * accumulators are discarded.
+	 * Re-estimate this state's parameters from the accumulator.
 	 */
 	public void reestimate() {
 		double sum = 0.;
 		for (int i = 0; i < c.length; ++i)
-			sum += caccu[i];
+			sum += a.c[i];
 		
 		// only re-estimate weights if there has been any accumulation
 		if (sum > 0.)
 			for (int i = 0; i < c.length; ++i)
-				c[i] = caccu[i] / sum;
+				c[i] = a.c[i] / sum;
 		else
-			logger.info("no activity for weights -- no re-estimation");
-		
-		cb.reestimate();
-		discard();
+			logger.info("no activity for weights, aborting re-estimation");
 	}
 	
 	/**
-	 * Discard the current accumulator as well as the shared codebook's.
+	 * Discard the current accumulator.
 	 */
 	public void discard() {
-		caccu = null;
-		cb.discard();
+		c = null;
 	}
 	
 	/**
@@ -220,7 +254,7 @@ public final class SCState extends State {
 			buf.append(" " + cc);
 		buf.append(" ]");
 		
-		if (caccu != null)
+		if (c != null)
 			buf.append(" weight accumulator present");
 		
 		return buf.toString();
