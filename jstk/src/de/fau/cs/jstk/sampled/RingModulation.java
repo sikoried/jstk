@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import de.fau.cs.jstk.sampled.filters.Butterworth;
+import de.fau.cs.jstk.sampled.filters.BandPassFilter;
 
 /**
  * The (ring) modulation multiplies an input signal (waveform) with a given 
@@ -115,20 +115,23 @@ public class RingModulation implements AudioSource {
 		}
 		
 		// file
-		RawAudioFormat raf = RawAudioFormat.getRawAudioFormat("ssg/8");
+		RawAudioFormat raf = RawAudioFormat.getRawAudioFormat("ssg/16");
 		AudioFileReader afr = new AudioFileReader(System.in, raf, false);
 		
 		// scrambler
+		double warp = Double.parseDouble(args[0]);
 		RingModulation sc = new RingModulation(afr, Double.parseDouble(args[0]));
 		
 		// low-pass
-		Butterworth bwf2 = new Butterworth(sc, 25, 300, Double.parseDouble(args[0]), true);
+		// double [] param = Butterworth.ord(new double [] { 300./4000., cutoff/4000. } , new double [] { 250./4000., (cutoff+200.)/4000. }, 3., 60.);
+		// Butterworth bpf = new Butterworth(sc, 3, 300., warp, true);
+		BandPassFilter bpf = new BandPassFilter(sc, 0., warp, 1024);
 		
 		double scale = Math.pow(2, raf.getBitRate() - 1) - 1;
 		double [] buf = new double [512];
 		byte [] bbuf = new byte [1024];
 		int r = 0;
-		while ((r = bwf2.read(buf)) > 0) {
+		while ((r = bpf.read(buf)) > 0) {
 			ByteBuffer bb = ByteBuffer.wrap(bbuf);
 			bb.order(ByteOrder.LITTLE_ENDIAN);
 	 

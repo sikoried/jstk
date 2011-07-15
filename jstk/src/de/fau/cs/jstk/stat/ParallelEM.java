@@ -141,7 +141,7 @@ public final class ParallelEM {
 		current.init();
 	
 		for (Mixture est : workingCopies)
-			current.absorb(est);
+			current.propagate(est);
 		
 		current.reestimate();
 		current.discard();

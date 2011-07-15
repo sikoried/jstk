@@ -30,6 +30,7 @@ import java.io.OutputStreamWriter;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
@@ -202,6 +203,8 @@ public class Codebook {
 	 */
 	public void init() {
 		logger.info("setting up Codebook accumulators");
+		for (Mixture m : shared.values())
+			m.init();
 		for (Hmm m : models.values())
 			m.init();
 	}
@@ -211,12 +214,20 @@ public class Codebook {
 	 * @param source
 	 */
 	public void consume(Codebook source) {
+		for (Entry<Integer, Mixture> e : shared.entrySet()) {
+			if (!source.shared.containsKey(e.getKey())) {
+				logger.fatal("source Accumulator for shared mixture " + e.getKey() + " not found -- exitting.");
+				System.exit(1);
+			}
+			e.getValue().propagate(source.shared.get(e.getKey()));
+		}
+		
 		for (Entry<Integer, Hmm> e : models.entrySet()) {
 			if (!source.models.containsKey(e.getKey())) {
 				logger.fatal("source Accumulator for model " + e.getKey() + " not found -- exitting.");
 				System.exit(1);
 			}
-			e.getValue().absorb(source.models.get(e.getKey()));
+			e.getValue().propagate(source.models.get(e.getKey()));
 		}
 	}
 	
@@ -225,8 +236,38 @@ public class Codebook {
 	 */
 	public void reestimate() {
 		logger.info("reestimating Codebook from accumulators");
+		for (Mixture m : shared.values())
+			m.reestimate();
 		for (Hmm m : models.values())
 			m.reestimate();
+	}
+	
+	/**
+	 * Discard all accumulators
+	 */
+	public void discard() {
+		logger.info("discarding all Codebook accumulators");
+		for (Mixture m : shared.values())
+			m.discard();
+		for (Hmm m : models.values())
+			m.discard();
+	}
+	
+	/**
+	 * Interpolate the local codebook with a different one (typically an earlier
+	 * iteration). 
+	 * 
+	 * Step 4 of APIS, see Schukat-Talamazzini p. 300ff
+	 * 
+	 * @param rho interpolation weight: this = rho * source + (1 - rho) * this
+	 * @param source
+	 */
+	public void interpolate(double rho, Codebook source) {
+		for (Map.Entry<Integer, Mixture> m : shared.entrySet())
+			m.getValue().pinterpolate(rho, source.shared.get(m.getKey()));
+		
+		for (Map.Entry<Integer, Hmm> m : models.entrySet())
+			m.getValue().pinterpolate(rho, source.models.get(m.getKey()));
 	}
 	
 	/**

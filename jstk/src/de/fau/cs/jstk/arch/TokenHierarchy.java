@@ -29,10 +29,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Stack;
 
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
+import de.fau.cs.jstk.stat.hmm.Hmm;
 
 
 /**
@@ -184,6 +186,8 @@ public final class TokenHierarchy {
 			p.pruneHierarchyByOccurrence(minOcc);
 			p.pruneHierarchy();
 		}
+		
+		rebuildTokenHash();
 	}
 	
 	/**
@@ -330,6 +334,72 @@ public final class TokenHierarchy {
 			
 			if (t.moreContext.length != reducedContext.size())
 				t.moreContext = reducedContext.toArray(new Token [reducedContext.size()]);
+		}
+	}
+	
+	/**
+	 * Propagate the sufficient statistics bottom-up
+	 * 
+	 * Step 2 of APIS, see Schukat-Talamazzini p. 300ff.
+	 */
+	public void propagate() {
+		// do a DFS to build up top-down and bottom-up lists
+		Stack<Token> bu = new Stack<Token>();
+		Stack<Token> agenda = new Stack<Token>();
+		
+		// add all root tokens
+		for (Token t : rtokens.values())
+			agenda.push(t);
+		
+		while (agenda.size() > 0) {
+			Token t = agenda.pop();
+			
+			bu.push(t);
+			
+			for (Token c : t.moreContext)
+				agenda.push(c);
+		}
+		
+		// bottom-up propagation of sufficient statistics
+		for (Token t: bu) {
+			Hmm mother = t.hmm;
+			
+			for (Token c : t.moreContext)
+				mother.propagate(c.hmm);
+		}
+	}
+	
+	/**
+	 * Interpolate the sufficient statistics top-down
+	 * 
+	 * Step 3 of APIS, see Schukat-Talamazzini p. 300ff
+	 * 
+	 * @param rho interpolation weight ( rho(i) =  rho / (rho + gamma(i) )
+	 */
+	public void interpolate(double rho) {
+		// do a DFS to build up top-down and bottom-up lists
+		LinkedList<Token> td = new LinkedList<Token>();
+		Stack<Token> agenda = new Stack<Token>();
+		
+		// add all root tokens
+		for (Token t : rtokens.values())
+			agenda.push(t);
+		
+		while (agenda.size() > 0) {
+			Token t = agenda.pop();
+			
+			td.add(t);
+			
+			for (Token c : t.moreContext)
+				agenda.push(c);
+		}
+		
+		// top-down interpolation 
+		for (Token t: td) {
+			Hmm mother = t.hmm;
+			
+			for (Token c : t.moreContext)
+				c.hmm.interpolate(mother, rho);
 		}
 	}
 }

@@ -423,7 +423,7 @@ public class Butterworth extends IIRFilter {
 	 * @param fs stop band corner frequency in radians (2. * Hz / samplef)
 	 * @param loss max loss in pass band, typically 3 (dB)
 	 * @param attn attenuation in the stop band, typically 60 (dB)
-	 * @return order (as int) and natural frequency
+	 * @return order (as int) and natural frequency (multiply by samplef/2 to obtain the respective frequency)
 	 */
 	public static double [] ord(double fp, double fs, double loss, double attn) {
 		// warp frequencies
@@ -464,7 +464,7 @@ public class Butterworth extends IIRFilter {
 	 * @param fs stop band corner frequencies in radians (2. * Hz / samplef)
 	 * @param loss max loss in pass band, typically 3 (dB)
 	 * @param attn attenuation in the stop band, typically 60 (dB)
-	 * @return order (as int) and natural frequencies
+	 * @return order (as int) and natural frequencies (multiply by samplef/2 to obtain the respective frequency)
 	 */
 	public static double [] ord(double [] fp, double [] fs, double loss, double attn) {
 		// warp frequencies

@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.stat.Mixture;
+import de.fau.cs.jstk.util.Arithmetics;
 
 
 /**
@@ -68,7 +69,7 @@ public final class Hmm {
 	public float [][] a = null;
 	
 	/** statistics accumulator */
-	transient Accumulator accumulator = null;
+	public transient Accumulator accumulator = null;
 	
 	/** 
 	 * Create a meta (left-to-right) HMM constructed from the referenced HMM array
@@ -218,6 +219,9 @@ public final class Hmm {
 	 * Initialize the statistics (and remove old ones!)
 	 */
 	public void init() {
+		if (accumulator != null)
+			logger.warn("replacing existing Accumulator!");
+		
 		accumulator = new Accumulator();
 		for (State si : s)
 			si.init();
@@ -236,10 +240,6 @@ public final class Hmm {
 	 * Re-estimate the model parameters from the accumulators.
 	 */
 	public void reestimate() {
-		// re-estimate each state
-		for (State si : s)
-			si.reestimate();
-		
 		double sum1 = 0., sum2;
 		
 		// re-estimate the entry and transition probabilities
@@ -250,103 +250,109 @@ public final class Hmm {
 			for (int j = 0; j < ns; ++j) 
 				sum2 += accumulator.a[i][j];
 			
-			// divisions by zero are nasty...
-			if (sum2 == 0.) {
-				// hm this is weird, why was there no loop? check if the state 
-				// has any valid transitions (->exit/final state?)
-				double trans = 0.;
+			// see if there was any activity
+			if (sum2 > 0.) {
+				// re-estimate the transition probs
 				for (int j = 0; j < ns; ++j)
-					trans += a[i][j];
+					a[i][j] = (float) (accumulator.a[i][j] / sum2);
 				
-				if (trans > 0.)
-					logger.info("HMM[" + id + "].reestimate(): no transitions logged for state " + i);
-				
-				// well it seems to be an exit/final state
-				sum2 = 1.;
-			}
-			
-			for (int j = 0; j < ns; ++j)
-				a[i][j] = (float) (accumulator.a[i][j] / sum2);
+				// re-estimate the state
+				s[i].reestimate();
+			} else
+				logger.warn("hmm(" + id + ")[" + i + "] no transition weight, no re-estimation of a[" + i + "][] and s[" + i + "]");
 		}
 		
 		// divisions by zero are nasty...
-		if (sum1 == 0.) {
-			logger.debug("HMM[" + id + "].reestimate(): no entries logged!");
-			sum1 = 1.;
-		}
-		
-		for (int i = 0; i < ns; ++i)
-			pi[i] = (float) (accumulator.pi[i] / sum1);
+		if (sum1 > 0.) {
+			for (int i = 0; i < ns; ++i)
+				pi[i] = (float) (accumulator.pi[i] / sum1);
+		} else 
+			logger.warn("hmm(" + id + ") no entries logged => no re-estimation of pi");
 	}
 	
 	/**
-	 * Absorb and discard the accumulator of another HMM instance. The number of
-	 * states (and their type) must match.
-	 * @param source Source HMM to accumulate (and then reset).
+	 * Propagate the sufficient statistics of another HMM instance to the local
+	 * accumulator. The number of states (and their type) must match.
+	 * @param source
 	 */
-	public void absorb(Hmm source) {
+	public void propagate(Hmm source) {
 		if (source.ns != ns)
-			throw new RuntimeException("HMM.absorbAccumulator(): Source HMM has different number of states!");
-		
-		// do we have an accumulator?
-		if (accumulator == null) {
-			logger.info("empty accumulator -- allocating a new one!");
-			init();
-		}
+			throw new RuntimeException("HMM.propagate(): Source HMM has different number of states!");
 		
 		// absorb the state accumulators
 		for (int i = 0; i < ns; ++i)
-			s[i].absorb(source.s[i]);
+			s[i].propagate(source.s[i]);
 		
 		// absorb the transition accumulator
-		accumulator.absorb(source.accumulator);
+		accumulator.propagate(source.accumulator);
+	}
+	
+	public void interpolate(Hmm source, double rho) {
+		if (source.ns != ns)
+			throw new RuntimeException("HMM.interpolate(): Source HMM has different number of states!");
 		
-		// discard the source's statistics!
-		source.discard();
+		// interpolate HMM specific accumulators
+		accumulator.interpolate(source.accumulator, rho);
+		
+		// interpolate state accumulators
+		for (int i = 0; i < ns; ++i)
+			s[i].interpolate(source.s[i], rho);
+	}
+	
+	/**
+	 * Interpolate the local parameters (!) with the referenced ones.
+	 * @param wt this = wt * source + (1 - wt) * this
+	 * @param source
+	 */
+	public void pinterpolate(double wt, Hmm source) {
+		if (ns != source.ns)
+			throw new RuntimeException("Hmm.pinterpolate(): different numbers of states");
+		
+		for (int i = 0; i < ns; ++i) {
+			pi[i] = (float) (wt * source.pi[i] + (1. - wt) * pi[i]);
+			Arithmetics.interp1(a[i], source.a[i], (float) wt);
+			Arithmetics.makesumto1(a[i]);
+			
+			s[i].pinterpolate(wt, source.s[i]);
+		}
+		
+		// don't forget the entry probs
+		Arithmetics.makesumto1(pi);
 	}
 	
 	/** 
 	 * Accumulator class to hold statistics for transition and entry probabilities 
 	 */
-	private final class Accumulator {
+	public final class Accumulator {
 		double [][] a = new double [ns][ns];
 		double [] pi = new double [ns];
-		long sequences = 0;
+		long segments = 0;
 		long frames = 0;
 		
-		/**
-		 * Absorb a given accumulator and flush it subsequently
-		 * @param source
-		 */
-		void absorb(Accumulator source) {
-			// add
-			for (int i = 0; i < a.length; ++i) {
-				pi[i] += source.pi[i];
-				for (int j = 0; j < a.length; ++j)
-					a[i][j] += source.a[i][j];
-			}
+		void propagate(Accumulator source) {
+			// no frames -- no gains ;)
+			if (source.frames == 0)
+				return;
 			
-			// don't forget the statistics
-			sequences += source.sequences;
+			segments += source.segments;
 			frames += source.frames;
 			
-			// make sure no-one else absorbs this accumulator
-			source.flush();
+			for (int i = 0; i < a.length; ++i) {
+				pi[i] += source.pi[i];
+				Arithmetics.vadd2(a[i], source.a[i]);
+			}
 		}
 		
-		/**
-		 * Flush this accumulator (set accumulators to zero)
-		 */
-		void flush() {
+		void interpolate(Accumulator source, double rho) {
 			for (int i = 0; i < a.length; ++i) {
-				pi[i] = 0.;
-				for (int j = 0; j < a.length; ++j)
-					a[i][j] = 0.;
+				double r = rho / (rho + s[i].gamma());
+				pi[i] = r * source.pi[i] + (1. - r) * pi[i];
+				Arithmetics.interp1(a[i], source.a[i], r);
 			}
 		}
 		
 		public String toString() {
-			return "HMM.Accumulator " + sequences + " sequences, " + frames + " frames";
+			return "HMM.Accumulator nseq=" + segments + " nfrm=" + frames;
 		}
 	}
 	
@@ -364,7 +370,7 @@ public final class Hmm {
 			return;
 		
 		// increment the counters
-		accumulator.sequences++;
+		accumulator.segments++;
 		accumulator.frames += no;
 		
 		Iterator<double []> o = observation.iterator();
@@ -501,6 +507,9 @@ public final class Hmm {
 		// nothing to do?
 		if (q.length == 0)
 			return;
+		
+		accumulator.segments++;
+		accumulator.frames += q.length;
 		
 		Iterator<double []> o = observation.iterator();
 		

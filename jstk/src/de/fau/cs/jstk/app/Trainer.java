@@ -39,7 +39,6 @@ import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import de.fau.cs.jstk.arch.Codebook;
 import de.fau.cs.jstk.arch.Configuration;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.stat.hmm.Alignment;
@@ -171,9 +170,6 @@ public class Trainer {
 						bw.close();
 					}
 					
-					// explode the alignment (similar to ISADORA APIS)
-					ma.explode();
-					
 					// do the actual training
 					if (job.train == TrainingType.VITERBI) {
 						for (Alignment alg : ma.alignments)
@@ -224,7 +220,11 @@ public class Trainer {
 		"  Number of threads to use for the training. If set to 0, the number of threads\n" +
 		"  is set to the number of CPU (default).\n" +
 		"--silent\n" +
-		"  Mute the DebugOutput.\n";
+		"  Mute the DebugOutput.\n" +
+		"--prop\n" +
+		"  Propagate the sufficient statistics prior to reestimation.\n" +
+		"--interp <rho>\n" +
+		"  Perform suff.stat. propagation and interpolation prior to reestimation\n";
 	
 	public static void main(String[] args) throws Exception {
 		if (args.length < 5) {
@@ -252,6 +252,8 @@ public class Trainer {
 		String fCodebookOut = args[i++];
 		String fTurns = args[i++];
 		String inDir = args[i++];
+		
+		double rho = -1.;
 		
 		for (; i < args.length; ++i) {
 			if (args[i].equals("--silent"))
@@ -299,6 +301,10 @@ public class Trainer {
 					logger.info("Trainer.main(): warning -- using more threads thann CPUs!");
 					p = nc;
 				}
+			} else if (args[i].equals("--prop"))
+				rho = 0.;
+			else if (args[i].equals("--interp")) {
+				rho = Double.parseDouble(args[++i]);
 			} else
 				logger.info("Trainer.main(): warning -- ignoring unknown argument \"" + args[i] + "\"");
 		}
@@ -342,13 +348,24 @@ public class Trainer {
 		
 		// combine the accumulators and re-estimate
 		logger.info("Trainer.main(): re-estimating...");
-		Codebook estimate = threads[0].conf.cb;
+		Configuration conf = threads[0].conf;
 		for (int j = 1; j < p; ++j)
-			estimate.consume(threads[j].conf.cb);
-		estimate.reestimate();
+			conf.cb.consume(threads[j].conf.cb);
+		
+		if (rho >= 0.) {
+			logger.info("propagating statistics...");
+			conf.th.propagate();
+		}
+		
+		if (rho > 0.) {
+			logger.info("interpolating statistics (rho = " + rho + ")...");
+			conf.th.interpolate(rho);
+		}
+		
+		conf.cb.reestimate();
 		
 		// finally write out the new model
 		logger.info("Trainer.main(): writing out " + fCodebookOut);
-		estimate.write(new File(fCodebookOut));
+		conf.cb.write(new File(fCodebookOut));
 	}
 }

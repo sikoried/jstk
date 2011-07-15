@@ -100,6 +100,62 @@ public final class Arithmetics {
 	}
 	
 	/**
+	 * Interpolate the values as a[i] = wt * b[i] + (1. - wt) * a[i];
+	 * @param a
+	 * @param b
+	 * @param wt weight of b
+	 */
+	public static void interp1(double [] a, double [] b, double wt) {
+		double wti = 1. - wt;
+		for (int i = 0; i < a.length; ++i)
+			a[i] = wt * b[i] + wti * a[i];
+	}
+	
+	/**
+	 * Interpolate the values as ret[i] = wt * b[i] + (1. - wt) * a[i];
+	 * @param a
+	 * @param b
+	 * @param wt weight of b
+	 * @return interpolation result
+	 */
+	public static double [] interp2(double [] a, double [] b, double wt) {
+		double wti = 1. - wt;
+		double [] ret = new double [a.length];
+		for (int i = 0; i < a.length; ++i)
+			ret[i] = wt * b[i] + wti * a[i];
+		
+		return ret;
+	}
+	
+	/**
+	 * Interpolate the values as a[i] = wt * b[i] + (1. - wt) * a[i];
+	 * @param a
+	 * @param b
+	 * @param wt weight of b
+	 */
+	public static void interp1(float [] a, float [] b, float wt) {
+		float wti = 1.f - wt;
+		for (int i = 0; i < a.length; ++i)
+			a[i] = wt * b[i] + wti * a[i];
+	}
+	
+	/**
+	 * Interpolate the values as ret[i] = wt * b[i] + (1. - wt) * a[i];
+	 * @param a
+	 * @param b
+	 * @param wt weight of b
+	 * @return interpolation result
+	 */
+	public static float [] interp2(float [] a, float [] b, float wt) {
+		float wti = 1.f - wt;
+		float [] ret = new float [a.length];
+		for (int i = 0; i < a.length; ++i)
+			ret[i] = wt * b[i] + wti * a[i];
+		
+		return ret;
+	}
+	
+	/**
 	 * c = a + b
 	 */
 	public static double [] vadd1(double [] a, double [] b) {
@@ -459,5 +515,29 @@ public final class Arithmetics {
 		for (float d : v)
 			r += d * d;
 		return (float) Math.sqrt(r);
+	}
+	
+	/**
+	 * Enforce sum_i a[i] = 1
+	 * @param a
+	 */
+	public static void makesumto1(float [] a) {
+		float s = 0.f;
+		for (int i = 0; i < a.length; ++i)
+			s += a[i];
+		for (int i = 0; i < a.length; ++i)
+			a[i] /= s;
+	}
+	
+	/**
+	 * Enforce sum_i a[i] = 1
+	 * @param a
+	 */
+	public static void makesumto1(double [] a) {
+		double s = 0.;
+		for (int i = 0; i < a.length; ++i)
+			s += a[i];
+		for (int i = 0; i < a.length; ++i)
+			a[i] /= s;
 	}
 }

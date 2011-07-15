@@ -27,6 +27,7 @@ import java.io.OutputStream;
 import java.nio.ByteOrder;
 
 import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.util.Arithmetics;
 
 /**
  * The discrete HMM state is the very basic form of HMM state. It features a 
@@ -133,24 +134,33 @@ public final class DState extends State {
 	}
 
 	/**
-	 * Absorb the accumulator of the given state (the source's accumulator will
-	 * be deleted)
+	 * Propagate the sufficient statistics of the given state to the local
+	 * accumulator.
 	 */
-	public void absorb(State source) {
+	public void propagate(State source) {
 		DState state = (DState) source;
+		Arithmetics.vadd2(baccu, state.baccu);
+	}
+	
+	public void interpolate(State source, double rho) {
+		// compute the sum over all gammas
+		double r = 0.;
+		for (double d : baccu)
+			r += d;
 		
-		if (baccu == null)
-			init();
+		// compute probability-dependent weighting factor
+		r = rho / (rho + r);
 		
-		for (int i = 0; i < b.length; ++i)
-			baccu[i] = state.baccu[i];
-		
-		source.discard();
+		Arithmetics.interp1(baccu, ((DState) source).baccu, r);
+	}
+	
+	public void pinterpolate(double wt, State source) {
+		Arithmetics.interp1(b, ((DState) source).b, wt);
+		Arithmetics.makesumto1(b);
 	}
 	
 	/**
 	 * Re-estimate the discrete output distribution by normalizing the sum to 1.
-	 * The accumulator is discarded afterwards.
 	 */
 	public void reestimate() {
 		double sum = 0.;
@@ -158,14 +168,19 @@ public final class DState extends State {
 			sum += baccu[i];
 		
 		if (sum == 0.) {
-			System.err.println("DState.reestimate(): Sum over all events is zero!");
-			sum = 1.;
+			System.err.println("no activity, aborting re-estimation");
+			return;
 		}
 		
 		for (int i = 0; i < b.length; ++i)
 			b[i] = baccu[i] / sum;
-		
-		discard();
+	}
+	
+	public double gamma() {
+		double s = 0.;
+		for (double d : baccu)
+			s += d;
+		return s;
 	}
 	
 	/**
