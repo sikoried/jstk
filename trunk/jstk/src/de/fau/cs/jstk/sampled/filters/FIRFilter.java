@@ -146,12 +146,9 @@ public class FIRFilter implements AudioSource {
 		
 		// do the convolution if there is any data
 		if (r > 0) {
-			double sc = 0;
-			// copy data (scale for rectangular window)
-			for (int i = 0; i < length; ++i) {
-				sc += Math.abs(buf[i]);
+			// copy data
+			for (int i = 0; i < length; ++i)
 				fft_sig[i] = buf[i];
-			}
 			
 			// zero padding
 			for (int i = length; i < fft_sig.length; ++i)
@@ -254,11 +251,9 @@ public class FIRFilter implements AudioSource {
 		
 		double [] buf = new double [fir.length];
 		int sr;
-		int tot = 0;
 		while ((sr = firf.read(buf)) > 0) {
 			for (int i = 0; i < sr; ++i)
 				IOUtil.writeShort(System.out, (short) (buf[i] * scale), ByteOrder.LITTLE_ENDIAN);
-			tot += sr;
 		}
 		
 		// due to bug in thread scheduling in DoubleFFT_1D

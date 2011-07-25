@@ -116,7 +116,7 @@ public class RingModulation implements AudioSource {
 		
 		// file
 		RawAudioFormat raf = RawAudioFormat.getRawAudioFormat("ssg/16");
-		AudioFileReader afr = new AudioFileReader(System.in, raf, false);
+		AudioFileReader afr = new AudioFileReader(System.in, raf, true);
 		
 		// scrambler
 		double warp = Double.parseDouble(args[0]);

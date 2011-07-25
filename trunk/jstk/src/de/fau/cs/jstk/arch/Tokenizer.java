@@ -122,7 +122,7 @@ public final class Tokenizer {
 	/**
 	 * Sort the lexicon
 	 */
-	private void sortTokenizations() {
+	public void sortTokenizations() {
 		Collections.sort(tokenizations);
 	}
 	
