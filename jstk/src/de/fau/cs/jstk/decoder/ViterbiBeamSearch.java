@@ -107,8 +107,19 @@ public class ViterbiBeamSearch {
 		
 		// generate the initial active hypotheses
 		Hypothesis h0 = new Hypothesis(root);
-		for (TreeNode n : root.children) 
+		for (TreeNode n : root.children) {
+			if (n == null)
+				System.err.println("fail1");
+			if (n.token == null)
+				System.err.println("fail2");
+			if (n.token.hmm == null)
+				System.err.println("fail3");
+			if (n.token.hmm.s == null)
+				System.err.println("fail4");
+			if (n.token.hmm.s[0] == null)
+				System.err.println("fail5");
 			expanded.add(new Hypothesis(h0, n, Math.log(n.token.hmm.s[0].emits(x)), lmwt, wip));
+		}
 		
 		// sort and prune if necessary
 		Collections.sort(expanded);

@@ -200,8 +200,11 @@ public class EnergyDetector implements FrameSource {
 		
 		return x[0];
 	}
-	
 	public static double comptueThresholdFromFile(String fileName, String sFormat, String sWindow, ThresholdStrategy strat) {
+		return computeThresholdFromFile(fileName, sFormat, sWindow, strat, null);
+	}
+	
+	public static double computeThresholdFromFile(String fileName, String sFormat, String sWindow, ThresholdStrategy strat, List<Boolean> byframe) {
 		double thres = 0.;
 		
 		try {
@@ -221,6 +224,11 @@ public class EnergyDetector implements FrameSource {
 			}
 			
 			thres = estimateThreshold(list, strat);
+			
+			if (byframe != null) {
+				for (Sample s : list) 
+					byframe.add(s.x[0] > thres);
+			}
 		} catch (IOException e) {
 			System.err.println(e.toString());
 			thres = -1.;
@@ -255,7 +263,9 @@ public class EnergyDetector implements FrameSource {
 			System.exit(1);
 		}
 		
-		logger.setLevel(Level.WARN);
+		logger.setLevel(Level.FATAL);
+		Initialization.logger.setLevel(Level.FATAL);
+		Trainer.logger.setLevel(Level.FATAL);
 		
 		String sFormat = args[0];
 		String sWindow = args[1];

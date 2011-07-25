@@ -518,7 +518,10 @@ public final class Configuration {
 		"    List the available shared Mixtures (compact).\n" +
 		"  --extract-shared id file\n" +
 		"  --replace-shared id file\n" +
-		"    Extract or replace a shared Mixture by ID/";
+		"    Extract or replace a shared Mixture by ID\n" +
+		"\n" +
+		"  --make-phone-conf codebook\n" +
+		"    Produce a phone recognizer type configuration.";
 	
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -626,9 +629,18 @@ public final class Configuration {
 				Mixture m = new Mixture(new FileInputStream(args[++i]));
 				m.id = id;
 				conf.cb.replaceSharedMixture(m);
-			}
-			
-			else
+			} else if (args[i].equals("--make-phone-conf")) {
+				
+				String fcbin = args[++i];
+						
+				conf.loadCodebook(new File(fcbin));
+				
+				conf.th.reduceContext(0);
+				conf.tok.tokenizations.clear();
+				for (Token t : conf.th.rtokens.values())
+					conf.tok.addTokenization(t.token, t.token);
+				conf.tok.sortTokenizations();
+			} else
 				throw new Exception("unknown parameter " + args[i]);
 		}
 	}

@@ -43,7 +43,7 @@ import de.fau.cs.jstk.util.Distances;
  *
  */
 public abstract class Initialization {
-	private static Logger logger = Logger.getLogger(Initialization.class);
+	public static Logger logger = Logger.getLogger(Initialization.class);
 	
 	/**
 	 * Compute a fast initialization for a mixture density. Available strategies

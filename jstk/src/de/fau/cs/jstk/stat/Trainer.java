@@ -37,7 +37,7 @@ import de.fau.cs.jstk.util.Arithmetics;
  *
  */
 public abstract class Trainer {
-	private static Logger logger = Logger.getLogger(Trainer.class);
+	public static Logger logger = Logger.getLogger(Trainer.class);
 	
 	/**
 	 * Standard (single-core) maximum likelihood estimation for a single 

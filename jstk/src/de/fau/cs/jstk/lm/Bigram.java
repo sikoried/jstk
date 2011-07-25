@@ -130,13 +130,17 @@ public class Bigram implements LanguageModel {
 		while ((lin = br.readLine()) != null) {
 			if (lin.startsWith("\\"))
 				break;
-			if (lin.trim().length() < 3)
+			if (lin.trim().length() < 3) {
+				logger.warn("ignoring wrong formatted line: " + lin);
 				continue;
+			}
 			String [] sp = lin.trim().split("\\s+");
 			
 			// ignore words not in the tokenizer
-			if (!tok.validate(sp[1]))
+			if (!tok.validate(sp[1])) {
+				logger.warn("ignoring unknown token: " + sp[1]);
 				continue;
+			}
 			
 			// set the prob, mind the exponentiation!
 			N1gram ng = new N1gram(
@@ -149,22 +153,29 @@ public class Bigram implements LanguageModel {
 		
 		logger.info("loaded " + p1.size() + " uni-grams");
 		
-		if (!lin.equals("\\2-grams:"))
-			while ((lin = br.readLine()) != null && !lin.equals("\\2-grams:"))
-				;
+		while (!lin.equals("\\2-grams:") && (lin = br.readLine()) != null)
+			;
 		
 		// read bi -grams
 		while ((lin = br.readLine()) != null) {
 			if (lin.startsWith("\\"))
 				break;
-			if (lin.trim().length() < 3)
+			if (lin.trim().length() < 3) {
+				logger.warn("ignoring wrong formatted line: " + lin);
 				continue;
+			}
 			
 			String [] sp = lin.trim().split("\\s+");
 			
 			// ignore words not in the tokenizer
-			if (!tok.validate(sp[1]))
+			if (!tok.validate(sp[1])) {
+				logger.warn("ignoring unknown token: " + sp[1]);
 				continue;
+			}
+			if (!tok.validate(sp[2])) {
+				logger.warn("ignoring unknown token: " + sp[2]);
+				continue;
+			}
 			
 			// set the prob, mind the exponentiation!
 			N2gram ng = new N2gram(
@@ -198,6 +209,7 @@ public class Bigram implements LanguageModel {
 			unigram.addToTree(t, th.tokenizeWord(t.sequence), p);
 		}
 		
+		System.err.println(TokenTree.traverseNetwork(unigram.root, "  "));
 		unigram.factor();
 		
 		// -%<------------------------------------------------------------------
@@ -282,6 +294,14 @@ public class Bigram implements LanguageModel {
 			}
 		}
 
+		// connect unigram and bigram
+		for (TreeNode n : unigram.leaves()) {
+			if (sils.containsKey(n.word))
+				n.setLst(unigram.root);
+			else
+				n.setLst(lut.get(n.word.word).root);
+		}
+		
 		return unigram.root;
 	}
 
