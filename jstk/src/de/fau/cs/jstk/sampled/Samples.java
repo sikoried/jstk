@@ -61,4 +61,68 @@ public class Samples {
 		return bb.array();		
 	}
 
+	public static void normalizeSignedLinearLittleShorts(byte [] bytes, boolean subtractDC) {
+		ByteBuffer bb = ByteBuffer.wrap(bytes);
+		bb.order(ByteOrder.LITTLE_ENDIAN);		
+		
+		if (bytes.length == 0)
+			return;
+		if ((bytes.length % 2) != 0)
+			throw new IllegalArgumentException("byte count is odd:" +  bytes.length);
+		
+		int nSamples = bytes.length / 2;
+		
+		long mean = 0;
+		
+		int i;
+		
+		if (subtractDC){
+			for (i = 0; i < nSamples; i++)
+				mean += bb.getShort(i * 2);
+			
+			mean /= nSamples;
+			
+			System.err.println("subtracting DC = " + mean);
+			
+			for (i = 0; i < nSamples; i++){
+				int value = bb.getShort(i * 2);
+				value -= mean;
+				value = Math.max(Math.min(value, 32767), -32768);
+
+				bb.putShort(i * 2, (short) value);
+			}
+		}
+		
+		// search for max
+		int max = Math.abs(bb.getShort(0));
+		
+		for (i = 1; i < nSamples; i++){
+			int value = Math.abs(bb.getShort(i * 2));
+			if (value > max)
+				max = value;
+		}
+
+		if (max == 0)
+			return;
+		
+		for (i = 0; i < nSamples; i++){
+			int value = bb.getShort(i * 2) * 32767 / max;
+			if (value > 32767 || value < -32768)
+				throw new AssertionError("value = " + value);
+			bb.putShort(i * 2, (short) value);
+		}	
+		
+//		int min = Math.abs(bb.getShort(0));
+//		max = Math.abs(bb.getShort(0));
+//		
+//		for (i = 1; i < nSamples; i++){
+//			int value = bb.getShort(i * 2);
+//			if (value > max)
+//				max = value;
+//			if (value < min)
+//				min= value;
+//		}
+//		System.err.println(String.format("new min: %d max: %d", min, max));
+		
+	}
 }
