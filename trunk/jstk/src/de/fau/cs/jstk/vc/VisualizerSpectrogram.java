@@ -239,6 +239,7 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 		}
 		
 
+		@SuppressWarnings("unused")
 		int i = (int) (xMin / xPerPixel);
 		double hMin = Math.pow(min, gamma);
 		double hMax = Math.pow(max, gamma);

@@ -65,6 +65,7 @@ public final class Alpha implements AgreementMeasure {
 	public double agreement(double[][] data) {
 		int ns = data[0].length; // number of subjects
 		int nc = 0; // number of classes
+		@SuppressWarnings("unused")
 		int nr = 0; // number of ratings
 		int ne = data.length; // number of experts
 

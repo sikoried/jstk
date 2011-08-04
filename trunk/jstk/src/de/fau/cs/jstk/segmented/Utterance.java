@@ -258,7 +258,7 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		int position = 0, i;
 		String lcOrtho = orthography.toLowerCase();
 		
-		System.err.println("getOrthographyIndex for word " + word);
+//		System.err.println("getOrthographyIndex for word " + word);
 		
 		// include any starting quotations marks
 		if (word == 0)
@@ -282,7 +282,7 @@ public class Utterance implements Serializable, PubliclyCloneable{
 					position += lcWord.length() + 1;
 			}			
 		}		
-		System.err.println("position = " + position);
+//		System.err.println("position = " + position);
 		return position;
 	}
 	
