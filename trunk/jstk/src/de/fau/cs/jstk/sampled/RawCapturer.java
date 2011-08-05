@@ -214,7 +214,7 @@ public class RawCapturer implements Runnable, LineListener{
 		} catch (InterruptedException e1) {
 			System.err.println("stopCapturing: interrupted");
 			return;
-		}		
+		}
 		
 		if (stopped){
 			stopMutex.release();
