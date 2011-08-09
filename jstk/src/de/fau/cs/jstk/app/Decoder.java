@@ -45,7 +45,7 @@ import de.fau.cs.jstk.arch.TreeNode;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
 import de.fau.cs.jstk.io.FrameInputStream;
-import de.fau.cs.jstk.lm.Unigram;
+import de.fau.cs.jstk.lm.Bigram;
 
 public class Decoder {
 	private static Logger logger = Logger.getLogger(Decoder.class);
@@ -125,8 +125,9 @@ public class Decoder {
 		
 		// load language model
 		HashMap<Tokenization, Float> sil = new HashMap<Tokenization, Float>();
-		sil.put(new Tokenization("sil", new String [0]), silprob);
-		Unigram lm = new Unigram(conf.tok, conf.th, sil);
+		// sil.put(conf.tok.getWordTokenization("si"), silprob);
+		// sil.put(conf.tok.getWordTokenization("unk"), silprob);
+		Bigram lm = new Bigram(conf.tok, conf.th, sil);
 		lm.loadSrilm(new File(args[z++]));
 		
 		for (; z < args.length; ++z) {
@@ -180,7 +181,7 @@ public class Decoder {
 		
 		TreeNode root = lm.generateNetwork();
 		
-		logger.info(TokenTree.traverseNetwork(root, " "));
+		// logger.info(TokenTree.traverseNetwork(root, " "));
 		
 		if (files.size() < 1) {
 			System.err.println("Nothing to do. Bye.");

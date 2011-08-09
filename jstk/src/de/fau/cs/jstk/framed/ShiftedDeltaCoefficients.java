@@ -213,9 +213,7 @@ public class ShiftedDeltaCoefficients implements FrameSource {
 		while (iolist.size() > 0) {
 			Pair<String, String> pp = iolist.remove(0);
 			FrameSource fs = new FrameInputStream(new File(pp.a));
-			
-			DCT dct = new DCT(fs, true);
-			ShiftedDeltaCoefficients sdc = new ShiftedDeltaCoefficients(dct, d, p, k);
+			ShiftedDeltaCoefficients sdc = new ShiftedDeltaCoefficients(fs, d, p, k);
 			
 			FrameOutputStream fw = new FrameOutputStream(sdc.getFrameSize(), new File(pp.b));
 			double [] buf = new double [sdc.getFrameSize()];
