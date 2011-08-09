@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 import de.fau.cs.jstk.framed.DCT;
 import de.fau.cs.jstk.framed.FFT;
 import de.fau.cs.jstk.framed.FilterBank;
+import de.fau.cs.jstk.framed.FilterBank.Vtln;
 import de.fau.cs.jstk.framed.MVN;
 import de.fau.cs.jstk.framed.Selection;
 import de.fau.cs.jstk.framed.Slope;
@@ -56,7 +57,7 @@ import de.fau.cs.jstk.sampled.RawAudioFormat;
  *
  */
 public class Mfcc implements FrameSource {
-	private static final double FEX_VERSION = 1.1;
+	private static final double FEX_VERSION = 1.2;
 	private static final String LAST_AUTHOR = "sikoried";
 	private static final String CONTRIBUTORS = "sikoried, bocklet, maier, hoenig, steidl";
 
@@ -96,11 +97,11 @@ public class Mfcc implements FrameSource {
 		output = pspec;
 	}
 	
-	private void initializeMelfilter(String parameterString) throws Exception {
+	private void initializeMelfilter(String parameterString, Vtln vtln) throws Exception {
 		if (parameterString.startsWith("manual:"))
 			melfilter = FilterBank.generateFilterBank((SpectralTransformation) output, true, parameterString.substring(7));
 		else
-			melfilter = FilterBank.generateMelFilterBank((SpectralTransformation) output, parameterString);
+			melfilter = FilterBank.generateMelFilterBank((SpectralTransformation) output, parameterString, vtln);
 		output = melfilter;
 	}
 	
@@ -154,14 +155,35 @@ public class Mfcc implements FrameSource {
 	 */
 	public Mfcc(String inFile, String pAudio, String pWindow, 
 			String pFilterbank, boolean noDCT, boolean doShortTimeEnergy, 
-			String pSelection, String pDeltas, String mvnParamFile) 
+			String pSelection, String pDeltas, String mvnParamFile) throws Exception {
+		this(inFile, pAudio, pWindow, pFilterbank, noDCT, doShortTimeEnergy, pSelection, pDeltas, mvnParamFile, null);
+	}
+	
+	/**
+	 * Initialize the new MFCC object using the given parameter strings. If a 
+	 * parameter String is null, the default constructor is called, or nthe object
+	 * is not integrated in the pipe line (deltas, CMS)
+	 * @param inFile file name to open
+	 * @param pAudio Audio format parameter string, e.g. t:ssg/16
+	 * @param pWindow Window function to use, e.g. hamm,25,10
+	 * @param pFilterbank Mel filter bank parameters, e.g. 0,8000,-1,.5
+	 * @param noDCT Flag if the cepstrum computation should be EXCLUDED
+	 * @param doShortTimeEnergy Flag to include the short time band energy (instead of the 0th coefficient)
+	 * @param pSelection Perform a selection on the feature vector (usually 0-11)
+	 * @param pDeltas Derivatives to compute, e.g. 1:5,2:3
+	 * @param mvnParamFile Parameter file for mean and variance normalization (if applicable)
+	 * @throws Exception
+	 */
+	public Mfcc(String inFile, String pAudio, String pWindow, 
+			String pFilterbank, boolean noDCT, boolean doShortTimeEnergy, 
+			String pSelection, String pDeltas, String mvnParamFile, Vtln vtln) 
 		throws Exception {
 		initializeAudio(inFile, pAudio);
 		initializeWindow(pWindow);
 		initializePowerSpectrum();
 		
 		if (pFilterbank != null)
-			initializeMelfilter(pFilterbank);
+			initializeMelfilter(pFilterbank, vtln);
 		
 		if (!noDCT)
 			initializeDCT();
@@ -192,7 +214,28 @@ public class Mfcc implements FrameSource {
 	 */
 	public Mfcc(InputStream is, String pAudio, String pWindow, 
 			String pFilterbank, boolean noDCT, boolean doShortTimeEnergy, 
-			String pSelection, String pDeltas, MVN mvn) 
+			String pSelection, String pDeltas, MVN mvn) throws Exception {
+		this(is, pAudio, pWindow, pFilterbank, noDCT, doShortTimeEnergy, pSelection, pDeltas, mvn, null);
+	}
+	
+	/**
+	 * Initialize the new MFCC object using the given parameter strings. If a 
+	 * parameter String is null, the default constructor is called, or nthe object
+	 * is not integrated in the pipe line (deltas, CMS)
+	 * @param inFile file name to open
+	 * @param pAudio Audio format parameter string, e.g. t:ssg/16
+	 * @param pWindow Window function to use, e.g. hamm,25,10
+	 * @param pFilterbank Mel filter bank parameters, e.g. 0,8000,-1,.5
+	 * @param noDCT Flag if the cepstrum computation should be EXCLUDED
+	 * @param doShortTimeEnergy Flag to include the short time band energy (instead of the 0th coefficient)
+	 * @param pSelection Perform a selection on the feature vector (usually 0-11)
+	 * @param pDeltas Derivatives to compute, e.g. 1:5,2:3
+	 * @param mvnParamFile Parameter file for mean and variance normalization (if applicable)
+	 * @throws Exception
+	 */
+	public Mfcc(InputStream is, String pAudio, String pWindow, 
+			String pFilterbank, boolean noDCT, boolean doShortTimeEnergy, 
+			String pSelection, String pDeltas, MVN mvn, Vtln vtln) 
 		throws Exception {
 		
 		format = RawAudioFormat.create(pAudio);
@@ -202,7 +245,7 @@ public class Mfcc implements FrameSource {
 		initializePowerSpectrum();
 		
 		if (pFilterbank != null)
-			initializeMelfilter(pFilterbank);
+			initializeMelfilter(pFilterbank, vtln);
 		
 		if (!noDCT)
 			initializeDCT();
@@ -217,7 +260,7 @@ public class Mfcc implements FrameSource {
 			output = mvn;
 		}
 	}
-		
+
 	public String describePipeline() {
 		StringBuffer buf = new StringBuffer();
 		LinkedList<String> reverse = new LinkedList<String>();
@@ -370,6 +413,8 @@ public class Mfcc implements FrameSource {
 		String selectionFormatString = DEFAULT_SELECTION;
 		String deltaFormatString = DEFAULT_DELTAS;
 		
+		Vtln vtln = null;
+		
 		if (args.length > 1) {
 			// process arguments
 			for (int i = 0; i < args.length; ++i) {
@@ -420,6 +465,9 @@ public class Mfcc implements FrameSource {
 					onlySpectrum = true;
 				else if (args[i].equals("--no-ste"))
 					doShortTimeEnergy = false;
+				else if (args[i].equals("--vtln")) {
+					vtln = new Vtln(Double.parseDouble(args[++i]), Double.parseDouble(args[++i]), Double.parseDouble(args[++i]));
+				}
 				
 				// deltas
 				else if (args[i].equals("-d")) {
@@ -501,7 +549,7 @@ public class Mfcc implements FrameSource {
 				
 				mfcc = new Mfcc(inFile, audioFormatString, windowFormatString, 
 						noFilterbank ? null : filterFormatString, onlySpectrum, 
-						doShortTimeEnergy, selectionFormatString, deltaFormatString, null);
+						doShortTimeEnergy, selectionFormatString, deltaFormatString, null, vtln);
 				
 				mvn.extendStatistics(mfcc);
 			}
@@ -527,7 +575,7 @@ public class Mfcc implements FrameSource {
 				mfcc = new Mfcc(inFile, audioFormatString, windowFormatString, 
 						noFilterbank ? null : filterFormatString, 
 						onlySpectrum, doShortTimeEnergy, selectionFormatString, 
-						deltaFormatString, null);
+						deltaFormatString, null, vtln);
 				
 				MVN mvn = new MVN();
 				mvn.extendStatistics(mfcc);
@@ -538,7 +586,7 @@ public class Mfcc implements FrameSource {
 			mfcc = new Mfcc(inFile, audioFormatString, windowFormatString, 
 					noFilterbank ? null : filterFormatString, 
 					onlySpectrum, doShortTimeEnergy, selectionFormatString, 
-					deltaFormatString, turnwisemvn ? tf.getCanonicalPath() : mvnParamFile);
+					deltaFormatString, turnwisemvn ? tf.getCanonicalPath() : mvnParamFile, vtln);
 			
 			// output pipeline?
 			if (showPipeline) {

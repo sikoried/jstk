@@ -27,9 +27,23 @@ import java.util.LinkedList;
 
 import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
 import de.fau.cs.jstk.io.FrameSource;
+import de.fau.cs.jstk.sampled.AudioFileReader;
+import de.fau.cs.jstk.sampled.RawAudioFormat;
 
 
 public class FilterBank implements FrameSource {
+	public static class Vtln {
+		public double low;
+		public double high; 
+		public double factor;
+		
+		public Vtln(double low, double high, double factor) {
+			this.low = low;
+			this.high = high;
+			this.factor = factor;
+		}
+	}
+	
 	/** Epsilon constant for logarithm */
 	public static double EPSILON = 1E-6;
 	
@@ -225,7 +239,78 @@ public class FilterBank implements FrameSource {
 		return fHz2Ind(fmel2fHz(fmel), st);
 	}
 	
-	public static FilterBank generateMelFilterBank(SpectralTransformation st, String parameterString)
+	/**
+	 * Warp the frequency for vocal tract length normalization (VTLN), from
+	 * kaldi src/feat/mel-computations.cc
+	 * 
+	 * @param vtln_low_cutoff
+	 * @param vtln_high_cutoff
+	 * @param low_freq
+	 * @param high_freq
+	 * @param vtln_warp_factor
+	 * @param freq
+	 * @return
+	 */
+	private static double vtlnWarpFreq(double vtln_low_cutoff, double vtln_high_cutoff,
+			double low_freq, double high_freq, double vtln_warp_factor, double freq) {
+		if (freq < low_freq || freq > high_freq)
+			return freq;
+
+		if (vtln_low_cutoff <= low_freq)
+			throw new RuntimeException("vtln_low_cutoff <= low_freq");
+		if (vtln_high_cutoff >= high_freq)
+			throw new RuntimeException("vtln_high_cutoff >= high_freq");
+
+		double l = vtln_low_cutoff * Math.max(1., vtln_warp_factor);
+		double h = vtln_high_cutoff * Math.min(1., vtln_warp_factor);
+		double scale = 1. / vtln_warp_factor;
+		double Fl = scale * l; // F(l);
+		double Fh = scale * h; // F(h);
+
+		if (l <= low_freq || h >= high_freq)
+			throw new RuntimeException("l <= low_freq || h >= high_freq");
+
+		// slope of left part of the 3-piece linear function
+		double scale_left = (Fl - low_freq) / (l - low_freq);
+		// [slope of center part is just "scale"]
+
+		// slope of right part of the 3-piece linear function
+		double scale_right = (high_freq - Fh) / (high_freq - h);
+
+		if (freq < l) {
+			return low_freq + scale_left * (freq - low_freq);
+		} else if (freq < h) {
+			return scale * freq;
+		} else {
+			return high_freq + scale_right * (freq - high_freq);
+		}
+	}
+	
+	/**
+	 * Warp the frequency for vocal tract length normalization (VTLN), from
+	 * kaldi src/feat/mel-computations.cc
+	 * 
+	 * @param vtln_low_cutoff
+	 * @param vtln_high_cutoff
+	 * @param low_freq
+	 * @param high_freq
+	 * @param vtln_warp_factor
+	 * @param mel
+	 * @return
+	 */
+	private static double vtlnWarpMelFreq(double vtln_low_cutoff, double vtln_high_cutoff,
+			double low_freq, double high_freq, double vtln_warp_factor, double mel) {
+		 return fHz2fmel(vtlnWarpFreq(vtln_low_cutoff, vtln_high_cutoff,
+                 low_freq, high_freq,
+                 vtln_warp_factor, fmel2fHz(mel)));
+	}
+	
+	public static FilterBank generateMelFilterBank(SpectralTransformation st, String parameterString) 
+			throws MalformedParameterStringException {
+		return generateMelFilterBank(st, parameterString, null);
+	}
+	
+	public static FilterBank generateMelFilterBank(SpectralTransformation st, String parameterString, Vtln vtln)
 		throws MalformedParameterStringException {
 		
 		/** Default lower boundary frequency (Hz) of mel filter bank */
@@ -266,7 +351,7 @@ public class FilterBank implements FrameSource {
 				fo = DEFAULT_FO;
 		}
 	
-		return new FilterBank(st, generateMelFilterBank(st, logMel, fw, lb, ub, fo));
+		return new FilterBank(st, generateMelFilterBank(st, logMel, fw, lb, ub, fo, vtln));
 	}
 
 	/**
@@ -278,10 +363,60 @@ public class FilterBank implements FrameSource {
 	 * @param lowerBoundary
 	 * @param upperBoundary
 	 * @param minNumFilters
+	 * @param vtln_factor
 	 * @return
 	 */
-	public static Filter [] generateMelFilterBank(SpectralTransformation st, boolean log, double filterWidthInMel, double lowerBoundary, double upperBoundary, double minNumFilters) {
-		// start end end of the filter bank
+	public static Filter [] generateMelFilterBank(SpectralTransformation st, 
+			boolean log, 
+			double filterWidthInMel, 
+			double lowerBoundary, // filterbank boundaries (Hz) 
+			double upperBoundary, 
+			double minNumFilters, double vtln_factor) {
+		return generateMelFilterBank(st, log, filterWidthInMel, lowerBoundary, upperBoundary, minNumFilters, new Vtln(lowerBoundary + 100., upperBoundary - 500, vtln_factor));
+	}
+	
+	/**
+	 * Generate a Mel filter bank for the given parameters
+	 * @param frameSize
+	 * @param sampleRate
+	 * @param log
+	 * @param filterWidthInMel
+	 * @param lowerBoundary
+	 * @param upperBoundary
+	 * @param minNumFilters
+	 * @return
+	 */
+	public static Filter [] generateMelFilterBank(SpectralTransformation st, 
+			boolean log, 
+			double filterWidthInMel, 
+			double lowerBoundary, // filterbank boundaries (Hz) 
+			double upperBoundary, 
+			double minNumFilters) {
+		return generateMelFilterBank(st, log, filterWidthInMel, lowerBoundary, upperBoundary, minNumFilters, null);
+	}
+	/**
+	 * Generate a Mel filter bank for the given parameters
+	 * @param frameSize
+	 * @param sampleRate
+	 * @param log
+	 * @param filterWidthInMel
+	 * @param lowerBoundary
+	 * @param upperBoundary
+	 * @param minNumFilters
+	 * @param vtln_low 
+	 * @param vtln_high
+	 * @param vtln_factor
+	 * @return
+	 */
+	public static Filter [] generateMelFilterBank(SpectralTransformation st, 
+			boolean log, 
+			double filterWidthInMel, 
+			double lowerBoundary, // filterbank boundaries (Hz) 
+			double upperBoundary, 
+			double minNumFilters, 
+			Vtln vtln) {
+		
+		// start and end of the filter bank
 		double lb_mel = fHz2fmel(lowerBoundary);
 		double ub_mel = fHz2fmel(upperBoundary);
 		
@@ -305,11 +440,18 @@ public class FilterBank implements FrameSource {
 		Filter [] filters = new Filter [sfb];
 		
 		// compute triangular frequencies and indices
-		for (int i = 0; i < sfb; ++i)
-			filters[i] = generateMelFilter(st, 
-					lb_mel + fo*filterWidthInMel*i, 
-					lb_mel + filterWidthInMel + fo*filterWidthInMel*i, 
-					FilterType.TRIANGULAR, true);
+		for (int i = 0; i < sfb; ++i) {
+			double l = lb_mel + fo*filterWidthInMel*i;
+			double r = lb_mel + filterWidthInMel + fo*filterWidthInMel*i;
+			
+			// VTLN?
+			if (vtln != null) {
+				l = vtlnWarpMelFreq(vtln.low, vtln.high, lowerBoundary, upperBoundary, vtln.factor, l);
+				r = vtlnWarpMelFreq(vtln.low, vtln.high, lowerBoundary, upperBoundary, vtln.factor, r);
+			}
+			
+			filters[i] = generateMelFilter(st, l, r, FilterType.TRIANGULAR, true);
+		}
 		
 		return filters;
 	}
@@ -414,5 +556,25 @@ public class FilterBank implements FrameSource {
 		}
 		
 		return ret;
+	}
+	
+	public static void main(String [] args) throws Exception {
+		AudioFileReader afr = new AudioFileReader(System.in, RawAudioFormat.getRawAudioFormat("ssg/16"), true);
+		Window wnd = new HammingWindow(afr, 25, 10, false);
+		FFT fft = new FFT(wnd);
+		
+		for (double w : new double [] { 0.6, 1.0, 1.4 }) {
+			Filter [] fb = generateMelFilterBank(
+					fft, 
+					true, 
+					226.79982, 
+					20., 
+					8000., 
+					23, 
+					new Vtln(100, 7400,	w));
+			System.err.println("fb.length " + fb.length);
+			for (Filter f : fb) 
+				System.err.println(f.toString());
+		}
 	}
 }
