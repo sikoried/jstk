@@ -127,6 +127,11 @@ public class VisualizerSpectrogram extends FileVisualizer implements Runnable {
 		while (!finished) {
 			
 			if (i >= size) {
+				if (audiosource == null) {
+					// should never happen
+					break;
+				} 
+				
 				xMax = audiosource.getBufferSize() - 1;
 				size = (int) Math.ceil(xMax * 100.0 / samplerate);
 				if (spectrogram == null) {

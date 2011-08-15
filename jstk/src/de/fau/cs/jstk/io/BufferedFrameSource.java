@@ -46,7 +46,9 @@ public class BufferedFrameSource implements FrameSource {
 		readIndex = 0;
 		buffer = null;
 		size = 0;
-		bufferAllFrames();
+		if (source != null) {
+			bufferAllFrames();
+		}
 	}
 	
 	private void bufferAllFrames() throws IOException {
