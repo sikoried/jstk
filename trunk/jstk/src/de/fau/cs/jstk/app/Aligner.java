@@ -1,7 +1,7 @@
 /*
 	Copyright (c) 2009-2011
 		Speech Group at Informatik 5, Univ. Erlangen-Nuremberg, GERMANY
-		Korbinian Riedhammer
+		Korbinian Riedhammer, 
 		Tobias Bocklet
 
 	This file is part of the Java Speech Toolkit (JSTK).
