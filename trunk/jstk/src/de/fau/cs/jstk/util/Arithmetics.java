@@ -518,6 +518,22 @@ public final class Arithmetics {
 	}
 	
 	/**
+	 * || a + s*b ||^2
+	 * @param s
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static double norm2(double s, double [] a, double [] b) {
+		double r = 0.;
+		for (int i = 0; i < a.length; ++i) {
+			double p = (a[i] + s * b[i]);
+			r += p*p;
+		}
+		return Math.sqrt(r);
+	}
+	
+	/**
 	 * Enforce sum_i a[i] = 1
 	 * @param a
 	 */

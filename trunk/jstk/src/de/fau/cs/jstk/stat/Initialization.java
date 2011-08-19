@@ -21,10 +21,12 @@
 */
 package de.fau.cs.jstk.stat;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -111,6 +113,111 @@ public abstract class Initialization {
 		}
 		
 		return estimate;
+	}
+	
+	/**
+	 * Produce a LGB clustering for the cached data, by splitting the largest
+	 * cluster first. The resulting Mixture has weights based on the cluster
+	 * sizes.
+	 * @param data
+	 * @param numc number of clusters requested
+	 * @param eps value to shift the cluster centroids on split (1.+-eps)*c
+	 * @param conv convergence value for centroid reestimation (e.g. 0.0001)
+	 * @param diag diagonal or full covariances
+	 * @return
+	 */
+	public static Mixture lbg(List<Sample> data, int numc, double eps, double conv, boolean diag) {
+		// dimension
+		int dim = data.get(0).x.length;
+		double scale = 1. / (data.size() * dim);
+		
+		// initial centroid
+		DensityDiagonal c0 = (DensityDiagonal) Trainer.ml(data, diag);
+		
+		// compute diversity
+		double d0 = 0.;
+		for (Sample s : data)
+			d0 += scale * Arithmetics.norm2(-1., s.x, c0.mue);
+		
+		ArrayList<Density> c = new ArrayList<Density>();
+		c.add(c0);
+		
+		int [] occ = new int [] { data.size() };
+		
+		// iterate over the splitting procedure
+		while (c.size() < numc) {			
+			// split the largest cluster
+			int p = 0;
+			int v = occ[0];
+			for (int i = 1; i < occ.length; ++i)
+				if (occ[i] > v) { p = i; v = occ[i]; }
+						
+			// split
+			Density ca = c.get(p);
+			Arithmetics.smul2(ca.mue, 1. + eps);
+			Density cb = (diag 
+					? new DensityDiagonal((DensityDiagonal) ca)
+					: new DensityFull((DensityFull) ca));
+			Arithmetics.smul2(cb.mue, 1. - eps);
+			c.add(cb);
+			
+			double d1 = d0;
+			double d2 = 0.;
+			
+			occ = new int [c.size()];
+			
+			// keep updating the clusters till they converge
+			while (Math.abs((d1 - d2) / d1) > conv) {
+				// init accumulators
+				for (Density dd : c)
+					dd.init();
+				
+				// cluster by distance and accumulate
+				for (Sample s : data) {
+					int pos = 0;
+					double min = Arithmetics.norm2(-1., s.x, c.get(0).mue);
+					
+					Iterator<Density> it = c.iterator(); it.next();
+					int i = 1;
+					while (it.hasNext()) {
+						double d = Arithmetics.norm2(-1., s.x, it.next().mue);
+						if (d < min) {
+							min = d;
+							pos = i;
+						}
+						++i;
+					}
+					
+					s.y = (short) pos;
+					c.get(pos).accumulate(1., s.x);
+					occ[pos]++;
+				}
+				
+				// update clusters
+				double sum = 0;
+				for (Density dd : c)
+					sum += dd.accu.apr;
+				for (Density dd : c) {
+					dd.reestimate(dd.accu.apr / sum);
+					dd.discard();
+				}
+				
+				d1 = d2;
+				d2 = 0.;
+				for (Sample s : data)
+					d2 += scale * Arithmetics.norm2(-1., s.x, c.get(s.y).mue);
+			}
+		}
+		
+		// construct codebook
+		Mixture m = new Mixture(dim, c.size(), diag);
+		Iterator<Density> it = c.iterator();
+		for (int i = 0; i < c.size(); ++i) {
+			Density dd = it.next();
+			m.components[i].fill(dd.apr, dd.mue, dd.cov);
+		}
+
+		return m;
 	}
 	
 	/**
@@ -469,7 +576,7 @@ public abstract class Initialization {
 	 * @author sikoried
 	 */
 	static class CovarianceRanker extends DensityRanker {
-		CovarianceRanker(LinkedList<Density> clusters) {
+		CovarianceRanker(List<Density> clusters) {
 			logger.info("CovarianceRanker: computing scores");
 			for (Density d : clusters) {
 				double s = 0.;
@@ -487,7 +594,7 @@ public abstract class Initialization {
 	 * @author sikoried
 	 */
 	static class SumOfEigenvaluesRanker extends DensityRanker {
-		SumOfEigenvaluesRanker(LinkedList<Density> clusters) {
+		SumOfEigenvaluesRanker(List<Density> clusters) {
 			logger.info("SumOfEigenvaluesRanker: computing scores");
 			long timestamp = System.currentTimeMillis();
 			
@@ -565,7 +672,7 @@ public abstract class Initialization {
 	 * @author sikoried
 	 */
 	static class EigenvalueRanker extends DensityRanker {
-		EigenvalueRanker(LinkedList<Density> clusters) {
+		EigenvalueRanker(List<Density> clusters) {
 			logger.info("EigenvalueRanker: computing scores");
 			long timestamp = System.currentTimeMillis();
 			
