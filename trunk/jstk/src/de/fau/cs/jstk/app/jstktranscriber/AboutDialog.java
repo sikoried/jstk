@@ -98,7 +98,7 @@ public class AboutDialog extends JDialog implements ActionListener {
 		insertText("Stefan Steidl", ITALIC_GRAY);
 		insertText("Korbinian Riedhammer", ITALIC_GRAY);
 		insertText("Tobias Bocklet", ITALIC_GRAY);
-		insertText("Florian Hönig" + newLine, ITALIC_GRAY);
+		insertText("Florian HÃ¶nig" + newLine, ITALIC_GRAY);
 		insertText(
 				"This software is based on the Java Speech Toolkit (JSTK), "
 						+ "which is developed and maintained by the Speech Group at the University of Erlangen-Nuremberg."
