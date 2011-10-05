@@ -88,7 +88,7 @@ public abstract class Density {
 	
 	/**
 	 * Create a new density with a certain feature dimension
-	 * @param dim Feature dimesion
+	 * @param dim Feature dimension
 	 */
 	public Density(int dim) {
 		fd = dim;
@@ -486,4 +486,14 @@ public abstract class Density {
 		else
 			return 1. - p;
 	}
+
+	/**
+	 * return a marginalized version of this density
+	 * (marginalized over all dimensions except first...last)
+	 * 
+	 * @param first
+	 * @param last
+	 * @return
+	 */
+	public abstract Density marginalize(int first, int last);
 }

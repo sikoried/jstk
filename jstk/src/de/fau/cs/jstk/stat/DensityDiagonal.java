@@ -22,6 +22,7 @@
 package de.fau.cs.jstk.stat;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Scanner;
 
 import org.apache.log4j.Logger;
@@ -219,5 +220,20 @@ public final class DensityDiagonal extends Density {
 			x[i] = mue[i] + gen.nextGaussian() * cov[i];
 		
 		return x;
+	}
+
+	@Override
+	public DensityDiagonal marginalize(int first, int last) {
+
+		if (last >= fd || last < first || first < 0)
+			throw new IllegalArgumentException("feature range " + first + " to " + last + " is invalid (dim = " + fd + ")!");		
+			
+		DensityDiagonal d = new DensityDiagonal(last - first + 1);
+	
+		d.fill(apr,  
+				Arrays.copyOfRange(mue, first, last + 1),
+				Arrays.copyOfRange(cov, first, last + 1));				
+
+		return d;
 	}
 }
