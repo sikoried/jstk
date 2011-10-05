@@ -63,9 +63,16 @@ public final class Mixture {
 	public int id;
 	
 	/** score after evaluation (including priors, or course) */
-	public transient double score;
+	public transient double score;	
+
+	/** log(score) after evaluation, but computed numerically more stable; 
+	 * might contain useful values even when score = Infinity */
+	private transient double logscore;
 	
-	/** log likelihood accumulator */
+	/** helper to avoid allocating memory in each call of evaluate */
+	private transient double [] logscoreHelp = null;	
+	
+	/** log likelihood accumulator. currently unused/not implemented */
 	public transient double llh = 0.;
 	
 	/** component densities */
@@ -191,10 +198,34 @@ public final class Mixture {
 	 */
 	public double evaluate(double [] x) {
 		score = 0.;
+		logscore = 0.;
+		
+		if (logscoreHelp == null)
+			logscoreHelp = new double[components.length];		
+		int i = 0;
+		
 		for (Density d : components) {
 			score += d.evaluate(x);
 			llh += d.lh;
+			
+			logscoreHelp[i++] = d.lh;
 		}
+		
+		/* compute log(score), avoiding Infinity */
+		
+		/* - find maximum */
+		double max = logscoreHelp[0];
+		for (double d : logscoreHelp)
+			if (d > max)
+				max = d;
+				
+		/* - subtract max, sum up exponents */			
+		double tmp = 0.;
+		for (i = 0; i < logscoreHelp.length; i++)
+			tmp += Math.exp(logscoreHelp[i] - max);
+		
+		logscore = max + Math.log(tmp);				
+				
 		return score;
 	}
 	
@@ -498,6 +529,20 @@ public final class Mixture {
 		return dist;
 	}
 	
+	public Mixture marginalize(int first, int last) {
+		
+		if (last >= fd || last < first || first < 0)
+			throw new IllegalArgumentException("feature range " + first + " to " + last + " is invalid (dim = " + fd + ")!");		
+	
+		Mixture m = new Mixture(last - first + 1, nd, diagonal);
+		
+		int i;
+		for (i = 0; i < nd; i++)
+			m.components[i] = components[i].marginalize(first, last);		
+		
+		return m;
+	}
+	
 	/**
 	 * Compute the approximate Kullback-Leibler statistics using this mixture as
 	 * a background model for priors and variance.
@@ -542,6 +587,8 @@ public final class Mixture {
 		"    mixtures, use an in/out list containing lines with input and output file separated by\n" +
 		"    whitespace. Each output frame consists of the overall mixture score followed by the\n" +
 		"    individual component scores without the priors.\n" +
+		"  l <codebook> [in-out-list]\n" +
+		"    like e, but just write the total log-likelihood for the whole mixture.\n" +		
 		"  E <codebook> <wt-ascii> [in-out-list]\n" + 
 		"    Same as 'e', but use mixture weights in ascii file\n" +
 		"  s <pmc> [in-out-list | in-list out-file | [< in > out]]\n" +
@@ -552,9 +599,11 @@ public final class Mixture {
 		"    to concatenate feature files.\n" +
 		"  t proj rank [in-out-list | [< in > out]]\n" +
 		"    Transform the means of the mixture density using the MNAP projection matrix; use 0 for full\n" +
-		"    rank projection.";
+		"    rank projection.\n" +
+		"  m <first> <last> < in-codebook > out-codebook\n" +
+		"    Marginalize codebook over all dimensions except <first> to <last>.";
 	
-	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, SV, MNAP, AKL, AKL2 };
+	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, SV, MNAP, AKL, AKL2, MARGINALIZE};
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length < 1) {
@@ -566,6 +615,7 @@ public final class Mixture {
 		
 		Mode mode = Mode.DISPLAY;
 		String weightfile = null;
+		boolean justLogAcc = false;
 		
 		if (smode.equals("d"))
 			mode = Mode.DISPLAY;
@@ -575,6 +625,10 @@ public final class Mixture {
 			mode = Mode.FROMASCII;
 		else if (smode.equals("e"))
 			mode = Mode.EVALUATE;
+		else if (smode.equals("l")){
+			mode = Mode.EVALUATE;
+			justLogAcc = true;
+		}
 		else if (smode.equals("E")) {
 			mode = Mode.EVALUATE;
 			weightfile = args[1];
@@ -586,6 +640,8 @@ public final class Mixture {
 			mode = Mode.AKL;
 		else if (smode.equals("A"))
 			mode = Mode.AKL2;
+		else if (smode.equals("m"))
+			mode = Mode.MARGINALIZE;
 		else {
 			System.err.println("MixtureDensity.main(): Unknown mode \"" + smode + "\"");
 			System.exit(1);
@@ -630,6 +686,7 @@ public final class Mixture {
 			// buffers
 			double [] x = new double [cb.fd];
 			double [] p = new double [cb.nd + 1];
+			double [] l = new double [1];
 			
 			LinkedList<String> inlist = new LinkedList<String>();
 			LinkedList<String> outlist = new LinkedList<String>();
@@ -659,14 +716,30 @@ public final class Mixture {
 			// process files
 			while (inlist.size() > 0) {
 				FrameInputStream reader = new FrameInputStream(new File(inlist.remove()));
-				FrameOutputStream writer = new FrameOutputStream(cb.nd + 1, new File(outlist.remove()));
+				FrameOutputStream writer;
+				if (justLogAcc)
+					writer = new FrameOutputStream(1, new File(outlist.remove()));
+				else
+					writer = new FrameOutputStream(cb.nd + 1, new File(outlist.remove()));
 				
 				// read, evaluate, write
 				while (reader.read(x)) {
-					p[0] = cb.evaluate(x);
-					for (int i = 1; i < p.length; ++i)
-						p[i] = cb.components[i-1].score;
-					writer.write(p);
+										
+					double totalProb = cb.evaluate(x);
+					
+					if (justLogAcc){
+						l[0] = cb.logscore;
+						
+						writer.write(l);
+					}
+					else{
+						p[0] = totalProb;
+						for (int i = 1; i < p.length; ++i)
+							p[i] = cb.components[i-1].score;
+						writer.write(p);
+					}					
+					
+					
 				}
 				
 				reader.close();
@@ -836,6 +909,18 @@ public final class Mixture {
 			
 			break;
 		}
+		case MARGINALIZE:
+			if (args.length < 3)
+				throw new IllegalArgumentException("mode m needs two arguments!");
+			int first = Integer.parseInt(args[1]);
+			int last = Integer.parseInt(args[2]);
+			
+			Mixture old = new Mixture(System.in);
+			Mixture m = old.marginalize(first, last);
+			
+			m.write(System.out);			
+			
+			break;
 		}
 	}
 }

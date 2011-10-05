@@ -22,7 +22,10 @@
 package de.fau.cs.jstk.stat;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Scanner;
+
+import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
@@ -273,5 +276,36 @@ public final class DensityFull extends Density {
 		}
 		// sb.append("logdet = " + logdet + "\nlogpiconst = " + logpiconst);
 		return sb.toString();
+	}
+
+	@Override
+	public DensityFull marginalize(int first, int last) {
+		
+		
+		if (last >= fd || last < first || first < 0)
+			throw new IllegalArgumentException("feature range " + first + " to " + last + " is invalid (dim = " + fd + ")!");		
+				
+		DensityFull d = new DensityFull(last - first + 1);
+		
+		// construct the redundant symmetrical form of the covariance matrix
+		double [][] help = new double [fd][fd];
+		int i, j, k = 0;
+		for (i = 0; i < fd; ++i) {
+			for (j = 0; j <= i; ++j)
+				help[i][j] = help[j][i] = cov[k++];
+		}		
+		
+		// marginalize
+		double [] newCov = new double [d.fd * (d.fd + 1) / 2];
+		k = 0;
+		for (i = first; i <= last; i++)
+			for (j = first; j <= i; j++)
+				newCov[k++] = help[i][j];		
+		Assert.assertEquals(d.cov.length, k);
+		
+		d.fill(apr,  
+				Arrays.copyOfRange(mue, first, last + 1),
+				newCov);		
+		return d;
 	}
 }
