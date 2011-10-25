@@ -46,7 +46,13 @@ public class ThreadedPlayer implements Runnable {
 		public void playerPaused(ThreadedPlayer instance);
 	}
 	
+	public interface ProgressListener {
+		public void resetCount();
+		public void bytesPlayed(int b);
+	}
+	
 	private List<StateListener> dependents = new LinkedList<StateListener>();
+	private List<ProgressListener> progress = new LinkedList<ProgressListener>();
 	
 	private Thread thread = null;
 	
@@ -114,6 +120,7 @@ public class ThreadedPlayer implements Runnable {
 		}
 			
 		player = new AudioPlay(mixer, source, desiredBufDur);
+		paused = false;
 	}
 	
 	/** 
@@ -139,11 +146,11 @@ public class ThreadedPlayer implements Runnable {
 		finished = true;
 		
 		// trigger stop in the thread
-		paused = true;		
+		paused = true;
 		
 		if (thread != null)
 			thread.join();
-				
+		
 		thread = null;
 	}
 	
@@ -164,11 +171,13 @@ public class ThreadedPlayer implements Runnable {
 		try {
 			notifyStart();
 			
+			int b;
 			while (!paused) {
-				if (player.write() <= 0) {
+				if ((b = player.write()) <= 0) {
 					finished = true;
 					break;
 				}
+				notifyBytesWritten(b);
 			}
 			
 			// free the device if everything was played
@@ -182,9 +191,16 @@ public class ThreadedPlayer implements Runnable {
 				notifyPause();
 		} catch (IOException e) {
 			System.err.println("ThreadedPlayer.run(): I/O error: " + e.toString());
-		} catch (Exception e) {
-			System.err.println("ThreadedPlayer.run(): " + e.toString());
-		}		
+			e.printStackTrace();
+		} 
+//		catch (Exception e) {
+//			System.err.println("ThreadedPlayer.run(): " + e.toString());
+//			e.printStackTrace();
+//		}		
+		catch (LineUnavailableException e) {
+			System.err.println("LineUnavailableException: " + e.toString());
+			e.printStackTrace();
+		}
 	}
 	
 	public void tearDown() throws IOException {
@@ -226,6 +242,24 @@ public class ThreadedPlayer implements Runnable {
 			}
 	}
 	
+	
+	public void addProgressListener(ProgressListener client) {
+		progress.add(client);
+	}
+	
+	public void removeProgressListener(ProgressListener client) {
+		for (int i = 0; i < progress.size(); ++i)
+			if (progress.get(i) == client) {
+				progress.remove(i);
+				break;
+			}
+	}
+	
+	private void notifyBytesWritten(int b) {
+		for (ProgressListener p : progress)
+			p.bytesPlayed(b);
+	}
+	
 	private void notifyStart() {
 		for (StateListener s : dependents)
 			s.playerStarted(this);
@@ -235,10 +269,12 @@ public class ThreadedPlayer implements Runnable {
 		for (StateListener s : dependents)
 			s.playerPaused(this);
 	}
-	
+
 	private void notifyStop() {
 		for (StateListener s : dependents)
 			s.playerStopped(this);
+		for (ProgressListener p : progress)
+			p.resetCount();
 	}
 	
 	public static void main(String [] args) throws Exception {

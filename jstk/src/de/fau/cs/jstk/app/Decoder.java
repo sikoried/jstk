@@ -39,7 +39,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.arch.Configuration;
-import de.fau.cs.jstk.arch.TokenTree;
 import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.arch.TreeNode;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch;

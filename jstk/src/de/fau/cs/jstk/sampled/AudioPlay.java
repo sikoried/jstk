@@ -29,6 +29,8 @@ import java.nio.ByteOrder;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.Mixer;
 import javax.sound.sampled.SourceDataLine;
@@ -39,7 +41,7 @@ import javax.sound.sampled.SourceDataLine;
  * @author sikoried
  * @see de.fau.cs.jstk.sampled.ThreadedPlayer
  */
-public class AudioPlay {
+public class AudioPlay implements LineListener {
 	private SourceDataLine line;
 	
 	private double [] doubleBuf = null;
@@ -51,9 +53,11 @@ public class AudioPlay {
 	
 	/** output bit rate */
 	public static final int BIT_RATE = 16;
-
+	
 	private AudioFormat af;
 	
+	/** add a little delay after stopping the playback, to make sure the line is empty */
+	public static int PLAYBACK_LAG = 400;
 	
 	private boolean lineOpened = false;
 
@@ -151,7 +155,7 @@ public class AudioPlay {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			
+						
 			// If no target, fall back to default line
 			if (target != null)
 				line = (SourceDataLine) AudioSystem.getMixer(target).getLine(info);
@@ -164,6 +168,14 @@ public class AudioPlay {
 			}
 		}
 	
+		try {
+			line.removeLineListener(this);
+			
+		} catch (Exception e) {
+			System.err.println("warning: could not remove line listener; not present? : " + e.toString());
+		}
+		line.addLineListener(this);
+		
 		scale = Math.pow(2, BIT_RATE - 1) - 1;
 	}
 
@@ -172,8 +184,6 @@ public class AudioPlay {
 	 * @throws LineUnavailableException
 	 */
 	private void openLine() throws LineUnavailableException{
-		lineOpened = true;
-		
 		try{
 			if (manualBufferSize != 0.){
 				int desiredBufSize = (int) Math.round(manualBufferSize * af.getFrameRate())
@@ -195,13 +205,13 @@ public class AudioPlay {
 			throw new LineUnavailableException(e.getMessage());
 		}
 
-		line.start();
-		
-		// init the buffer		
-		int bytes = line.getBufferSize();
-		byteBuf = new byte [bytes];
-		doubleBuf = new double [bytes / af.getFrameSize()];
-		fs = af.getFrameSize();
+		// further handling is done in the LineEvent(OPEN) handler, wait for the line to open
+		while (!lineOpened)
+			try {
+				Thread.sleep(25);
+			} catch (InterruptedException e) {
+				// outch, only active wait
+			}
 	}
 	
 	private static Mixer.Info [] getMixerList(AudioFormat af) {
@@ -222,13 +232,38 @@ public class AudioPlay {
 	/**
 	 * Close everyting
 	 * @throws IOException
+	 * @throws InterruptedException 
 	 */
 	public void tearDown() throws IOException {
 		// when tearing down, we need to drain and stop the line before closing 
 		// it; no drain means the end of the playback is very likely to be chop
+
 		line.drain();
+		
+		// this is a workaround for the current linux driver/jdk issues that 
+		// truncate the last bit of sound despite the drain; the issue seems to
+		// be that the subsequent stops the actual system device, while drain
+		// returns once the (java) buffer is empty -- which might be different
+		// from the OS buffer
+		if (System.getProperty("os.name").toLowerCase().indexOf("linux") != -1) {
+			try {
+				Thread.sleep(PLAYBACK_LAG);
+			} catch (InterruptedException e1) {
+				// well, it's a workaround anyways...
+			}
+		}
+	
 		line.stop();
-		line.close();
+		
+		// the line is closed on the LineEventHandler
+		
+		// make a somewhat active wait for the line
+		while (lineOpened)
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// if this fails, it's just a real active wait
+			}
 	}
 
 	/**
@@ -244,7 +279,7 @@ public class AudioPlay {
 		if (!lineOpened)
 			openLine();
 
-		bytes = byteBuf.length;		
+		bytes = byteBuf.length;
 		
 		int frames = bytes / fs / 2;
 		
@@ -331,4 +366,26 @@ public class AudioPlay {
 		}
 	}
 
+	public void update(LineEvent event) {
+		if (event.getType() == LineEvent.Type.OPEN) {
+			// start the line, init the buffer
+			line.start();
+			
+			int bytes = line.getBufferSize();
+			byteBuf = new byte [bytes];
+			doubleBuf = new double [bytes / af.getFrameSize()];
+			fs = af.getFrameSize();
+			
+			lineOpened = true;
+		} else if (event.getType() == LineEvent.Type.START) {
+			// nothing to do here
+		} else if (event.getType() == LineEvent.Type.STOP) {
+			line.close();
+		} else if (event.getType() == LineEvent.Type.CLOSE) {
+			// only free the line now
+			lineOpened = false;
+		} else
+			System.err.println("Unknown LineEvent: " + event.getType());
+		
+	}
 }
