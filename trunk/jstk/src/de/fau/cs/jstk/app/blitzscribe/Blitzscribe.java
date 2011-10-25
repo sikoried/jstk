@@ -23,6 +23,8 @@ package de.fau.cs.jstk.app.blitzscribe;
 
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
@@ -47,6 +50,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
  * A simplistic tool for very fast (utterance level) transcription of large 
@@ -68,10 +72,8 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	private JButton btnOpen = new JButton("Open");
 	private JButton btnSave = new JButton("Save");
 	private JButton btnSaveAs = new JButton("Save as...");
-	private JButton btnOptions = new JButton("Options");
 	
 	private JTextField tfTranscription = new JTextField();
-	private JButton btnOk = new JButton("save and next");
 	
 	private JList liFileList = new JList();
 	private DefaultListModel listModel = new DefaultListModel();
@@ -80,12 +82,16 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	
 	private AudioPanel ap = new AudioPanel();
 	
+	private JFileChooser fc = new JFileChooser();
+	
 	public Blitzscribe() {
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		fc.setFileFilter(new FileNameExtensionFilter("transcription files", "trl"));
 		
 		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
 		} catch (Exception e) {
+			System.err.println("Could not set look and feel: " + e.toString());
 			setDefaultLookAndFeelDecorated(true);
 		}
 		
@@ -102,6 +108,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	}
 	
 	private void initUI() {
+		setTitle("Blitzscribe");
 		JPanel root = new JPanel();
 		GridBagConstraints c = new GridBagConstraints();
 		root.setLayout(new GridBagLayout());
@@ -111,8 +118,11 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			public void keyTyped(KeyEvent e) { }
 			public void keyReleased(KeyEvent e) { }
 			public void keyPressed(KeyEvent e) {
-				if (e.getKeyCode() == KeyEvent.VK_ENTER)
+				if (e.getKeyCode() == KeyEvent.VK_ENTER) {
 					next();
+					if (!e.isShiftDown())
+						play();
+				} 
 				else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE && e.isShiftDown()) {
 					prev();
 					e.consume();
@@ -140,26 +150,55 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			}
 		});
 		
+		// button actions
+		btnOpen.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// we only need this once
+				int r = fc.showOpenDialog(Blitzscribe.this);
+				if (r == JFileChooser.APPROVE_OPTION)
+					loadTrl(fc.getSelectedFile());
+			}
+		});
+		
+		btnSave.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (curFile != null)
+					saveTrl(Blitzscribe.this.curFile);
+			}
+		});
+		
+		btnSaveAs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int r = fc.showOpenDialog(Blitzscribe.this);
+				if (r == JFileChooser.APPROVE_OPTION)
+					saveTrl(fc.getSelectedFile());
+			}
+		});
+		
+		// button short cuts
+		btnOpen.setMnemonic(KeyEvent.VK_O);
+		btnSave.setMnemonic(KeyEvent.VK_S);
+		
 		// buttons
 		c.gridx = 0; c.gridy = 0; root.add(btnOpen, c);
 		c.gridx = 1; c.gridy = 0; root.add(btnSave, c);
 		c.gridx = 2; c.gridy = 0; root.add(btnSaveAs, c);
-		c.gridx = 3; c.gridy = 0; root.add(btnOptions, c);
-		c.gridx = 5; c.gridy = 0; c.fill = GridBagConstraints.HORIZONTAL; root.add(new JPanel(), c);
+		double old = c.weightx;
+		c.gridx = 3; c.gridy = 0; c.weightx = 1.0; c.fill = GridBagConstraints.HORIZONTAL; root.add(new JPanel(), c);
+		c.weightx = old;
+		
 		
 		// audio panel
-		c.gridx = 0; c.gridy = 1; c.gridwidth = 5; root.add(ap, c);
+		c.gridx = 0; c.gridy = 1; c.gridwidth = 4; root.add(ap, c);
 		
 		// transcription panel
-		c.weightx = 0.8; 
+		c.weightx = 1.0; 
 		c.gridx = 0; c.gridy = 2; c.gridwidth = 4; root.add(tfTranscription, c);
-		c.weightx = 0.2;
-		c.gridx = 4; c.gridy = 2; c.gridwidth = 1; root.add(btnOk, c);
 		
 		// the available list
 		JScrollPane sp = new JScrollPane(liFileList);
 		c.weightx = 1.0; c.weighty = 1.0;
-		c.gridx = 0; c.gridy = 3; c.gridwidth = 5; c.fill = GridBagConstraints.BOTH; root.add(sp, c);
+		c.gridx = 0; c.gridy = 3; c.gridwidth = 4; c.fill = GridBagConstraints.BOTH; root.add(sp, c);
 		
 		// display
 		setSize(640, 480);
@@ -171,8 +210,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	private Turn curData = null;
 	
 	private void play() {
-		ap.play(0);
-		System.err.println("playing file...");
+		ap.toggle();
 	}
 	
 	/**
@@ -227,6 +265,9 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	 * @param pos
 	 */
 	private void display(int pos) {
+		// make sure the player stops
+		ap.stop();
+		
 		System.err.println("Loading item " + pos);
 		
 		curIndex = pos;
@@ -236,9 +277,10 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		liFileList.ensureIndexIsVisible(curIndex);
 		tfTranscription.requestFocus();
 		tfTranscription.setText(curData.text);
+		tfTranscription.setCaretPosition(curData.text.length());
 		
-		// update audio panel
 		try {
+			// update audio panel
 			ap.setAudioFile(new File(curDir + curData.file));
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, e.getMessage(), "IO exception",
@@ -250,7 +292,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	}
 	
 	private String curDir = "";
-	
+	private File curFile = null;
 	/**
 	 * Load a transcription file and select the first non-empty entry.
 	 * @param file
@@ -279,6 +321,9 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			
 			// update dir, if necessary
 			curDir = (file.getParent() == null ? "" : file.getParent() + System.getProperty("file.separator"));
+			curFile = file;
+			
+			setTitle("Blitzscribe: " + file.getName());
 			
 			// go forward to the first empty transcription
 			int p = 0;
@@ -303,8 +348,9 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	public void saveTrl(File file) {
 		try {
 			BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+			curFile = file;
 			for (int i = 0; i < listModel.getSize(); ++i)
-				bw.append(listModel.get(i).toString() + "\n");
+				bw.append(((Turn) listModel.get(i)).toFinalString() + "\n");
 			bw.close();
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, e.toString(), "An exception ocurred while writing turn file!", JOptionPane.ERROR_MESSAGE);
@@ -313,7 +359,9 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	
 	public void windowClosing(WindowEvent arg0) {
 		// prevent an accidental close of the program
-		System.exit(0);
+		if (JOptionPane.showConfirmDialog(this, "Are you sure? Did you save your transcription?", "Alert", JOptionPane.YES_NO_OPTION)
+				== JOptionPane.YES_OPTION)
+			System.exit(0);
 	}
 	
 	// un-used event listeners
