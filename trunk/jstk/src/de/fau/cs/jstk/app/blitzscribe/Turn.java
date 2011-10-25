@@ -49,7 +49,7 @@ public class Turn {
 			int ms1 = Integer.parseInt(ss);
 			int ms2 = Integer.parseInt(se);
 			
-			DecimalFormat twoDForm = new DecimalFormat("#.##");
+			DecimalFormat twoDForm = new DecimalFormat("000.00");
 	        return twoDForm.format((double) (ms2 - ms1) / 1000 );
 		} catch (Exception e) {
 			System.err.println(e.toString());
