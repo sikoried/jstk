@@ -823,6 +823,9 @@ public abstract class FileVisualizer extends VisualComponent implements
 		  //scrollbar.setValue((int) xMin); // order of setValue and setVisible
 		  //scrollbar.setVisibleAmount(visibleSamples); // important!
 		}
+		
+		draw();
+		repaint();
 	}
 	
 	public void mouseMoved(Object sender, int sample) {

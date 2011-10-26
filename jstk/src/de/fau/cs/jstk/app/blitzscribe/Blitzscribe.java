@@ -122,8 +122,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 					next();
 					if (!e.isShiftDown())
 						play();
-				} 
-				else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE && e.isShiftDown()) {
+				} else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE && e.isShiftDown()) {
 					prev();
 					e.consume();
 				} else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
@@ -146,7 +145,8 @@ public class Blitzscribe extends JFrame implements WindowListener {
 						save();
 						display(pos);
 					}
-				}
+				} else
+					tfTranscription.requestFocus();
 			}
 		});
 		
@@ -157,6 +157,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 				int r = fc.showOpenDialog(Blitzscribe.this);
 				if (r == JFileChooser.APPROVE_OPTION)
 					loadTrl(fc.getSelectedFile());
+				tfTranscription.requestFocus();
 			}
 		});
 		
@@ -164,6 +165,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			public void actionPerformed(ActionEvent e) {
 				if (curFile != null)
 					saveTrl(Blitzscribe.this.curFile);
+				tfTranscription.requestFocus();
 			}
 		});
 		
@@ -172,6 +174,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 				int r = fc.showOpenDialog(Blitzscribe.this);
 				if (r == JFileChooser.APPROVE_OPTION)
 					saveTrl(fc.getSelectedFile());
+				tfTranscription.requestFocus();
 			}
 		});
 		
