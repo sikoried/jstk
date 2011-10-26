@@ -15,13 +15,13 @@ public class Turn {
 			text = "";
 		} else {
 			file = line.substring(0, p);
-			text = line.substring(p);
+			text = line.substring(p).trim();
 		}
 	}
 	
 	public Turn(String file, String text) {
 		this.file = file;
-		this.text = (text == null ? "" :  text);
+		this.text = (text == null ? "" :  text.trim());
 	}
 	
 	public String getShortName() {
