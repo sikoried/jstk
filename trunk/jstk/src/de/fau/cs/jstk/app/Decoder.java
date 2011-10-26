@@ -107,6 +107,7 @@ public class Decoder {
 		
 		double wip = 0.01;
 		double lmwt = 10.;
+		@SuppressWarnings("unused")
 		float silprob = 0.05f;
 		Mode mode = Mode.WORD;
 		int n = 1;
