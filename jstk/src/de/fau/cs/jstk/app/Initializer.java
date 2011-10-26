@@ -95,7 +95,7 @@ public class Initializer {
 			+ "                     then switch to the next (and loop once all are visited)\n"
 			+ "    random[_<n>]     : Put the next <n> samples to a random Gaussian. If one\n"
 			+ "                     Gaussian remains w/o observations, the largest cluster\n"
-			+ "                     is split."
+			+ "                     is split.\n"
 			+ "    uniform        : Distribute the samples uniformly, in the sequence read.\n";
 
 	public static void main(String[] args) throws Exception {
