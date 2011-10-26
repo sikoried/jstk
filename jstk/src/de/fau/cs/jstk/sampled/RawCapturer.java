@@ -187,7 +187,8 @@ public class RawCapturer implements Runnable, LineListener{
 		this.activeSleepRatio = activeSleepRatio;
 	}
 	
-	public void start(){
+	
+	public void startCapture(){
 		Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread(){
 			public void run() {
 				
@@ -413,7 +414,7 @@ public class RawCapturer implements Runnable, LineListener{
 		// And the latter from time to time refuses to put out anything
 		//capturer.enableStressTest(0.99);
 
-		capturer.start();		
+		capturer.startCapture();		
 		
 		// i.e. forever, unless interrupted (see addShutdownHook of RawCapturer)
 		capturer.join();
