@@ -31,8 +31,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Scanner;
+
+import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
@@ -529,19 +532,56 @@ public final class Mixture {
 		return dist;
 	}
 	
-	public Mixture marginalize(int first, int last) {
+	public Mixture marginalize(boolean [] keep) {
+				
+		if (keep.length != fd)
+			throw new IllegalArgumentException("dimension mismatch (keep.length = " + keep.length + " != fd = " + fd);
 		
-		if (last >= fd || last < first || first < 0)
-			throw new IllegalArgumentException("feature range " + first + " to " + last + " is invalid (dim = " + fd + ")!");		
+	    int dim = 0;
+	    for (boolean value : keep)
+	    	if (value)
+	    		dim++;	    		
 	
-		Mixture m = new Mixture(last - first + 1, nd, diagonal);
+		Mixture m = new Mixture(dim, nd, diagonal);
 		
 		int i;
 		for (i = 0; i < nd; i++)
-			m.components[i] = components[i].marginalize(first, last);		
+			m.components[i] = components[i].marginalize(keep);		
 		
 		return m;
 	}
+	
+	/**
+	 * return a marginalized version of this density;
+	 * marginalized over all dimensions from first...last 
+	 * (or all dimensions *except* first...last, if keepInterval is true)
+	 * 
+	 * @param first
+	 * @param last
+	 * @param keepInterval
+	 * @return the new density
+	 */
+	public Mixture marginalizeInverval(int first, int last, boolean keepInterval){
+		boolean [] keep = new boolean[fd];
+		
+		Arrays.fill(keep, false);
+			
+		int i;
+		
+		if (keepInterval){
+			for (i = first; i <= last; i++)
+				keep[i] = true;			
+		}
+		else{
+			for (i = 0; i < first; i++)
+				keep[i] = true;
+			for (i = last + 1; i < fd; i++)
+				keep[i] = true;
+		}
+		return marginalize(keep);
+		
+	}
+	
 	
 	/**
 	 * Compute the approximate Kullback-Leibler statistics using this mixture as
@@ -588,7 +628,10 @@ public final class Mixture {
 		"    whitespace. Each output frame consists of the overall mixture score followed by the\n" +
 		"    individual component scores without the priors.\n" +
 		"  l <codebook> [in-out-list]\n" +
-		"    like e, but just write the total log-likelihood for the whole mixture.\n" +		
+		"    like e, but just write the total log-likelihood for the whole mixture.\n" +
+		"  ml first last <codebook> [in-out-list]\n" +
+		"    write the total log-likelihood for the whole mixture for: all dimensions,\n" +
+		"    dimensions first through last, and all dimensions except first through last.\n" +
 		"  E <codebook> <wt-ascii> [in-out-list]\n" + 
 		"    Same as 'e', but use mixture weights in ascii file\n" +
 		"  s <pmc> [in-out-list | in-list out-file | [< in > out]]\n" +
@@ -601,9 +644,12 @@ public final class Mixture {
 		"    Transform the means of the mixture density using the MNAP projection matrix; use 0 for full\n" +
 		"    rank projection.\n" +
 		"  m <first> <last> < in-codebook > out-codebook\n" +
+		"    Marginalize codebook over all dimensions from <first> to <last>.\n" +
+		"  M <first> <last> < in-codebook > out-codebook\n" +
 		"    Marginalize codebook over all dimensions except <first> to <last>.";
 	
-	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, SV, MNAP, AKL, AKL2, MARGINALIZE};
+	
+	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, EVALUATE_MARGINALS, SV, MNAP, AKL, AKL2, MARGINALIZE};
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length < 1) {
@@ -616,6 +662,7 @@ public final class Mixture {
 		Mode mode = Mode.DISPLAY;
 		String weightfile = null;
 		boolean justLogAcc = false;
+		boolean marginalizeKeepInterval = false;
 		
 		if (smode.equals("d"))
 			mode = Mode.DISPLAY;
@@ -628,6 +675,9 @@ public final class Mixture {
 		else if (smode.equals("l")){
 			mode = Mode.EVALUATE;
 			justLogAcc = true;
+		}
+		else if (smode.equals("ml")){
+			mode = Mode.EVALUATE_MARGINALS;
 		}
 		else if (smode.equals("E")) {
 			mode = Mode.EVALUATE;
@@ -642,6 +692,10 @@ public final class Mixture {
 			mode = Mode.AKL2;
 		else if (smode.equals("m"))
 			mode = Mode.MARGINALIZE;
+		else if (smode.equals("M")){
+			mode = Mode.MARGINALIZE;
+			marginalizeKeepInterval = true;
+		}
 		else {
 			System.err.println("MixtureDensity.main(): Unknown mode \"" + smode + "\"");
 			System.exit(1);
@@ -748,6 +802,89 @@ public final class Mixture {
 			
 			break;
 		}
+//		case EVALUATE_MARGINALS: TODO{
+//			// read codebook
+//			int first = Integer.parseInt(args[1]);
+//			int last = Integer.parseInt(args[2]);
+//			Mixture cb = Mixture.readFromFile(new File(args[3]));
+//			Mixture cb_marg = cb.marginalizeInverval(first, last, false);
+//			Mixture cb_marg_complement = cb.marginalizeInverval(first, last, true);			
+//			
+//			// buffers
+//			double [] x = new double [cb.fd];
+//			double [] x_marg = new double [last - first + 1];
+//			double [] x_marg_complement = new double [cb.fd - (x_marg.length)];
+//			double [] l = new double [1];
+//			
+//			LinkedList<String> inlist = new LinkedList<String>();
+//			LinkedList<String> outlist = new LinkedList<String>();
+//			
+//			if (args.length == 4){
+//				// read and write from stdin
+//				inlist.add(null);
+//				outlist.add(null);
+//			} else if (args.length == 5) {
+//				// read list
+//				BufferedReader lr = new BufferedReader(new FileReader(args[4]));
+//				String line = null;
+//				int i = 1;
+//				while ((line = lr.readLine()) != null) {
+//					String [] help = line.split("\\s+");
+//					if (help.length != 2)
+//						throw new Exception("list file is broken at line " + i);
+//					inlist.add(help[0]);
+//					outlist.add(help[1]);
+//					i++;
+//				}
+//			} else {
+//				System.err.println("MixtureDensity.main(): Invalid number of parameters (" + args.length + ")!");
+//				System.exit(1);
+//			}
+//			
+//			// process files
+//			while (inlist.size() > 0) {
+//				FrameInputStream reader = new FrameInputStream(new File(inlist.remove()));
+//				FrameOutputStream writer;
+//				
+//				writer = new FrameOutputStream(3, new File(outlist.remove()));				
+//				
+//				// read, evaluate, write
+//				while (reader.read(x)) {
+//					
+//					// marginalize feature vectors:
+//					// - first to last
+//					System.arraycopy(x, first, x_marg, 0, x_marg.length);
+//					// - complement:
+//					System.arraycopy(x, 0, x_marg_complement, 0, first);
+//					System.arraycopy(x, last + 1, x_marg_complement, first, x.length - (last + 1));
+//					
+//					// check
+//					{
+//						int i;
+//						for (i = 0; i < x_marg.length; i++)
+//							Assert.assertEquals(x_marg[i], x[first + i]);
+//
+//						for (i = 0; i < first; i++)
+//							Assert.assertEquals(x_marg_complement[i], x[i]);
+//						for (; i< x_marg_complement.length; i++)
+//							Assert.assertEquals(x_marg_complement[i], x[last + i-first]);
+//					}
+//
+//					double totalProb = cb.evaluate(x);
+//
+//					l[0] = cb.logscore;
+//
+//					writer.write(l);
+//
+//
+//				}
+//				
+//				reader.close();
+//				writer.close();
+//			}
+//			
+//			break;
+//		}
 		case SV: {
 			if (args.length < 2) {
 				System.err.println("MixtureDensity.main(): no pmc var set!");
@@ -916,7 +1053,7 @@ public final class Mixture {
 			int last = Integer.parseInt(args[2]);
 			
 			Mixture old = new Mixture(System.in);
-			Mixture m = old.marginalize(first, last);
+			Mixture m = old.marginalizeInverval(first, last, marginalizeKeepInterval);
 			
 			m.write(System.out);			
 			

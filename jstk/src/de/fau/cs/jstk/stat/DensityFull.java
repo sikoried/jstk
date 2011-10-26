@@ -279,32 +279,54 @@ public final class DensityFull extends Density {
 	}
 
 	@Override
-	public DensityFull marginalize(int first, int last) {
+	public DensityFull marginalize(boolean [] keep) {
 		
-		
-		if (last >= fd || last < first || first < 0)
-			throw new IllegalArgumentException("feature range " + first + " to " + last + " is invalid (dim = " + fd + ")!");		
+		if (keep.length != fd)
+			throw new IllegalArgumentException("dimension mismatch (keep.length = " + keep.length + " != fd = " + fd);
 				
-		DensityFull d = new DensityFull(last - first + 1);
-		
-		// construct the redundant symmetrical form of the covariance matrix
-		double [][] help = new double [fd][fd];
-		int i, j, k = 0;
+		int dim = 0;
+	    for (boolean value : keep)
+	    	if (value)
+	    		dim++;
+	    		
+		DensityFull d = new DensityFull(dim);
+
+   		double [] mueNew = new double[dim];
+
+   		// marginalize mu
+   		int i, j, k, l;
+   		for (i = j = 0; i < fd; i++)
+   			if (keep[i]){
+   				mueNew[j] = mue[i];
+   				j++;
+   			}
+
+	    		
+		// construct the redundant symmetrical form of the original covariance matrix
+		double [][] help = new double [fd][fd];		
+		k = 0;
 		for (i = 0; i < fd; ++i) {
 			for (j = 0; j <= i; ++j)
 				help[i][j] = help[j][i] = cov[k++];
 		}		
 		
-		// marginalize
-		double [] newCov = new double [d.fd * (d.fd + 1) / 2];
+		// marginalize cov (packed storage)
+		double [] newCov = new double [dim * (dim + 1) / 2];
+		
 		k = 0;
-		for (i = first; i <= last; i++)
-			for (j = first; j <= i; j++)
-				newCov[k++] = help[i][j];		
+		for (i = 0; i < fd; i++)
+			if (keep[i]){
+				for (j = 0; j <= i; j++){
+					if (keep[j]){
+						newCov[k++] = help[i][j];
+					}					
+				}
+			}
+
 		Assert.assertEquals(d.cov.length, k);
 		
 		d.fill(apr,  
-				Arrays.copyOfRange(mue, first, last + 1),
+				mueNew,				
 				newCov);		
 		return d;
 	}

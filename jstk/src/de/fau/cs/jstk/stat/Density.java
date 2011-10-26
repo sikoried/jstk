@@ -488,12 +488,12 @@ public abstract class Density {
 	}
 
 	/**
-	 * return a marginalized version of this density
-	 * (marginalized over all dimensions except first...last)
-	 * 
-	 * @param first
-	 * @param last
+	 * return a marginalized version of this density.
+	 * Marginalization is done over all dimensions j for which keep[j] is false
+	 * @param keep
 	 * @return
 	 */
-	public abstract Density marginalize(int first, int last);
+	public abstract Density marginalize(boolean [] keep);
+	
+
 }
