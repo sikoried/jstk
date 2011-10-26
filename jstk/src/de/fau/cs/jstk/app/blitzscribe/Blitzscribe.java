@@ -77,7 +77,8 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		"[ENTER] Go to next segment and start playback\n" +
 		"[SHIFT+ENTER] Same as [ENTER], but don't start playback\n" +
 		"[SHIFT+BACKSPACE] Go to previous segment\n" +
-		"[CTRL+SPACE] Start/pause/resume audio playback\n\n" +
+		"[CTRL+SPACE] Start/pause/resume audio playback\n" +
+		"[CTRL+BACKSPACE] Restart playback from beginning\n\n" +
 		"Furthermore, double-click into the progress bar above the transcription\n" +
 		"field to jump to a certain part of the segment.";
 	
@@ -116,8 +117,6 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		
 		liFileList.setModel(listModel);
 		liFileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		
-		// loadTrl(new File("/net/speechdata/LMELectures/segmented/20090427-Hornegger-PA01/20090427-Hornegger-PA01.trl"));
 	}
 	
 	private void initUI() {
@@ -140,6 +139,9 @@ public class Blitzscribe extends JFrame implements WindowListener {
 					e.consume();
 				} else if (e.getKeyCode() == KeyEvent.VK_SPACE && e.isControlDown()) {
 					play();
+					e.consume();
+				} else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE && e.isControlDown()) {
+					ap.play(0);
 					e.consume();
 				}
 			}
@@ -359,7 +361,13 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			// set up protocol file (append for existing files
 			if (logw != null)
 				logw.close();
-			logw = new BufferedWriter(new FileWriter(new File(file.getAbsoluteFile() + "~"), true));
+			
+			try {
+				logw = new BufferedWriter(new FileWriter(new File(file.getAbsoluteFile() + "~"), true));
+			} catch (Exception e) {
+				System.err.println("Could not write temp file!");
+				logw = null;
+			}
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, e.toString(), "An exception ocurred while loading turn file!", JOptionPane.ERROR_MESSAGE);
 		}

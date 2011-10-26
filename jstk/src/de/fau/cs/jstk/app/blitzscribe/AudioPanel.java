@@ -19,6 +19,7 @@ import de.fau.cs.jstk.sampled.AudioFileReader;
 import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.sampled.ThreadedPlayer;
 import de.fau.cs.jstk.sampled.ThreadedPlayer.ProgressListener;
+import de.fau.cs.jstk.vc.VisualizerSpeechSignal;
 
 public class AudioPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
@@ -29,12 +30,24 @@ public class AudioPanel extends JPanel {
 	private JProgressBar progressBar = new JProgressBar();
 	private ProgressListener progressListener;
 	
+	private VisualizerSpeechSignal vss = new VisualizerSpeechSignal("", bas);
+	
 	public AudioPanel() {
 		super();
 		
 		setLayout(new GridBagLayout());
 		GridBagConstraints c = new GridBagConstraints();
 	
+		// set up visualizer
+		vss.border_left = 0;
+		vss.border_right = 0;
+		vss.border_bottom = 0;
+		vss.border_top = 0;
+				
+		vss.showCursorX = true;
+		vss.yMax =  0.25;
+		vss.yMin = -0.25;
+		
 		
 		progressListener = new ProgressListener() {
 			private int count = 0;
@@ -69,31 +82,61 @@ public class AudioPanel extends JPanel {
 					int sample = (int)((double) bas.getBufferSize() * e.getX() / progressBar.getWidth());
 					
 					progressListener.resetCount();
+										
+					play(sample);
 					progressListener.bytesPlayed(sample*2);
+				}
+			}
+		});
+		
+		vss.addMouseListener(new MouseListener() {
+			public void mouseReleased(MouseEvent e) { }
+			public void mousePressed(MouseEvent e) { }
+			public void mouseExited(MouseEvent e) { }
+			public void mouseEntered(MouseEvent e) { }
+
+			public void mouseClicked(MouseEvent e) {
+				if (e.getClickCount() > 1) {
+					if (bas == null)
+						return;
+					
+					int sample = (int)((double) bas.getBufferSize() * e.getX() / vss.getWidth());
+					
+					progressListener.resetCount();
 					
 					play(sample);
+					progressListener.bytesPlayed(sample*2);
+					e.consume();
 				}
 			}
 		});
 	
+		vss.setPreferredSize(new Dimension(100, 150));
 		progressBar.setPreferredSize(new Dimension(100, 30));
-		c.fill = GridBagConstraints.BOTH; c.weightx = 1.0; c.weighty = 1.0; 
-		c.gridx = 0; c.gridy = 2; add(progressBar, c);
+		
+		c.fill = GridBagConstraints.BOTH; c.weightx = 1.0;
+		c.weighty = 0.8; c.gridx = 0; c.gridy = 0; add(vss, c);
+		c.weighty = 0.2; c.gridx = 0; c.gridy = 1; add(progressBar, c);
+		
 	}
 	
 	public void setAudioFile(File file) throws IOException, UnsupportedAudioFileException {
 		try {
 			stop();
-
+			
 			// set up audio
-			System.err.println("setting up buffered audio source");
 			as = new AudioFileReader(file.getAbsolutePath(), true);
 			as.setPreEmphasis(false, 0);
 			bas = new BufferedAudioSource(as);
 			
 			// active wait till buffer is full
 			while(bas.stillReading)
-				Thread.sleep(100);
+				Thread.sleep(10);
+			
+			// update the visualizer
+			vss.xPerPixel = (double) bas.getBufferSize() / vss.getWidth();
+			vss.setBufferedAudioSource(bas);
+			vss.repaint();
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, e.getMessage(), "IO error",
 					JOptionPane.ERROR_MESSAGE);
