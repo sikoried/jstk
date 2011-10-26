@@ -22,7 +22,6 @@
 package de.fau.cs.jstk.stat;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Scanner;
 
 import junit.framework.Assert;
@@ -294,7 +293,7 @@ public final class DensityFull extends Density {
    		double [] mueNew = new double[dim];
 
    		// marginalize mu
-   		int i, j, k, l;
+   		int i, j, k;
    		for (i = j = 0; i < fd; i++)
    			if (keep[i]){
    				mueNew[j] = mue[i];
