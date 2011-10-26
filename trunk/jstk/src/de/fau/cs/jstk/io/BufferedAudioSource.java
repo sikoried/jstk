@@ -20,7 +20,6 @@
 package de.fau.cs.jstk.io;
 
 import java.io.IOException;
-import java.util.ListIterator;
 import java.util.Vector;
 
 import de.fau.cs.jstk.sampled.AudioCapture;
@@ -83,7 +82,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 
 	private boolean stopRequest = false;
 
-	public boolean stillReading = false;
+	public boolean stillReading = true;
 
 	/**
 	 * Gets a new Buffer for the AudioSource file that provides all its values.
@@ -489,21 +488,19 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	}
 
 	public void addBufferListener(AudioBufferListener listener) {
-		synchronized(audioBufferListeners) {
+		synchronized (audioBufferListeners) {
+			// avoid double insertions
+			for (AudioBufferListener abl : audioBufferListeners)
+				if (abl == listener)
+					return;
 			audioBufferListeners.add(listener);
 		}
 	}
 
 	public void informAudioBufferListeners() {
 		synchronized (audioBufferListeners) {
-			ListIterator<AudioBufferListener> iterator = audioBufferListeners
-					.listIterator();
-			// System.err.println("Informing audio buffer listeners: " +
-			// numSamples);
-			while (iterator.hasNext()) {
-				AudioBufferListener listener = iterator.next();
-				listener.newSamplesAvailable(numSamples);
-			}
+			for (AudioBufferListener abl : audioBufferListeners)
+				abl.newSamplesAvailable(numSamples);
 		}
 	}
 
