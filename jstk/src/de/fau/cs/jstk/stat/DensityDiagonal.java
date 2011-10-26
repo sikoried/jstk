@@ -22,7 +22,6 @@
 package de.fau.cs.jstk.stat;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Scanner;
 
 import junit.framework.Assert;
@@ -247,7 +246,8 @@ public final class DensityDiagonal extends Density {
 	    		covNew[j] = cov[i];
 	    		j++;
 	    	}
-	    Assert.assertEquals(dim, j);
+	    if (dim != j)
+	    	throw new Error("implementation error");
 		
 	    
 	    		

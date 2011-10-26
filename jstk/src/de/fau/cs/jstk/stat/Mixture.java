@@ -35,8 +35,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-import junit.framework.Assert;
-
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.app.MNAP;
@@ -802,89 +800,114 @@ public final class Mixture {
 			
 			break;
 		}
-//		case EVALUATE_MARGINALS: TODO{
-//			// read codebook
-//			int first = Integer.parseInt(args[1]);
-//			int last = Integer.parseInt(args[2]);
-//			Mixture cb = Mixture.readFromFile(new File(args[3]));
-//			Mixture cb_marg = cb.marginalizeInverval(first, last, false);
-//			Mixture cb_marg_complement = cb.marginalizeInverval(first, last, true);			
-//			
-//			// buffers
-//			double [] x = new double [cb.fd];
-//			double [] x_marg = new double [last - first + 1];
-//			double [] x_marg_complement = new double [cb.fd - (x_marg.length)];
-//			double [] l = new double [1];
-//			
-//			LinkedList<String> inlist = new LinkedList<String>();
-//			LinkedList<String> outlist = new LinkedList<String>();
-//			
-//			if (args.length == 4){
-//				// read and write from stdin
-//				inlist.add(null);
-//				outlist.add(null);
-//			} else if (args.length == 5) {
-//				// read list
-//				BufferedReader lr = new BufferedReader(new FileReader(args[4]));
-//				String line = null;
-//				int i = 1;
-//				while ((line = lr.readLine()) != null) {
-//					String [] help = line.split("\\s+");
-//					if (help.length != 2)
-//						throw new Exception("list file is broken at line " + i);
-//					inlist.add(help[0]);
-//					outlist.add(help[1]);
-//					i++;
-//				}
-//			} else {
-//				System.err.println("MixtureDensity.main(): Invalid number of parameters (" + args.length + ")!");
-//				System.exit(1);
-//			}
-//			
-//			// process files
-//			while (inlist.size() > 0) {
-//				FrameInputStream reader = new FrameInputStream(new File(inlist.remove()));
-//				FrameOutputStream writer;
-//				
-//				writer = new FrameOutputStream(3, new File(outlist.remove()));				
-//				
-//				// read, evaluate, write
-//				while (reader.read(x)) {
-//					
-//					// marginalize feature vectors:
-//					// - first to last
-//					System.arraycopy(x, first, x_marg, 0, x_marg.length);
-//					// - complement:
-//					System.arraycopy(x, 0, x_marg_complement, 0, first);
-//					System.arraycopy(x, last + 1, x_marg_complement, first, x.length - (last + 1));
-//					
-//					// check
+		case EVALUATE_MARGINALS: {
+			// read codebook
+			if (args.length != 4 && args.length != 5){
+				throw new IllegalArgumentException("MixtureDensity.main(): Invalid number of parameters (" + args.length + ")!");
+			}
+			
+			int first = Integer.parseInt(args[1]);
+			int last = Integer.parseInt(args[2]);
+			Mixture cb = Mixture.readFromFile(new File(args[3]));
+
+
+			Mixture cb_marg = cb.marginalizeInverval(first, last, true);			
+			Mixture cb_marg_complement = cb.marginalizeInverval(first, last, false);
+			
+			// buffers
+			double [] x = new double [cb.fd];
+			double [] x_marg_complement = new double [last - first + 1];
+			double [] x_marg = new double [cb.fd - (x_marg_complement.length)];						
+			double [] l = new double [3];
+			
+			LinkedList<String> inlist = new LinkedList<String>();
+			LinkedList<String> outlist = new LinkedList<String>();
+			
+			if (args.length == 4){
+				// read and write from stdin
+				inlist.add(null);
+				outlist.add(null);
+			} else if (args.length == 5) {
+				// read list
+				BufferedReader lr = new BufferedReader(new FileReader(args[4]));
+				String line = null;
+				int i = 1;
+				while ((line = lr.readLine()) != null) {
+					String [] help = line.split("\\s+");
+					if (help.length != 2)
+						throw new Exception("list file is broken at line " + i);
+					inlist.add(help[0]);
+					outlist.add(help[1]);
+					i++;
+				}
+			}
+			
+			// process files
+			while (inlist.size() > 0) {
+				FrameInputStream reader = new FrameInputStream(new File(inlist.remove()));
+				FrameOutputStream writer;
+				
+				writer = new FrameOutputStream(3, new File(outlist.remove()));				
+				
+				// read, evaluate, write
+				while (reader.read(x)) {
+					
+					// marginalize feature vectors:
+					// - first to last
+					System.arraycopy(x, first, x_marg_complement, 0, x_marg_complement.length);
+					// - complement:
+					System.arraycopy(x, 0, x_marg, 0, first);
+					System.arraycopy(x, last + 1, x_marg, first, x.length - (last + 1));
+					
+//					System.err.println("x:");
+//					for (double val : x){
+//						System.err.println(val);
+//					}
+//					System.err.println("x_marg:");
+//					for (double val : x_marg){
+//						System.err.println(val);
+//					}
+//					System.err.println("x_marg_complement:");
+//					for (double val : x_marg_complement){
+//						System.err.println(val);						
+//					}					
+					
+					// check
 //					{
 //						int i;
 //						for (i = 0; i < x_marg.length; i++)
-//							Assert.assertEquals(x_marg[i], x[first + i]);
+//							if (x_marg[i] != x[first + i])
+//								throw new Error("implementation error");
 //
 //						for (i = 0; i < first; i++)
-//							Assert.assertEquals(x_marg_complement[i], x[i]);
+//							if (x_marg_complement[i] != x[i])
+//								throw new Error("implementation error");
 //						for (; i< x_marg_complement.length; i++)
-//							Assert.assertEquals(x_marg_complement[i], x[last + i-first]);
+//							if (x_marg_complement[i] != x[last + 1 + i-first])
+//								throw new Error("implementation error");
 //					}
-//
-//					double totalProb = cb.evaluate(x);
-//
-//					l[0] = cb.logscore;
-//
-//					writer.write(l);
-//
-//
-//				}
-//				
-//				reader.close();
-//				writer.close();
-//			}
-//			
-//			break;
-//		}
+
+					cb.evaluate(x);
+					l[0] = cb.logscore;
+
+					System.err.println("cb_marg:" + cb_marg_complement.fd);
+					cb_marg_complement.evaluate(x_marg_complement);
+					l[1] = cb_marg_complement.logscore;
+					
+					System.err.println("cb_marg_complement:" + cb_marg.fd);
+					cb_marg_complement.evaluate(x_marg);
+					l[2] = cb_marg.logscore;					
+
+					writer.write(l);
+
+				}
+				
+				reader.close();
+				writer.close();
+			}
+			
+			break;
+		}
 		case SV: {
 			if (args.length < 2) {
 				System.err.println("MixtureDensity.main(): no pmc var set!");
