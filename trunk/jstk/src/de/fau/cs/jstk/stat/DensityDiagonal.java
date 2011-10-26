@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import junit.framework.Assert;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -223,16 +225,35 @@ public final class DensityDiagonal extends Density {
 	}
 
 	@Override
-	public DensityDiagonal marginalize(int first, int last) {
+	public DensityDiagonal marginalize(boolean [] keep) {
 
-		if (last >= fd || last < first || first < 0)
-			throw new IllegalArgumentException("feature range " + first + " to " + last + " is invalid (dim = " + fd + ")!");		
-			
-		DensityDiagonal d = new DensityDiagonal(last - first + 1);
-	
-		d.fill(apr,  
-				Arrays.copyOfRange(mue, first, last + 1),
-				Arrays.copyOfRange(cov, first, last + 1));				
+		if (keep.length != fd)
+			throw new IllegalArgumentException("dimension mismatch (keep.length = " + keep.length + " != fd = " + fd);
+				
+		int dim = 0;
+	    for (boolean value : keep)
+	    	if (value)
+	    		dim++;
+	    		
+		DensityDiagonal d = new DensityDiagonal(dim);
+	    		
+	    double [] mueNew = new double[dim];
+	    double [] covNew = new double[dim];
+	    		
+	    int i, j;
+	    for (i = j = 0; i < fd; i++)
+	    	if (keep[i]){
+	    		mueNew[j] = mue[i];
+	    		covNew[j] = cov[i];
+	    		j++;
+	    	}
+	    Assert.assertEquals(dim, j);
+		
+	    
+	    		
+		d.fill(apr,
+				mueNew,
+				covNew);				
 
 		return d;
 	}
