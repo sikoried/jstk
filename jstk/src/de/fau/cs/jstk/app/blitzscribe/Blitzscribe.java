@@ -53,11 +53,13 @@ import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 /**
- * A simplistic tool for very fast (utterance level) transcription of large 
- * speech data; inspired by Blitzscribe [1].
+ * A simplistic tool for very fast (utterance level) transcription of large
+ * amounts of speech data; inspired by Blitzscribe [1].
  * 
- * The .trl to read/write contains lines as "turn-file.wav [transcription"; the
+ * The .trl to read/write contains lines as "turn-file.wav [transcription]"; the
  * file names must not contain whitespace as these are used to split the string.
+ * If the file name has _MSECSTART_MSECEND[.wav] timeing information in the end,
+ * the GUI will display segment lengths instead of file names.
  * 
  * [1] B. Roy and D. Roy (2009). Fast transcription of unstructured audio 
  *     recordings. Proc. Annual Conference of the Int'l Speech Communication 
@@ -69,9 +71,20 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class Blitzscribe extends JFrame implements WindowListener {
 	private static final long serialVersionUID = 1L;
 
+	private static final String USAGE =
+		"After loading a transcription file, use the following key short cuts\n" +
+		"to control Blitzscribe:\n\n" +
+		"[ENTER] Go to next segment and start playback\n" +
+		"[SHIFT+ENTER] Same as [ENTER], but don't start playback\n" +
+		"[SHIFT+BACKSPACE] Go to previous segment\n" +
+		"[CTRL+SPACE] Start/pause/resume audio playback\n\n" +
+		"Furthermore, double-click into the progress bar above the transcription\n" +
+		"field to jump to a certain part of the segment.";
+	
 	private JButton btnOpen = new JButton("Open");
 	private JButton btnSave = new JButton("Save");
 	private JButton btnSaveAs = new JButton("Save as...");
+	private JButton btnHelp = new JButton("Help!");
 	
 	private JTextField tfTranscription = new JTextField();
 	
@@ -104,7 +117,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		liFileList.setModel(listModel);
 		liFileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		
-		loadTrl(new File("/net/speechdata/LMELectures/segmented/20090427-Hornegger-PA01/20090427-Hornegger-PA01.trl"));
+		// loadTrl(new File("/net/speechdata/LMELectures/segmented/20090427-Hornegger-PA01/20090427-Hornegger-PA01.trl"));
 	}
 	
 	private void initUI() {
@@ -178,6 +191,13 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			}
 		});
 		
+		btnHelp.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showMessageDialog(Blitzscribe.this, USAGE, "How to use this Blitzscribe", JOptionPane.PLAIN_MESSAGE);
+				tfTranscription.requestFocus();
+			}
+		});
+		
 		// button short cuts
 		btnOpen.setMnemonic(KeyEvent.VK_O);
 		btnSave.setMnemonic(KeyEvent.VK_S);
@@ -186,22 +206,23 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		c.gridx = 0; c.gridy = 0; root.add(btnOpen, c);
 		c.gridx = 1; c.gridy = 0; root.add(btnSave, c);
 		c.gridx = 2; c.gridy = 0; root.add(btnSaveAs, c);
+		c.gridx = 3; c.gridy = 0; root.add(btnHelp, c);
 		double old = c.weightx;
-		c.gridx = 3; c.gridy = 0; c.weightx = 1.0; c.fill = GridBagConstraints.HORIZONTAL; root.add(new JPanel(), c);
+		c.gridx = 4; c.gridy = 0; c.weightx = 1.0; c.fill = GridBagConstraints.HORIZONTAL; root.add(new JPanel(), c);
 		c.weightx = old;
 		
 		
 		// audio panel
-		c.gridx = 0; c.gridy = 1; c.gridwidth = 4; root.add(ap, c);
+		c.gridx = 0; c.gridy = 1; c.gridwidth = 5; root.add(ap, c);
 		
 		// transcription panel
 		c.weightx = 1.0; 
-		c.gridx = 0; c.gridy = 2; c.gridwidth = 4; root.add(tfTranscription, c);
+		c.gridx = 0; c.gridy = 2; c.gridwidth = 5; root.add(tfTranscription, c);
 		
 		// the available list
 		JScrollPane sp = new JScrollPane(liFileList);
 		c.weightx = 1.0; c.weighty = 1.0;
-		c.gridx = 0; c.gridy = 3; c.gridwidth = 4; c.fill = GridBagConstraints.BOTH; root.add(sp, c);
+		c.gridx = 0; c.gridy = 3; c.gridwidth = 5; c.fill = GridBagConstraints.BOTH; root.add(sp, c);
 		
 		// display
 		setSize(640, 480);
