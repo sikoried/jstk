@@ -4,10 +4,13 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 
 public class Turn {
+	public final int id;
+	
 	public String file;
 	public String text;
 	
-	public Turn(String line) {
+	public Turn(String line, int id) {
+		this.id = id;
 		line = line.trim();
 		int p = line.indexOf(' ');
 		if (p < 0) {
@@ -19,7 +22,8 @@ public class Turn {
 		}
 	}
 	
-	public Turn(String file, String text) {
+	public Turn(String file, String text, int id) {
+		this.id = id;
 		this.file = file;
 		this.text = (text == null ? "" :  text.trim());
 	}
@@ -50,7 +54,8 @@ public class Turn {
 			int ms2 = Integer.parseInt(se);
 			
 			DecimalFormat twoDForm = new DecimalFormat("000.00");
-	        return twoDForm.format((double) (ms2 - ms1) / 1000 );
+			DecimalFormat intFormat = new DecimalFormat("0000");
+	        return intFormat.format(id) + " " + twoDForm.format((double) (ms2 - ms1) / 1000 );
 		} catch (Exception e) {
 			System.err.println(e.toString());
 			return file;

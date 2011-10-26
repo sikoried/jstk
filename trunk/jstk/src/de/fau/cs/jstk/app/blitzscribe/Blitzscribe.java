@@ -333,7 +333,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			int i = 0, j = 0;
 			String l;
 			while ((l = br.readLine()) != null) {
-				Turn t = new Turn (l);
+				Turn t = new Turn (l, i + 1);
 				listModel.addElement(t);
 				i++;
 				if (t.text.length() > 0)
