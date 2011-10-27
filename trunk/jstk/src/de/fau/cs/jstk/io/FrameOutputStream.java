@@ -32,6 +32,8 @@ import java.nio.ByteOrder;
  * Use the FrameOutputStream class to write Frame format data. The format is binary
  * and places a (little endian) int as frame size and subsequent doubles or
  * floats as requested.
+ *
+ * please FIXME: take an OutputStream instead of a File
  * 
  * @author sikoried
  */
