@@ -24,7 +24,6 @@ package de.fau.cs.jstk.stat;
 import java.io.IOException;
 import java.util.Scanner;
 
-import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
