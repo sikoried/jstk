@@ -27,7 +27,7 @@ import java.nio.ByteOrder;
 
 import org.apache.log4j.Logger;
 
-import de.fau.cs.jstk.sampled.filters.BandPassFilter;
+import de.fau.cs.jstk.sampled.filters.Butterworth;
 
 public class SplitbandInversion implements AudioSource {
 	public static Logger logger = Logger.getLogger(SplitbandInversion.class);
@@ -37,7 +37,9 @@ public class SplitbandInversion implements AudioSource {
 	private AudioSource s1, s2;
 
 	private RingModulation rm1, rm2;
-	private BandPassFilter lp1, hp1, lpout1, lpout2;
+	private Butterworth lp1, hp1, lpout1, lpout2;
+	
+	private final int ORDER = 7;
 	
 	public SplitbandInversion(AudioSource s1, AudioSource s2)  {
 		this.s1 = s1;
@@ -46,23 +48,23 @@ public class SplitbandInversion implements AudioSource {
 	
 	public void configure(double splitf, double invf1, double invf2) {
 		if (lp1 == null) {
-			lp1 = new BandPassFilter(s1, 0., splitf, FFT_SIZE);
+			lp1 = new Butterworth(s1, ORDER, splitf, true);
 			rm1 = new RingModulation(lp1, invf1);
-			lpout1 = new BandPassFilter(rm1, 0., invf1, FFT_SIZE);
+			lpout1 = new Butterworth(rm1, ORDER, invf1, true);
 		} else {
-			lp1.setFilterBands(new double [] { 0., splitf });
+			lp1.configure(ORDER, splitf, true);
 			rm1.setFrequency(invf1);
-			lpout1.setFilterBands(new double [] { 0., invf1 });
+			lpout1.configure(ORDER, invf1, true);
 		}
 		
 		if (hp1 == null) {
-			hp1 = new BandPassFilter(s2, splitf, s2.getSampleRate(), FFT_SIZE);
+			hp1 = new Butterworth(s2, ORDER, splitf, false);
 			rm2 = new RingModulation(hp1, invf2);
-			lpout2 = new BandPassFilter(rm2, 0., invf2, FFT_SIZE);
+			lpout2 = new Butterworth(rm2, ORDER, invf2, true);
 		} else {
-			lp1.setFilterBands(new double [] { splitf, (double) s2.getSampleRate() });
-			rm1.setFrequency(invf2);
-			lpout2.setFilterBands(new double [] { 0., invf2 });
+			hp1.configure(ORDER, splitf, false);
+			rm2.setFrequency(invf2);
+			lpout2.configure(ORDER, invf2, true);
 		}
 	}
 	

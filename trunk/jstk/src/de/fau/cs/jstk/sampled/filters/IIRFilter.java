@@ -38,7 +38,7 @@ import de.fau.cs.jstk.sampled.AudioSource;
  */
 public class IIRFilter implements AudioSource {
 
-	private AudioSource source;
+	protected AudioSource source;
 	
 	/** local signal buffer to read from source */
 	private double [] buf = new double [0];
