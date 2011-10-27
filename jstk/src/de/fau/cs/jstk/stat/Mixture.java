@@ -201,6 +201,10 @@ public final class Mixture {
 		score = 0.;
 		logscore = 0.;
 		
+		if (x.length != fd)
+			throw new IllegalArgumentException("x.length = " + x.length + " != codebook dim = " + fd);
+		
+		
 		if (logscoreHelp == null)
 			logscoreHelp = new double[components.length];		
 		int i = 0;
@@ -627,7 +631,7 @@ public final class Mixture {
 		"    individual component scores without the priors.\n" +
 		"  l <codebook> [in-out-list]\n" +
 		"    like e, but just write the total log-likelihood for the whole mixture.\n" +
-		"  ml first last <codebook> [in-out-list]\n" +
+		"  lm first last <codebook> [in-out-list]\n" +
 		"    write the total log-likelihood for the whole mixture for: all dimensions,\n" +
 		"    dimensions first through last, and all dimensions except first through last.\n" +
 		"  E <codebook> <wt-ascii> [in-out-list]\n" + 
@@ -674,7 +678,7 @@ public final class Mixture {
 			mode = Mode.EVALUATE;
 			justLogAcc = true;
 		}
-		else if (smode.equals("ml")){
+		else if (smode.equals("lm")){
 			mode = Mode.EVALUATE_MARGINALS;
 		}
 		else if (smode.equals("E")) {
@@ -808,11 +812,15 @@ public final class Mixture {
 			
 			int first = Integer.parseInt(args[1]);
 			int last = Integer.parseInt(args[2]);
+//			System.err.println("first = " + first);
+//			System.err.println("last = " + last);
 			Mixture cb = Mixture.readFromFile(new File(args[3]));
 
-
-			Mixture cb_marg = cb.marginalizeInverval(first, last, true);			
-			Mixture cb_marg_complement = cb.marginalizeInverval(first, last, false);
+			// marginalized mixtures:
+			// - remove first through last
+			Mixture cb_marg = cb.marginalizeInverval(first, last, false);
+			// - remove all except first through last
+			Mixture cb_marg_complement = cb.marginalizeInverval(first, last, true);
 			
 			// buffers
 			double [] x = new double [cb.fd];
@@ -858,45 +866,15 @@ public final class Mixture {
 					// - complement:
 					System.arraycopy(x, 0, x_marg, 0, first);
 					System.arraycopy(x, last + 1, x_marg, first, x.length - (last + 1));
-					
-//					System.err.println("x:");
-//					for (double val : x){
-//						System.err.println(val);
-//					}
-//					System.err.println("x_marg:");
-//					for (double val : x_marg){
-//						System.err.println(val);
-//					}
-//					System.err.println("x_marg_complement:");
-//					for (double val : x_marg_complement){
-//						System.err.println(val);						
-//					}					
-					
-					// check
-//					{
-//						int i;
-//						for (i = 0; i < x_marg.length; i++)
-//							if (x_marg[i] != x[first + i])
-//								throw new Error("implementation error");
-//
-//						for (i = 0; i < first; i++)
-//							if (x_marg_complement[i] != x[i])
-//								throw new Error("implementation error");
-//						for (; i< x_marg_complement.length; i++)
-//							if (x_marg_complement[i] != x[last + 1 + i-first])
-//								throw new Error("implementation error");
-//					}
 
 					cb.evaluate(x);
 					l[0] = cb.logscore;
 
-					System.err.println("cb_marg:" + cb_marg_complement.fd);
 					cb_marg_complement.evaluate(x_marg_complement);
 					l[1] = cb_marg_complement.logscore;
 					
-					System.err.println("cb_marg_complement:" + cb_marg.fd);
-					cb_marg_complement.evaluate(x_marg);
-					l[2] = cb_marg.logscore;					
+					cb_marg.evaluate(x_marg);
+					l[2] = cb_marg.logscore;
 
 					writer.write(l);
 

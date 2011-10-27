@@ -22,6 +22,7 @@
 package de.fau.cs.jstk.app;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -164,20 +165,34 @@ public class Convert {
 		
 		while (inlist.size() > 0) {
 			// get next file
-			String inFile = inlist.remove(0);
-			String outFile = outlist.remove(0);
+			String inFileName = inlist.remove(0);
+			String outFileName = outlist.remove(0);
 			
-			InputStream in;
-			OutputStream out;
-			if (inFile == null)
+			InputStream in = null;
+			
+			// FIXME: remove as soon as FrameInputStream takes InputStreams
+			File inFile = null;
+			File outFile = null;
+			
+			OutputStream out = null;
+			if (inFileName == null){
 				in = System.in;
-			else
-				in = new FileInputStream(inFile);
+			}
+			else {
+				System.err.println("in: " + inFileName);
+				in = new FileInputStream(inFileName);
+
+				inFile = new File(inFileName);
+			}
 			
-			if (outFile == null)
+			if (outFileName == null)
 				out = System.out;
-			else
-				out = new FileOutputStream(outFile);
+			else {
+				System.err.println("out: " + outFileName);
+				out = new FileOutputStream(outFileName);
+				
+				outFile = new File(outFileName);
+			}
 
 			// possible readers
 			FrameSource fsource = null;
@@ -191,8 +206,8 @@ public class Convert {
 			switch (inFormat) {
 			case SAMPLE_A: ssource = new SampleReader(new InputStreamReader(in)); break;
 			case SAMPLE_B: ssource = new SampleInputStream(in); break;
-			case FRAME: fsource = new FrameInputStream(null); fd = fsource.getFrameSize(); break;
-			case FRAME_DOUBLE: fsource = new FrameInputStream(null, false); fd = fsource.getFrameSize(); break;
+			case FRAME: fsource = new FrameInputStream(inFile); fd = fsource.getFrameSize(); break;
+			case FRAME_DOUBLE: fsource = new FrameInputStream(inFile, false); fd = fsource.getFrameSize(); break;
 			case ASCII: fsource = new FrameReader(new InputStreamReader(in)); fd = fsource.getFrameSize(); break;
 			}
 
@@ -251,12 +266,12 @@ public class Convert {
 					break;
 				case FRAME:
 					if (fdest == null)
-						fdest = new FrameOutputStream(s.x.length);
+						fdest = new FrameOutputStream(s.x.length, outFile);
 					fdest.write(s.x);
 					break;
 				case FRAME_DOUBLE:
 					if (fdest == null)
-						fdest = new FrameOutputStream(s.x.length, false);
+						fdest = new FrameOutputStream(s.x.length, outFile, false);
 					fdest.write(s.x);
 					break;
 				case LFV:
@@ -293,7 +308,7 @@ public class Convert {
 				fdest.close();
 			if (sdest != null)
 				sdest.close();
-
+		
 			out.flush();
 		}
 	}

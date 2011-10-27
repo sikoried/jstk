@@ -31,6 +31,8 @@ import java.nio.ByteOrder;
 /**
  * Read frames from a file or stdin in Frame format.
  * 
+ * please FIXME: take an InputStream instead of a File
+ * 
  * @author sikoried
  */
 public class FrameInputStream implements FrameSource {
