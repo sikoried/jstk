@@ -21,11 +21,18 @@
 */
 package de.fau.cs.jstk.app;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.LinkedList;
 
 import de.fau.cs.jstk.io.FrameDestination;
 import de.fau.cs.jstk.io.FrameInputStream;
@@ -46,8 +53,8 @@ public class Convert {
 	public static final short LABEL_SIZE = 12;
 	
 	public static final String SYNOPSIS = 
-		"Translate between various file formats.\n\n" +
-		"usage: app.Convert in_format out_format < data_in > data_out\n\n" +
+		"Translate between various feature file formats.\n\n" +
+		"usage: app.Convert in_format out_format < data_in > data_out [options]\n\n" +
 		"formats:\n" +
 		"  ufv,dim\n" +
 		"    Unlabeled feature data, 4 byte (float) per sample dimension\n" +
@@ -60,7 +67,11 @@ public class Convert {
 		"    Labeled feature data using the stat.Sample class, either (a)scii or\n" +
 		"    (b)inary. Format is <short:label> <short:classif-result> <float: feature data>\n" +
 		"  ascii\n" +
-		"    Unlabeled ASCII data: TAB separated double values, one sample per line.\n";
+		"    Unlabeled ASCII data: TAB separated double values, one sample per line.\n\n"+
+		"options:\n\n" +
+		"  --in-out-list listfile\n" +
+		"    the list contains lines \"<in-file> <out-file>\" for batch processing\n\n";
+		
 	
 	public static enum Format {
 		UFV,
@@ -100,130 +111,190 @@ public class Convert {
 	}
 	
 	public static void main(String[] args) throws Exception {
-		if (args.length != 2) {
+		if (args.length < 2) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
+
+		LinkedList<String> inlist = new LinkedList<String>();
+		LinkedList<String> outlist = new LinkedList<String>();
+		String listFile = null;
 		
-		// get the formats
+		// get input and output formats
 		Format inFormat = determineFormat(args[0]);
-		Format outFormat = determineFormat(args[1]);
-		
-		// possible readers
-		FrameSource fsource = null;
-		SampleSource ssource = null;
-		
-		
-		// possible writers
-		FrameDestination fdest = null;
-		SampleDestination sdest = null;
-		
-		switch (inFormat) {
-		case SAMPLE_A: ssource = new SampleReader(new InputStreamReader(System.in)); break;
-		case SAMPLE_B: ssource = new SampleInputStream(System.in); break;
-		case FRAME: fsource = new FrameInputStream(null); fd = fsource.getFrameSize(); break;
-		case FRAME_DOUBLE: fsource = new FrameInputStream(null, false); fd = fsource.getFrameSize(); break;
-		case ASCII: fsource = new FrameReader(new InputStreamReader(System.in)); fd = fsource.getFrameSize(); break;
+		Format outFormat = determineFormat(args[1]);		
+
+		// parse other options
+		for (int i = 2; i < args.length; ++i) {		
+		  if (args[i].equals("--in-out-list")){
+			  // already at last argument?
+			  if (i == args.length - 1){
+				  throw new IllegalArgumentException("missing argument for option " + args[i]);
+			  }
+			  listFile  = args[++i];
+		  }
+		  else{
+			  System.err.println("unknown option " + args[i]);
+			  System.exit(1);
+		  }
 		}
 		
-		double [] buf = new double [fd];
+		if (listFile == null){
+			// null to indicate stdin/stdout
+			inlist.add(null);
+			outlist.add(null);
+		}
+		else {
+			BufferedReader lr = new BufferedReader(new FileReader(listFile));
+			String line = null;
+			int i = 1;
+			while ((line = lr.readLine()) != null) {			
+				String [] help = line.split("\\s+");
+				if (help.length != 2)
+					throw new Exception("file list is broken at line " + i);
+				inlist.add(help[0]);
+				outlist.add(help[1]);
+				
+				System.err.println("in = " + help[0]);
+				System.err.println("out = " + help[1]);
+
+				i++;
+			}
+		}
 		
-		// read until done...
-		while (true) {
-			Sample s = null;
-			short label = 0;
+		while (inlist.size() > 0) {
+			// get next file
+			String inFile = inlist.remove(0);
+			String outFile = outlist.remove(0);
 			
-			// try to read...
+			InputStream in;
+			OutputStream out;
+			if (inFile == null)
+				in = System.in;
+			else
+				in = new FileInputStream(inFile);
+			
+			if (outFile == null)
+				out = System.out;
+			else
+				out = new FileOutputStream(outFile);
+
+			// possible readers
+			FrameSource fsource = null;
+			SampleSource ssource = null;
+
+
+			// possible writers
+			FrameDestination fdest = null;
+			SampleDestination sdest = null;
+
 			switch (inFormat) {
-			case FRAME:
-			case FRAME_DOUBLE:
-			case ASCII:
-				if (fsource.read(buf))
-					s = new Sample((short) 0, buf);
-				break;
-			case SAMPLE_A:
-			case SAMPLE_B:
-				s = ssource.read();
-				break;
-			case LFV:
-				byte [] bl = new byte [LABEL_SIZE];
-				if (!IOUtil.readByte(System.in, bl))
-					break;
-				String textual = new String(bl);
-				try {
-					label = Short.parseShort(textual);
-				} catch (NumberFormatException e) {
-					throw new IOException("Invalid label '" + textual + "' -- only numeric labels allowed!");
-				}
-			case UFV:
-				if (!IOUtil.readFloat(System.in, buf, ByteOrder.LITTLE_ENDIAN)) 
-					break;
-				
-				s = new Sample(label, buf);
-				break;
+			case SAMPLE_A: ssource = new SampleReader(new InputStreamReader(in)); break;
+			case SAMPLE_B: ssource = new SampleInputStream(in); break;
+			case FRAME: fsource = new FrameInputStream(null); fd = fsource.getFrameSize(); break;
+			case FRAME_DOUBLE: fsource = new FrameInputStream(null, false); fd = fsource.getFrameSize(); break;
+			case ASCII: fsource = new FrameReader(new InputStreamReader(in)); fd = fsource.getFrameSize(); break;
 			}
-			
-			// anything read?
-			if (s == null)
-				break;
-						
-			// write out...
-			switch (outFormat) {
-			case SAMPLE_A:
-				if (sdest == null)
-					sdest = new SampleWriter(new OutputStreamWriter(System.out));
-				sdest.write(s);
-				break;
-			case SAMPLE_B:
-				if (sdest == null)
-					sdest = new SampleOutputStream(System.out, s.x.length);
-				sdest.write(s);
-				break;
-			case FRAME:
-				if (fdest == null)
-					fdest = new FrameOutputStream(s.x.length);
-				fdest.write(s.x);
-				break;
-			case FRAME_DOUBLE:
-				if (fdest == null)
-					fdest = new FrameOutputStream(s.x.length, false);
-				fdest.write(s.x);
-				break;
-			case LFV:
-				byte [] outlabel1 = new byte [LABEL_SIZE];
-				byte [] outlabel2 = Integer.toString(s.c).getBytes();
-				for (int i = 0; i < LABEL_SIZE; ++i) {
-					if (i < outlabel2.length)
-						outlabel1[i] = outlabel2[i];
-					else
-						outlabel1[i] = 0;
+
+			double [] buf = new double [fd];
+
+			// read until done...
+			while (true) {
+				Sample s = null;
+				short label = 0;
+
+				// try to read...
+				switch (inFormat) {
+				case FRAME:
+				case FRAME_DOUBLE:
+				case ASCII:
+					if (fsource.read(buf))
+						s = new Sample((short) 0, buf);
+					break;
+				case SAMPLE_A:
+				case SAMPLE_B:
+					s = ssource.read();
+					break;
+				case LFV:
+					byte [] bl = new byte [LABEL_SIZE];
+					if (!IOUtil.readByte(in, bl))
+						break;
+					String textual = new String(bl);
+					try {
+						label = Short.parseShort(textual);
+					} catch (NumberFormatException e) {
+						throw new IOException("Invalid label '" + textual + "' -- only numeric labels allowed!");
+					}
+				case UFV:
+					if (!IOUtil.readFloat(in, buf, ByteOrder.LITTLE_ENDIAN)) 
+						break;
+
+					s = new Sample(label, buf);
+					break;
 				}
-				System.out.write(outlabel1);
-			case UFV:
-				ByteBuffer bb = ByteBuffer.allocate(buf.length * Float.SIZE/8);
-				
-				// UFVs are little endian!
-				bb.order(ByteOrder.LITTLE_ENDIAN);
-				
-				for (double d : s.x) 
-					bb.putFloat((float) d);
-				
-				System.out.write(bb.array());
-				break;
-			case ASCII:
-				if (fdest == null)
-					fdest = new FrameWriter(new OutputStreamWriter(System.out));
-				fdest.write(s.x);
-				break;
+
+				// anything read?
+				if (s == null)
+					break;
+
+				// write out...
+				switch (outFormat) {
+				case SAMPLE_A:
+					if (sdest == null)
+						sdest = new SampleWriter(new OutputStreamWriter(out));
+					sdest.write(s);
+					break;
+				case SAMPLE_B:
+					if (sdest == null)
+						sdest = new SampleOutputStream(out, s.x.length);
+					sdest.write(s);
+					break;
+				case FRAME:
+					if (fdest == null)
+						fdest = new FrameOutputStream(s.x.length);
+					fdest.write(s.x);
+					break;
+				case FRAME_DOUBLE:
+					if (fdest == null)
+						fdest = new FrameOutputStream(s.x.length, false);
+					fdest.write(s.x);
+					break;
+				case LFV:
+					byte [] outlabel1 = new byte [LABEL_SIZE];
+					byte [] outlabel2 = Integer.toString(s.c).getBytes();
+					for (int i = 0; i < LABEL_SIZE; ++i) {
+						if (i < outlabel2.length)
+							outlabel1[i] = outlabel2[i];
+						else
+							outlabel1[i] = 0;
+					}
+					out.write(outlabel1);
+				case UFV:
+					ByteBuffer bb = ByteBuffer.allocate(buf.length * Float.SIZE/8);
+
+					// UFVs are little endian!
+					bb.order(ByteOrder.LITTLE_ENDIAN);
+
+					for (double d : s.x) 
+						bb.putFloat((float) d);
+
+							out.write(bb.array());
+							break;
+				case ASCII:
+					if (fdest == null)
+						fdest = new FrameWriter(new OutputStreamWriter(out));
+					fdest.write(s.x);
+					break;
+				}
 			}
+
+			// be nice, close everything
+			if (fdest != null)
+				fdest.close();
+			if (sdest != null)
+				sdest.close();
+
+			out.flush();
 		}
-		
-		// be nice, close everything
-		if (fdest != null)
-			fdest.close();
-		if (sdest != null)
-			sdest.close();
-		
-		System.out.flush();
 	}
 }
