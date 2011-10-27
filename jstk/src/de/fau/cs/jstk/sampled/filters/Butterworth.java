@@ -54,7 +54,25 @@ public class Butterworth extends IIRFilter {
 	 */
 	public Butterworth(AudioSource source, int order, double freq, boolean lowp) {
 		super(source);
-		
+		configure(order, freq, lowp);
+	}
+	
+	/**
+	 * Generate a Butterworth band pass/reject filter at the given cutoff
+	 * frequencies.
+	 * 
+	 * @param source
+	 * @param order
+	 * @param freq1 in Hz
+	 * @param freq2 in Hz
+	 * @param pass true for bandpass, false for bandreject
+	 */
+	public Butterworth(AudioSource source, int order, double freq1, double freq2, boolean pass) {
+		super(source);
+		configure(order, freq1, freq2, pass);		
+	}
+	
+	public void configure(int order, double freq, boolean lowp) {
 		this.n = order;
 		
 		double ff = 2. * freq / source.getSampleRate();
@@ -70,19 +88,7 @@ public class Butterworth extends IIRFilter {
 		setCoefficients(b, a);
 	}
 
-	/**
-	 * Generate a Butterworth band pass/reject filter at the given cutoff
-	 * frequencies.
-	 * 
-	 * @param source
-	 * @param order
-	 * @param freq1 in Hz
-	 * @param freq2 in Hz
-	 * @param pass true for bandpass, false for bandreject
-	 */
-	public Butterworth(AudioSource source, int order, double freq1, double freq2, boolean pass) {
-		super(source);
-		
+	public void configure(int order, double freq1, double freq2, boolean pass) {
 		this.n = order;
 		
 		double ff1 = 2. * freq1 / source.getSampleRate();
