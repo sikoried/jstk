@@ -68,6 +68,44 @@ public class SplitbandInversion implements AudioSource {
 		}
 	}
 	
+	/**
+	 * Configure the SplitbandInversion to use a Butterworth filter. The splitf
+	 * arrays contain the order and natural frequency to use (from 
+	 * Butterworth.ord()).
+	 * 
+	 * @see Butterworth
+	 * 
+	 * @param splitfLow [ord, nat-feq] for lowpass
+	 * @param splitfHigh [ord, nat-freq] for highpass
+	 * @param invf1Low [ord, nat-freq] for output lowp (lower subband)
+	 * @param invf2Low [ord, nat-freq] for output lowp (upper subband)
+	 * @param invf1 inversion frequency 1
+	 * @param invf2 inversion frequency 2
+	 */
+	public void configureWithButterworth(double [] splitfLow, 
+			double [] splitfHigh, double [] invf1Low, double [] invf2Low, 
+			double invf1, double invf2) {
+		if (lp1 == null) {
+			lp1 = new Butterworth(s1, (int) splitfLow[0], splitfLow[1], true);
+			rm1 = new RingModulation(lp1, invf1);
+			lpout1 = new Butterworth(rm1, (int) invf1Low[0], invf1Low[1], true);
+		} else {
+			lp1.configure((int) splitfLow[0], splitfLow[1], true);
+			rm1.setFrequency(invf1);
+			lpout1.configure((int) invf1Low[0], invf1Low[1], true);
+		}
+
+		if (hp1 == null) {
+			hp1 = new Butterworth(s2, (int) splitfHigh[0], splitfHigh[1], false);
+			rm2 = new RingModulation(hp1, invf2);
+			lpout2 = new Butterworth(rm2, (int) invf2Low[0], invf2Low[1], true);
+		} else {
+			hp1.configure((int) splitfHigh[0], splitfHigh[1], false);
+			rm2.setFrequency(invf2);
+			lpout2.configure((int) invf2Low[0], invf2Low[1], true);
+		}
+	}
+
 	public int read(double [] buf) throws IOException {
 		return read(buf, buf.length);
 	}
