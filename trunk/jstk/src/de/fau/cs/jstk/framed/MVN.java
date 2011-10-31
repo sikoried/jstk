@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -72,6 +73,11 @@ public class MVN implements FrameSource {
 		loadFromFile(parameterFile);
 	}
 
+	public void setUniformVariance() {
+		Arrays.fill(variances, 1.0);
+		Arrays.fill(sigmas, 1.0);
+	}
+	
 	public FrameSource getSource() {
 		return source;
 	}
@@ -313,6 +319,8 @@ public class MVN implements FrameSource {
 		"    cumulative estimates.\n" +
 		"  --simulate\n" +
 		"    Only compute the normalization parameters but no data normalization!\n" +
+		"  --no-variance\n" +
+		"    Do not do variance normalization\n" +
 		"  -v\n" +
 		"    Be verbose\n" +
 		"\n" +
@@ -329,6 +337,7 @@ public class MVN implements FrameSource {
 		
 		boolean cumulative = false;
 		boolean simulate = false;
+		boolean novar = false;
 		
 		String parameterOutputFile = null;
 		String parameterInputFile = null;
@@ -347,6 +356,8 @@ public class MVN implements FrameSource {
 				simulate = true;
 			else if (args[i].equals("--cumulative"))
 				cumulative = true;
+			else if (args[i].equals("--no-variance"))
+				novar = true;
 			else if (args[i].equals("--load-parameters"))
 				parameterInputFile = args[++i];
 			else if (args[i].equals("--save-parameters"))
@@ -420,6 +431,10 @@ public class MVN implements FrameSource {
 		
 		if (parameterInputFile != null) {
 			work.loadFromFile(parameterInputFile);
+			
+			if (novar)
+				work.setUniformVariance();
+			
 			logger.info(work.toString());
 		}
 		
@@ -441,6 +456,9 @@ public class MVN implements FrameSource {
 			
 			if (simulate)
 				System.exit(0);
+			
+			if (novar)
+				work.setUniformVariance();
 		}
 		
 		for (Pair<String, String> p : iolist) {
