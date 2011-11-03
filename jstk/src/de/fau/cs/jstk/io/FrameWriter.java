@@ -63,6 +63,13 @@ public class FrameWriter implements FrameDestination {
 	}
 	
 	/**
+	 * Flush the writer 
+	 */
+	public void flush() throws IOException {
+		wr.flush();	
+	}
+	
+	/**
 	 * Flush and close the writer 
 	 */
 	public void close() throws IOException {

@@ -68,6 +68,15 @@ public class SampleOutputStream implements SampleDestination {
 	}
 	
 	/**
+	 * Flush the OutputStream
+	 * @throws IOException
+	 */
+	public void flush() throws IOException {
+		os.flush();
+		
+	}
+	
+	/**
 	 * Flush and close the OutputStream
 	 * @throws IOException
 	 */

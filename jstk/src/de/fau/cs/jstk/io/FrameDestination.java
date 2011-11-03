@@ -44,6 +44,12 @@ public interface FrameDestination {
 	void write(float [] x) throws IOException;
 	
 	/**
+	 * Flush destination.
+	 * @throws IOException
+	 */
+	void flush() throws IOException;
+	
+	/**
 	 * Flush and close the destination.
 	 * @throws IOException
 	 */

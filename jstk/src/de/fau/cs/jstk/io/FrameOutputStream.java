@@ -147,12 +147,22 @@ public class FrameOutputStream implements FrameDestination {
 	}
 	
 	/**
+	 * Flush the OutputStream
+	 * @throws IOException
+	 */
+	public void flush() throws IOException {
+		
+		os.flush();			
+		
+	}
+	
+	/**
 	 * Flush and close the OutputStream
 	 * @throws IOException
 	 */
 	public void close() throws IOException {
-		if (!(os == System.out || os == System.err)) {
-			os.flush();
+		os.flush();
+		if (!(os == System.out || os == System.err)) {			
 			os.close();
 		}
 	}
@@ -161,8 +171,8 @@ public class FrameOutputStream implements FrameDestination {
 	 * In the end, close the data file to prevent data loss!
 	 */
 	public void finalize() throws Throwable{
-		try {
-			os.flush();
+		os.flush();
+		try {			
 			os.close();
 		} finally {
 			super.finalize();

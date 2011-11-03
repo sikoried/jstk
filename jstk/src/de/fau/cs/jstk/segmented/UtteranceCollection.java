@@ -49,7 +49,7 @@ public class UtteranceCollection implements Serializable, PubliclyCloneable{
 	
 
 	
-	private Utterance [] turns = null;
+	Utterance [] turns = null;
 
 	public UtteranceCollection(){		
 	}

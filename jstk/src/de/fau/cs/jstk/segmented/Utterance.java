@@ -302,6 +302,24 @@ public class Utterance implements Serializable, PubliclyCloneable{
 	/**
 	 * 
 	 * @param i
+	 * @return (an estimate of) part of the orthographic representation that belongs to word i,
+	 *   including spaces/punctiation/etc. limitations see getOrthographyIndex().
+	 * @throws Exception see that of getOrthographyIndex()
+	 */
+	public String getWordOrthography(int i) throws Exception {
+		int startIndex, endIndex;
+
+//		System.err.println("getSubdivisionOrthography: subdivision " + i);
+		
+		startIndex = i;
+		endIndex = i + 1;		
+		
+		return getOrthography(startIndex, endIndex);
+	}
+	
+	/**
+	 * 
+	 * @param i
 	 * @return (an estimate of) part of the orthographic representation that belongs to subdivision i
 	 * @throws Exception see that of getOrthographyIndex()
 	 */
