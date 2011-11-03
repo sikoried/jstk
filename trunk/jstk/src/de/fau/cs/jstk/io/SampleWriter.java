@@ -56,6 +56,15 @@ public class SampleWriter implements SampleDestination {
 		wr.append(s.toClassifiedString() + "\n");
 	}
 	
+	
+	/**
+	 * Flush the stream.
+	 * @throws IOException
+	 */
+	public void flush() throws IOException {
+		wr.flush();		
+	}
+	
 	/**
 	 * Flush and close the stream.
 	 * @throws IOException

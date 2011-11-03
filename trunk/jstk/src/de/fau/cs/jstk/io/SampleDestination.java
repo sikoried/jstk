@@ -39,6 +39,12 @@ public interface SampleDestination {
 	void write(Sample s) throws IOException;
 	
 	/**
+	 * Flush the destination.
+	 * @throws IOException
+	 */
+	void flush() throws IOException;
+	
+	/**
 	 * Flush and close the destination.
 	 * @throws IOException
 	 */

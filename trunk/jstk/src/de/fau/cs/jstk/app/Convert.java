@@ -71,7 +71,8 @@ public class Convert {
 		"    Unlabeled ASCII data: TAB separated double values, one sample per line.\n\n"+
 		"options:\n\n" +
 		"  --in-out-list listfile\n" +
-		"    the list contains lines \"<in-file> <out-file>\" for batch processing\n\n";
+		"    the list contains lines \"<in-file> <out-file>\" for batch processing.\n" +
+		"    If <out-file> is missing, put everything out to stdout\n\n";
 		
 	
 	public static enum Format {
@@ -151,14 +152,17 @@ public class Convert {
 			int i = 1;
 			while ((line = lr.readLine()) != null) {			
 				String [] help = line.split("\\s+");
-				if (help.length != 2)
-					throw new Exception("file list is broken at line " + i);
-				inlist.add(help[0]);
-				outlist.add(help[1]);
+				if (help.length == 2){
+					inlist.add(help[0]);					
+					outlist.add(help[1]);
+				}
+				else if (help.length == 1){
+					inlist.add(help[0]);
+					// indicate stdout:
+					outlist.add(null);					
+				}
+				else throw new Exception("file list is broken at line " + i);
 				
-				System.err.println("in = " + help[0]);
-				System.err.println("out = " + help[1]);
-
 				i++;
 			}
 		}
@@ -179,16 +183,15 @@ public class Convert {
 				in = System.in;
 			}
 			else {
-				System.err.println("in: " + inFileName);
 				in = new FileInputStream(inFileName);
 
 				inFile = new File(inFileName);
 			}
 			
-			if (outFileName == null)
+			if (outFileName == null){
 				out = System.out;
+			}
 			else {
-				System.err.println("out: " + outFileName);
 				out = new FileOutputStream(outFileName);
 				
 				outFile = new File(outFileName);
@@ -197,7 +200,6 @@ public class Convert {
 			// possible readers
 			FrameSource fsource = null;
 			SampleSource ssource = null;
-
 
 			// possible writers
 			FrameDestination fdest = null;
@@ -303,11 +305,11 @@ public class Convert {
 				}
 			}
 
-			// be nice, close everything
+			// be nice, close everything? No, just flush (for the benefit of multiple files to stdout)
 			if (fdest != null)
-				fdest.close();
+				fdest.flush();
 			if (sdest != null)
-				sdest.close();
+				sdest.flush();
 		
 			out.flush();
 		}
