@@ -78,7 +78,7 @@ public class Turn {
 			DecimalFormat intFormat = new DecimalFormat("0000");
 	        return intFormat.format(id) + " " + twoDForm.format((double) (ms2 - ms1) / 1000 );
 		} catch (Exception e) {
-			System.err.println(e.toString());
+			// System.err.println(e.toString());
 			return file;
 		}
 	}

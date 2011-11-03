@@ -21,6 +21,7 @@
 
 package de.fau.cs.jstk.app.blitzscribe;
 
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -228,12 +229,16 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		
 		// display
 		setSize(640, 480);
+		setPreferredSize(new Dimension(640, 480));
+		setMinimumSize(new Dimension(300, 300));
 		pack();
 		setContentPane(root);
 	}
 
 	private int curIndex = -1;
 	private Turn curData = null;
+	
+	private boolean modified = false;
 	
 	private void play() {
 		ap.toggle();
@@ -274,10 +279,11 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		String text = tfTranscription.getText().trim();
 			
 		if (!text.equals(curData.text)) {
+			modified = true;
 			curData.text = text;
 			if (logw != null) {
 				try {
-					logw.append(System.currentTimeMillis() + " " + curData.toString() + "\n");
+					logw.append(System.currentTimeMillis() + " " + curData.toFinalString() + "\n");
 					logw.flush();
 				} catch (IOException e) {
 					System.err.println("Error writing protocol: " + e.toString());
@@ -356,6 +362,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			while (((Turn) listModel.get(p)).text.length() > 0)
 				p++;
 			
+			modified = false;
 			display(p);
 			
 			// set up protocol file (append for existing files
@@ -384,16 +391,25 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			for (int i = 0; i < listModel.getSize(); ++i)
 				bw.append(((Turn) listModel.get(i)).toFinalString() + "\n");
 			bw.close();
+			modified = false;
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(this, e.toString(), "An exception ocurred while writing turn file!", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 	
 	public void windowClosing(WindowEvent arg0) {
-		// prevent an accidental close of the program
-		if (JOptionPane.showConfirmDialog(this, "Are you sure? Did you save your transcription?", "Alert", JOptionPane.YES_NO_OPTION)
-				== JOptionPane.YES_OPTION)
+		if (!modified)
 			System.exit(0);
+		
+		// prevent an accidental close of the program
+		int ret = JOptionPane.showConfirmDialog(this, "Do you want to save your transcription?", "Whoops! Your transcription is not saved yet!", JOptionPane.YES_NO_CANCEL_OPTION);
+		if (ret == JOptionPane.CANCEL_OPTION)
+			return;
+		else if (ret == JOptionPane.YES_OPTION) {
+			saveTrl(curFile);
+		}
+		
+		System.exit(0);
 	}
 	
 	// un-used event listeners
