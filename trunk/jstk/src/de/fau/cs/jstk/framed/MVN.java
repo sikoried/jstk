@@ -389,7 +389,7 @@ public class MVN implements FrameSource {
 					if (!(new File(inf)).canRead())
 						throw new IOException(args[i-1] + "(" + lineCnt + "): Cannot read input file " + line);
 						
-					iolist.add(new Pair<String, String>(line, ouf));
+					iolist.add(new Pair<String, String>(inf, ouf));
 					lineCnt++;
 				}
 			} else if (args[i].equals("--in-out-list")) {
@@ -440,15 +440,10 @@ public class MVN implements FrameSource {
 		
 		if (cumulative) {
 			// read all data
-			LinkedList<Sample> cache = new LinkedList<Sample>();
 			for (Pair<String, String> p : iolist) {
 				FrameInputStream fr = new FrameInputStream(new File(p.a));
-				double [] buf = new double [fr.getFrameSize()];
-				while (fr.read(buf))
-					cache.add(new Sample((short) 0, buf));
+				work.extendStatistics(fr);
 			}
-			
-			work.extendStatistics(cache);
 			
 			// save the parameter if required
 			if (parameterOutputFile != null)
