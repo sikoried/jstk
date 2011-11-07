@@ -467,8 +467,8 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		for (i = first; i <= last; i++){
 			orthography += getSubdivisionOrthography(i);
 			
-			System.out.printf("this o [%d] = %s, total = %s\n",
-					i, getSubdivisionOrthography(i), orthography);
+//			System.out.printf("this o [%d] = %s, total = %s\n",
+//					i, getSubdivisionOrthography(i), orthography);
 		}		
 		
 		int firstWord;
@@ -484,7 +484,7 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		else
 			lastWord = subdivisions[last + 1].getIndex() - 1; 
 		
-		System.out.printf("firstWord=%d, lastWord=%d\n", firstWord, lastWord);
+//		System.out.printf("firstWord=%d, lastWord=%d\n", firstWord, lastWord);
 		
 		// search for start of new boundaries
 		for (i = 0; i < boundaries.length; i++)
