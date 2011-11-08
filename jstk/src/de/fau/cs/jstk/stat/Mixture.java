@@ -35,8 +35,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Scanner;
 
-import org.apache.log4j.Logger;
-
 import de.fau.cs.jstk.app.MNAP;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
@@ -52,7 +50,7 @@ import de.fau.cs.jstk.util.Pair;
  *
  */
 public final class Mixture {
-	private static Logger logger = Logger.getLogger(Mixture.class);
+//	private static Logger logger = Logger.getLogger(Mixture.class);
 	
 	/** number of densities */
 	public int nd;
@@ -311,35 +309,6 @@ public final class Mixture {
 		llh = 0.;
 		for (Density d : components)
 			d.clear();
-		discard();
-	}
-	
-	/**
-	 * If there is no current accumulator, initialize a new accumulator. 
-	 */
-	public void init() {
-		for (Density d : components)
-			d.init();
-	}
-	
-	/**
-	 * Propagate the sufficient statistics of the referenced source to the local
-	 * accumulator
-	 * @param source
-	 */
-	public void propagate(Mixture source) {
-		for (int i = 0; i < nd; ++i)
-			components[i].propagate(source.components[i]);
-	}
-	
-	/**
-	 * Interpolate the local sufficient statistics with the referenced one's
-	 * @param source
-	 * @param weight
-	 */
-	public void interpolate(Mixture source, double weight) {
-		for (int i = 0; i < nd; ++i)
-			components[i].interpolate(source.components[i], weight);
 	}
 	
 	/**
@@ -360,47 +329,6 @@ public final class Mixture {
 	}
 	
 	/**
-	 * Reestimate the MixtureDensity from the accumulated statistics. Don't
-	 * forget to discard the accumulator afterwards!
-	 */
-	public void reestimate() {
-		// first, compute normalization factor for new weights
-		double sum = 0.;
-		for (Density d : components) {
-			if (d.accu == null)
-				return;
-			sum += d.accu.apr;
-		}
-		
-		if (sum == 0.) {
-			logger.warn("no accumulated statistics, aborting reestimation!");
-			return;
-		}
-		
-		// update the components and set new weight
-		for (Density d : components)
-			d.reestimate(d.accu.apr / sum);
-	}
-	
-	/**
-	 * Discard the current accumulator.
-	 */
-	public void discard() {
-		for (Density d : components)
-			d.discard();
-	}
-	
-	/**
-	 * Accumulate a feature vector for the given component and posterior.
-	 * @param gamma posterior
-	 * @param x feature vector
-	 * @param i target density
-	 */
-	public void accumulate(double gamma, double [] x, int i) {
-		components[i].accumulate(gamma, x);
-	}
-	
-	/**
 	 * Generate a super vector for GMM-SVM use. The generated vector contains 
 	 * (in that order) all priors, mean values and variances (if requested).
 	 * @param priors include prior probabilities
@@ -408,14 +336,14 @@ public final class Mixture {
 	 * @param variances include variances (diagonal covariance)
 	 * @return super vector [apr1 apr2 ... mue1 mue2 ... cov1 cov2 ...]
 	 */
-	public double [] superVector(boolean priors, boolean means, boolean variances) {
+	public double [] superVector(Density.Flags flags) {
 		// determine the size
 		int size = 0;
-		if (priors)
+		if (flags.weights)
 			size += 1;
-		if (means)
+		if (flags.means)
 			size += fd;
-		if (variances)
+		if (flags.vars)
 			size += fd;
 		
 		double [] sv = new double [size * nd];
@@ -423,7 +351,7 @@ public final class Mixture {
 		// copy values
 		int i = 0;
 		for (Density d : components)
-			System.arraycopy(d.superVector(priors, means, variances), 0, sv, size * (i++), size);
+			System.arraycopy(d.superVector(flags), 0, sv, size * (i++), size);
 		
 		return sv;
 	}
@@ -955,7 +883,7 @@ public final class Mixture {
 				while (inlist.size() > 0) {
 					String inf = inlist.remove();
 					Mixture md = Mixture.readFromFile(inf == null ? null : new File(inf));
-					double [] sv = md.superVector(p, m, c);
+					double [] sv = md.superVector(new Density.Flags(p, m, c));
 					String ouf = outlist.remove();
 					FrameOutputStream fw = new FrameOutputStream(sv.length, ouf == null ? null : new File(ouf));
 					fw.write(sv);
@@ -966,7 +894,7 @@ public final class Mixture {
 				while (inlist.size() > 0) {
 					String inf = inlist.remove();
 					Mixture md = Mixture.readFromFile(inf == null ? null : new File(inf));
-					double [] sv = md.superVector(p, m, c);
+					double [] sv = md.superVector(new Density.Flags(p, m, c));
 					if (fw == null)
 						fw = new FrameOutputStream(sv.length, new File(singleOutFile));
 					else if (fw.getFrameSize() != sv.length)
@@ -983,8 +911,8 @@ public final class Mixture {
 			Mixture ubm = new Mixture(new FileInputStream(args[1]));
 			Mixture m1 = new Mixture(new FileInputStream(args[2]));
 			Mixture m2 = new Mixture(new FileInputStream(args[3]));
-			double [] mm1 = m1.superVector(false, true, false);
-			double [] mm2 = m2.superVector(false, true, false);
+			double [] mm1 = m1.superVector(Density.Flags.fOnlyMeans);
+			double [] mm2 = m2.superVector(Density.Flags.fOnlyMeans);
 			System.out.println("dotp()       = " + Arithmetics.dotp(mm1, mm2));
 			System.out.println("akl-kernel() = " + ubm.aklkernel(mm1, mm2));
 			System.out.println("akl()        = " + ubm.akl(mm1, mm2));

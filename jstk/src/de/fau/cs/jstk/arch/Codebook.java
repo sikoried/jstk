@@ -38,7 +38,12 @@ import org.apache.log4j.Logger;
 import de.fau.cs.jstk.arch.mf.ModelFactory;
 import de.fau.cs.jstk.exceptions.CodebookException;
 import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.stat.Density.Flags;
+import de.fau.cs.jstk.stat.DensityDiagonal;
+import de.fau.cs.jstk.stat.DensityFull;
 import de.fau.cs.jstk.stat.Mixture;
+import de.fau.cs.jstk.stat.MleDensityAccumulator.MleOptions;
+import de.fau.cs.jstk.stat.MleMixtureAccumulator;
 import de.fau.cs.jstk.stat.hmm.Hmm;
 import de.fau.cs.jstk.stat.hmm.SCState;
 import de.fau.cs.jstk.stat.hmm.State;
@@ -54,6 +59,9 @@ public class Codebook {
 	
 	/** index of shared emission mixture densities */
 	private HashMap<Integer, Mixture> shared = new HashMap<Integer, Mixture>();
+	
+	/** corresponding MLE accumulators */
+	private HashMap<Integer, MleMixtureAccumulator> sharedAccs = new HashMap<Integer, MleMixtureAccumulator>();
 	
 	/** index of HMM models */ 
 	private HashMap<Integer, Hmm> models = new HashMap<Integer, Hmm>();
@@ -203,10 +211,27 @@ public class Codebook {
 	 */
 	public void init() {
 		logger.info("setting up Codebook accumulators");
-		for (Mixture m : shared.values())
+		for (int id : shared.keySet()) {
+			Mixture m = shared.get(id);
+			try {
+				sharedAccs.put(id, new MleMixtureAccumulator(m.fd, m.nd, m.diagonal() ? DensityDiagonal.class : DensityFull.class));
+			} catch (ClassNotFoundException e) {
+				throw new RuntimeException(e.toString());
+			}
+		}
+		
+		// set up the model accumulators
+		for (Hmm m : models.values()) {
 			m.init();
-		for (Hmm m : models.values())
-			m.init();
+			
+			for (State s : m.s) {
+				// don't forget to link the shared accumulators
+				if (s instanceof SCState) {
+					SCState sc = (SCState) s;
+					sc.setSharedAccumulator(sharedAccs.get(sc.cb.id));
+				}
+			}
+		}
 	}
 	
 	/**
@@ -217,9 +242,15 @@ public class Codebook {
 		for (Entry<Integer, Mixture> e : shared.entrySet()) {
 			if (!source.shared.containsKey(e.getKey())) {
 				logger.fatal("source Accumulator for shared mixture " + e.getKey() + " not found -- exitting.");
-				System.exit(1);
+				throw new RuntimeException();
 			}
-			e.getValue().propagate(source.shared.get(e.getKey()));
+			
+			if (!source.sharedAccs.containsKey(e.getKey())) {
+				logger.fatal("source Accumulator for shared mixture " + e.getKey() + " not found -- exitting.");
+				throw new RuntimeException();
+			}
+			
+			sharedAccs.get(e.getKey()).propagate(source.sharedAccs.get(e.getKey()));
 		}
 		
 		for (Entry<Integer, Hmm> e : models.entrySet()) {
@@ -236,8 +267,10 @@ public class Codebook {
 	 */
 	public void reestimate() {
 		logger.info("reestimating Codebook from accumulators");
-		for (Mixture m : shared.values())
-			m.reestimate();
+		for (Entry<Integer, Mixture> e : shared.entrySet()) {
+			Mixture old = e.getValue().clone();
+			MleMixtureAccumulator.MleUpdate(old, MleOptions.pDefaultOptions, Flags.fAllParams, sharedAccs.get(e.getKey()), e.getValue());
+		}
 		for (Hmm m : models.values())
 			m.reestimate();
 	}
@@ -247,8 +280,9 @@ public class Codebook {
 	 */
 	public void discard() {
 		logger.info("discarding all Codebook accumulators");
-		for (Mixture m : shared.values())
-			m.discard();
+		
+		sharedAccs.clear();
+		
 		for (Hmm m : models.values())
 			m.discard();
 	}

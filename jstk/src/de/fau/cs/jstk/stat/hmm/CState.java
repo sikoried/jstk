@@ -26,7 +26,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import de.fau.cs.jstk.io.IOUtil;
+import de.fau.cs.jstk.stat.Density.Flags;
+import de.fau.cs.jstk.stat.DensityDiagonal;
+import de.fau.cs.jstk.stat.DensityFull;
 import de.fau.cs.jstk.stat.Mixture;
+import de.fau.cs.jstk.stat.MleDensityAccumulator.MleOptions;
+import de.fau.cs.jstk.stat.MleMixtureAccumulator;
 
 /**
  * The continuous HMM state features an individual mixture density. Though this
@@ -39,6 +44,8 @@ public class CState extends State {
 
 	/** codebook for this state */
 	Mixture cb = null;
+	
+	MleMixtureAccumulator acc = null;
 	
 	private double ga = 0.;
 	
@@ -91,7 +98,11 @@ public class CState extends State {
 	 * Initialize a new accumulator.
 	 */
 	public void init() {
-		cb.init();
+		try {
+			acc = new MleMixtureAccumulator(cb.fd, cb.nd, cb.diagonal() ? DensityDiagonal.class : DensityFull.class);
+		} catch (Exception e) {
+			throw new RuntimeException(e.toString());
+		}
 		ga = 0.;
 	}
 
@@ -113,7 +124,7 @@ public class CState extends State {
 		// for all densities...
 		for (int j = 0; j < cb.nd; ++j) {
 			// gamma_t(i,k)
-			cb.accumulate(gamma * p[j], x, j);
+			acc.accumulate(gamma * p[j], x, j);
 		}
 	}
 	
@@ -128,7 +139,7 @@ public class CState extends State {
 		CState state = (CState) source;	
 		
 		// absorb the statistics
-		cb.propagate(state.cb);
+		acc.propagate(state.acc);
 	}
 	
 	/**
@@ -137,7 +148,7 @@ public class CState extends State {
 	 */
 	public void interpolate(State source, double rho) {
 		CState state = (CState) source;
-		cb.interpolate(state.cb, rho / (rho + ga));
+		acc.interpolate(state.acc, rho / (rho + ga));
 	}
 	
 	public void pinterpolate(double wt, State source) {
@@ -148,7 +159,8 @@ public class CState extends State {
 	 * Reestimate this state's codebook.
 	 */
 	public void reestimate() {
-		cb.reestimate();
+		Mixture old = cb.clone();
+		MleMixtureAccumulator.MleUpdate(old, MleOptions.pDefaultOptions, Flags.fAllParams, acc, cb);
 	}
 	
 	/**
@@ -156,7 +168,7 @@ public class CState extends State {
 	 */
 	public void discard() {
 		ga = 0.;
-		cb.discard();
+		acc = null;
 	}
 	
 	/**

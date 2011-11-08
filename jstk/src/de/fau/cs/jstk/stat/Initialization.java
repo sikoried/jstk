@@ -33,6 +33,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.exceptions.TrainingException;
+import de.fau.cs.jstk.stat.Density.Flags;
+import de.fau.cs.jstk.stat.MleDensityAccumulator.MleOptions;
 import de.fau.cs.jstk.trans.PCA;
 import de.fau.cs.jstk.util.Arithmetics;
 import de.fau.cs.jstk.util.Distances;
@@ -126,7 +128,8 @@ public abstract class Initialization {
 	 * @param diag diagonal or full covariances
 	 * @return
 	 */
-	public static Mixture lbg(List<Sample> data, int numc, double eps, double conv, boolean diag) {
+	public static Mixture lbg(List<Sample> data, int numc, double eps, double conv, boolean diag)
+		throws ClassNotFoundException {
 		// dimension
 		int dim = data.get(0).x.length;
 		double scale = 1. / (data.size() * dim);
@@ -169,8 +172,9 @@ public abstract class Initialization {
 			// keep updating the clusters till they converge
 			while (Math.abs((d1 - d2) / d1) > conv) {
 				// init accumulators
-				for (Density dd : c)
-					dd.init();
+				MleDensityAccumulator [] mlea = new MleDensityAccumulator [c.size()];
+				for (int i = 0; i < mlea.length; ++i)
+					mlea[i] = new MleDensityAccumulator(c.get(i).fd, diag ? DensityDiagonal.class : DensityFull.class);
 				
 				// cluster by distance and accumulate
 				for (Sample s : data) {
@@ -189,17 +193,19 @@ public abstract class Initialization {
 					}
 					
 					s.y = (short) pos;
-					c.get(pos).accumulate(1., s.x);
+					mlea[pos].accumulate(1.0, s.x);
 					occ[pos]++;
 				}
 				
 				// update clusters
 				double sum = 0;
-				for (Density dd : c)
-					sum += dd.accu.apr;
-				for (Density dd : c) {
-					dd.reestimate(dd.accu.apr / sum);
-					dd.discard();
+				for (int i = 0; i < mlea.length; ++i)
+					sum += mlea[i].occ;
+				
+				for (int i = 0; i < mlea.length; ++i) {
+					Density nd = c.get(i).clone();
+					MleDensityAccumulator.MleUpdate(c.get(i), MleOptions.pDefaultOptions, Flags.fAllParams, mlea[i], mlea[i].occ / sum, nd);
+					c.get(i).fill(nd);
 				}
 				
 				d1 = d2;

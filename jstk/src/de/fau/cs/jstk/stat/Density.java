@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
-import java.util.Arrays;
-
-import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.util.Arithmetics;
@@ -39,7 +36,37 @@ import de.fau.cs.jstk.util.Arithmetics;
  *
  */
 public abstract class Density {
-	private static Logger logger = Logger.getLogger(Density.class);
+//	private static Logger logger = Logger.getLogger(Density.class);
+	
+	/**
+	 * Flag set to control the parameter update
+	 */
+	public static final class Flags {
+		public static final Flags fAllParams = new Flags(true, true, true);
+		public static final Flags fOnlyMeans = new Flags(false, true, false);
+		public static final Flags fMeansVars = new Flags(false, true, true);
+	
+		public boolean weights, means, vars;
+		
+		/**
+		 * Custom update: Select parameters on demand
+		 * @param weights
+		 * @param means
+		 * @param vars
+		 */
+		public Flags(boolean weights, boolean means, boolean vars) {
+			this.weights = weights;
+			this.means = means;
+			this.vars = vars;
+		}
+		
+		/**
+		 * Default set: update everything
+		 */
+		public Flags() {
+			weights = means = vars = true;
+		}
+	}
 	
 	/** minimum density score */
 	public static final double MIN_PROB = 1e-256;
@@ -83,9 +110,6 @@ public abstract class Density {
 	/** covariance matrix: either diagonal, or packed lower triangle */
 	public double [] cov;
 	
-	/** accumulator for sufficient statistics */
-	public Accumulator accu = null;
-	
 	/**
 	 * Create a new density with a certain feature dimension
 	 * @param dim Feature dimension
@@ -115,6 +139,12 @@ public abstract class Density {
 		System.arraycopy(mue, 0, this.mue, 0, fd);
 		System.arraycopy(cov, 0, this.cov, 0, cov.length);
 		update();
+	}
+	
+	public void fill(Density d) {
+		this.apr = d.apr;
+		System.arraycopy(d.mue, 0, this.mue, 0, fd);
+		System.arraycopy(d.cov, 0, this.cov, 0, d.cov.length);
 	}
 	
 	/**
@@ -155,170 +185,17 @@ public abstract class Density {
 	public abstract void update();
 	
 	/**
-	 * If there is no current accumulator, initialize one
-	 */
-	public void init() {
-		if (accu != null) {
-			logger.info("accumulator already present, ignoring request");
-			return;
-		}
-		accu = new Accumulator();
-	}
-	
-	/**
-	 * Propagate the sufficient statistics of the given Density to the local
-	 * stats
-	 * @param d
-	 */
-	public void propagate(Density d) {
-		accu.propagate(d.accu);
-	}
-	
-	public void interpolate(Density d, double weight) {
-		accu.interpolate(d.accu, weight);
-	}
-	
-	/**
 	 * Interpolate the local parameters (!) with the referenced ones. 
 	 * @param weight this = weight * source + (1 - weight) * this
 	 * @param source
 	 */
 	public void pinterpolate(double weight, Density source) {
 		apr = weight * source.apr + (1 - weight) * apr;
+		
 		Arithmetics.interp1(mue, source.mue, weight);
 		Arithmetics.interp1(cov, source.cov, weight);
 		
 		update();
-	}
-	
-	/**
-	 * Discard the current accumulator
-	 */
-	public void discard() {
-		accu = null;
-	}
-	
-	/**
-	 * Reestimate the density from accumulator statistics and set the weight/prior.
-	 */
-	public void reestimate(double weight) {
-		if (accu == null)
-			return;
-		
-		if  (accu.n < fd + 1) {
-			logger.info("less observations than feature dimension -- no re-estimation!");
-			return;
-		}
-		
-		// normalize statistics
-		Arithmetics.sdiv2(accu.mue, accu.apr);
-		Arithmetics.sdiv2(accu.cov, accu.apr);
-		
-		// conclude covariance computation by subtracting new mean
-		if (this instanceof DensityDiagonal) {
-			for (int i = 0; i < fd; ++i)
-				accu.cov[i] -= accu.mue[i] * accu.mue[i];
-		} else {
-			int l = 0;
-			for (int j = 0; j < fd; ++j)
-				for (int k = 0; k <= j; ++k)
-					accu.cov[l++] -= accu.mue[j] * accu.mue[k];
-		}
-		
-		// update statistics
-		fill(weight, accu.mue, accu.cov);
-		
-		// discard accumulator
-		discard();
-	}
-	
-	/**
-	 * For the given density posterior, accumulate x
-	 * @param gamma
-	 * @param x
-	 */
-	public void accumulate(double gamma, double [] x) {
-		accu.n++;
-		
-		// save your breath
-		if (gamma == 0.)
-			return;
-		
-		accu.apr += gamma;
-
-		if (this instanceof DensityDiagonal) {
-			for (int k = 0; k < fd; ++k) {
-				double t = gamma * x[k];
-				accu.mue[k] += t;
-				accu.cov[k] += t * x[k];
-			}
-		} else {
-			for (int k = 0; k < fd; ++k)
-				accu.mue[k] += gamma * x[k];
-			
-			int m = 0;
-			for (int k = 0; k < fd; ++k)
-				for (int l = 0; l <= k; ++l)
-					accu.cov[m++] += gamma * x[k] * x[l];
-		}
-	}
-	
-	/**
-	 * The Density.Accumulator keeps track of the accumulated statistics
-	 *  
-	 * @author sikoried
-	 */
-	public final class Accumulator {
-		/** number of observations */
-		long n = 0;
-		
-		/** weight accumulator */
-		double apr = 0;
-		
-		/** mean value accumulator */
-		double [] mue = new double [fd];
-		
-		/** covariance accumulator */
-		double [] cov = new double [Density.this.cov.length];
-		
-		/**
-		 * Add the referenced accumulator's scores to this one's.
-		 * @param source
-		 */
-		void propagate(Accumulator source) {
-			if (source.n == 0)
-				return;
-			
-			// observations
-			n += source.n;
-			
-			// stats
-			apr += source.apr;
-			Arithmetics.vadd2(mue, source.mue);
-			Arithmetics.vadd2(cov, source.cov);
-		}
-		
-		void interpolate(Accumulator source, double weight) {
-			if (source.n == 0)
-				return;
-			
-			apr = weight * source.apr + (1. - weight) * apr;
-			Arithmetics.interp1(mue, source.mue, weight);
-			Arithmetics.interp1(cov, source.cov, weight);
-		}
-		
-		/**
-		 * Flush the accumulator by setting all values to zero
-		 */
-		void flush() {
-			n = 0;
-			Arrays.fill(mue, 0.);
-			Arrays.fill(cov, 0.);
-		}
-		
-		public String toString() {
-			return "Density.Accumulator n = " + n + " apr = " + apr; 
-		}
 	}
 	
 	/**
@@ -341,29 +218,29 @@ public abstract class Density {
 	 * @param cov include the covariance
 	 * @return
 	 */
-	public double [] superVector(boolean prior, boolean mue, boolean cov) {
+	public double [] superVector(Flags flags) {
 		int size = 0;
 		
 		// get size
-		if (prior)
+		if (flags.weights)
 			size += 1;
-		if (mue)
+		if (flags.means)
 			size += fd;
-		if (cov)
+		if (flags.vars)
 			size += fd;
 		
 		double [] sv = new double [size];
 		
 		// copy data
 		int i = 0;
-		if (prior)
+		if (flags.weights)
 			sv[i++] = apr;
 		
-		if (mue)
+		if (flags.means)
 			for (double m : this.mue)
 				sv[i++] = m;
 		
-		if (cov) {
+		if (flags.vars) {
 			Density d = this;
 			if (d instanceof DensityFull)
 				d = new DensityDiagonal((DensityFull) d);
@@ -494,6 +371,4 @@ public abstract class Density {
 	 * @return
 	 */
 	public abstract Density marginalize(boolean [] keep);
-	
-
 }

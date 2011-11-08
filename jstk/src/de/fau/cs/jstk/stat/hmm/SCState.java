@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.stat.Mixture;
+import de.fau.cs.jstk.stat.MleMixtureAccumulator;
 import de.fau.cs.jstk.util.Arithmetics;
 
 
@@ -46,7 +47,9 @@ public final class SCState extends State {
 	private static Logger logger = Logger.getLogger(SCState.class);
 	
 	/** shared codebook */
-	Mixture cb = null;
+	public Mixture cb = null;
+	
+	public MleMixtureAccumulator sharedAcc = null;
 	
 	/** individual mixture weights */
 	double [] c = null;
@@ -102,6 +105,10 @@ public final class SCState extends State {
 		
 		cb = shared.get(cbId);
 		p = new double [cb.nd];
+	}
+	
+	public void setSharedAccumulator(MleMixtureAccumulator acc) {
+		this.sharedAcc = acc;
 	}
 	
 	/**
@@ -196,7 +203,7 @@ public final class SCState extends State {
 			a.c[j] += gamma2;
 			
 			// this is the sum over all states, as the cb and its accu are shared!
-			cb.accumulate(gamma2, x, j);
+			sharedAcc.accumulate(gamma2, x, j);
 		}
 	}
 	
