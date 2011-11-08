@@ -192,6 +192,24 @@ public final class Arithmetics {
 	}
 
 	/**
+	 * ret = a + c * b where c is scalar
+	 */
+	public static double [] vadd5(double [] a, double [] b, double c) {
+		double [] ret = new double [a.length];
+		for (int i = 0; i < a.length; ++i)
+			ret[i] = a[i] + c * b[i];
+		return ret;
+	}
+	
+
+	/**
+	 * a += c * b where c is scalar
+	 */
+	public static void vadd6(double [] a, double [] b, double c) {
+		for (int i = 0; i < a.length; ++i)
+			a[i] += c * b[i];
+	}
+	/**
 	 * c = a - b
 	 */
 	public static double [] vsub1(double [] a, double [] b) {

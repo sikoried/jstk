@@ -63,6 +63,10 @@ public final class ParallelEM {
 	/** number of iterations performed by this instance */
 	public int ni = 0;
 	
+	private MleDensityAccumulator.MleOptions opts;
+	
+	private Density.Flags flags;
+	
 	/**
 	 * Generate a new Estimator for parallel EM iterations.
 	 * 
@@ -73,11 +77,19 @@ public final class ParallelEM {
 	 */
 	public ParallelEM(Mixture initial, ChunkedDataSet data, int numThreads) 
 		throws IOException {
+		this(initial, data, MleDensityAccumulator.MleOptions.pDefaultOptions, Density.Flags.fAllParams, numThreads);
+	}
+	
+	public ParallelEM(Mixture initial, ChunkedDataSet data, 
+			MleDensityAccumulator.MleOptions opts, Density.Flags flags, 
+			int numThreads) throws IOException {
 		this.data = data;
 		this.numThreads = numThreads;
 		this.current = initial;
 		this.fd = initial.fd;
 		this.nd = initial.nd;
+		this.opts = opts;
+		this.flags = flags;
 	}
 	
 	/**
@@ -100,7 +112,7 @@ public final class ParallelEM {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	public void iterate(int iterations) throws IOException, InterruptedException {
+	public void iterate(int iterations) throws ClassNotFoundException, IOException, InterruptedException {
 		while (iterations-- > 0)
 			iterate();
 	}
@@ -110,11 +122,13 @@ public final class ParallelEM {
 	 * @throws IOException
 	 * @throws InterruptedException
 	 */
-	public void iterate() throws IOException, InterruptedException {
+	public void iterate() throws ClassNotFoundException, IOException, InterruptedException {
 		logger.info("ParallelEM.iterate(): BEGIN iteration " + (++ni));
 		
 		// each thread an individual working copy of the current estiamte
 		Mixture [] workingCopies = new Mixture[numThreads];
+		MleMixtureAccumulator accus [] = new MleMixtureAccumulator [numThreads];
+		
 		
 		// save the old mixture, put zeros in the current
 		previous = current.clone();
@@ -123,9 +137,17 @@ public final class ParallelEM {
 		
 		// BEGIN EM PART1: accumulate the statistics
 		CountDownLatch latch = new CountDownLatch(numThreads);
+	
+		MleMixtureAccumulator mlea = new MleMixtureAccumulator(
+				current.fd, 
+				current.nd, 
+				current.diagonal() ? DensityDiagonal.class : DensityFull.class);
 		
 		for (int i = 0; i < numThreads; ++i)
-			e.execute(new Worker(workingCopies[i] = current.clone(), latch));
+			e.execute(new Worker(
+				workingCopies[i] = current.clone(), 
+				accus[i] = new MleMixtureAccumulator(mlea), latch)
+			);
 		
 		// wait for all jobs to be done
 		latch.await();
@@ -137,16 +159,10 @@ public final class ParallelEM {
 		data.rewind();
 		
 		// BEGIN EM PART2: combine the partial estimates by combining the accus
-		current.discard();
-		current.init();
-	
-		for (Mixture est : workingCopies)
-			current.propagate(est);
+		for (int i = 0; i < numThreads; ++i)
+			mlea.propagate(accus[i]);
 		
-		current.reestimate();
-		current.discard();
-		
-		// END EM Part2
+		MleMixtureAccumulator.MleUpdate(previous, opts, flags, mlea, current);
 
 		logger.info("ParallelEM.iterate(): END");
 	}
@@ -156,6 +172,7 @@ public final class ParallelEM {
 	 */
 	private class Worker implements Runnable {
 		Mixture m;
+		MleMixtureAccumulator a;
 		CountDownLatch latch;
 		
 		/** feature buffer */
@@ -170,16 +187,17 @@ public final class ParallelEM {
 		/** number of frames processed by this thread */
 		int cnt_frame = 0;
 		
-		Worker(Mixture m, CountDownLatch latch) {
+		Worker(Mixture m, MleMixtureAccumulator a, CountDownLatch latch) {
 			this.latch = latch;
 			this.m = m;
+			this.a = a;
 			
 			// init the buffers
 			f = new double [fd];
 			p = new double [nd];
 			
-			m.discard();
-			m.init();
+			// just to be sure...
+			a.flush();
 		}
 		
 		/**
@@ -197,9 +215,7 @@ public final class ParallelEM {
 					while (source.read(f)) {
 						m.evaluate(f);
 						m.posteriors(p);
-						
-						for (int i = 0; i < nd; ++i)
-							m.accumulate(p[i], f, i);
+						a.accumulate(p, f);
 
 						cnt_frame++;
 					}

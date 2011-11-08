@@ -581,7 +581,7 @@ public class Mfcc implements FrameSource {
 				mvn.extendStatistics(mfcc);
 				mvn.saveToFile(tf.getCanonicalPath());
 			} 
-			
+
 			// regular processing: if there's (temporal) MVN data, it's applied
 			mfcc = new Mfcc(inFile, audioFormatString, windowFormatString, 
 					noFilterbank ? null : filterFormatString, 
