@@ -24,10 +24,12 @@ package de.fau.cs.jstk.stat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 
+import de.fau.cs.jstk.io.IOUtil;
 import de.fau.cs.jstk.util.Arithmetics;
 
 public final class MleDensityAccumulator {
@@ -42,13 +44,13 @@ public final class MleDensityAccumulator {
 	public long n = 0;
 	
 	/** occupancy (weight accumulator) */
-	double occ = 0;
+	public double occ = 0;
 	
 	/** mean value accumulator */
-	double [] mue;
+	public double [] mue;
 	
 	/** covariance accumulator */
-	double [] cov;
+	public double [] cov;
 	
 	/**
 	 * Allocate a new MLE accumulator for the requested type of Density
@@ -82,13 +84,48 @@ public final class MleDensityAccumulator {
 	}
 	
 	public MleDensityAccumulator(InputStream is) throws IOException {
-		// TODO
-		throw new RuntimeException("Method not yet implemented");
+		read(is);		
+	}
+	
+	public static final int HOST_DIAGONAL = 0;
+	public static final int HOST_FULL = 1;
+	
+	public void read(InputStream is) throws IOException {
+		int htype = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
+		if (htype == HOST_DIAGONAL)
+			host = DensityDiagonal.class;
+		else if (htype == HOST_FULL)
+			host = DensityFull.class;
+		else
+			throw new IOException("Unknown host-type " + htype);
+		
+		fd = IOUtil.readInt(is, ByteOrder.LITTLE_ENDIAN);
+		n = IOUtil.readLong(is, ByteOrder.LITTLE_ENDIAN);
+		occ = IOUtil.readDouble(is, ByteOrder.LITTLE_ENDIAN);
+		
+		mue = new double [fd];
+		cov = new double [htype == HOST_DIAGONAL ? fd : fd * (fd + 1) / 2];
+		
+		if (!IOUtil.readDouble(is, mue, ByteOrder.LITTLE_ENDIAN))
+			throw new IOException("Could not read x stats");
+		
+		if (!IOUtil.readDouble(is, cov, ByteOrder.LITTLE_ENDIAN))
+			throw new IOException("Could not read x2 stats");
 	}
 	
 	public void write(OutputStream os) throws IOException {
-		// TODO
-		throw new RuntimeException("Method not yet implemented");
+		if (host.equals(DensityDiagonal.class))
+			IOUtil.writeInt(os, HOST_DIAGONAL, ByteOrder.LITTLE_ENDIAN);
+		else
+			IOUtil.writeInt(os, HOST_FULL, ByteOrder.LITTLE_ENDIAN);
+		
+		IOUtil.writeInt(os, fd, ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeLong(os, n , ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeDouble(os, occ, ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeDouble(os, mue, ByteOrder.LITTLE_ENDIAN);
+		IOUtil.writeDouble(os, cov, ByteOrder.LITTLE_ENDIAN);
+		
+		os.flush();
 	}
 	
 	public void accumulate(double gamma, double [] x) {
@@ -145,6 +182,16 @@ public final class MleDensityAccumulator {
 	}
 	
 	/**
+	 * Scale the accumulated statistics
+	 * @param tau
+	 */
+	void scale(double tau) {
+		occ *= tau;
+		Arithmetics.smul2(mue, tau);
+		Arithmetics.smul2(cov, tau);
+	}
+	
+	/**
 	 * Flush the accumulator by setting all values to zero
 	 */
 	void flush() {
@@ -155,7 +202,12 @@ public final class MleDensityAccumulator {
 	}
 	
 	public String toString() {
-		return "MleDensityAccumulator n = " + n + " occ = " + occ; 
+		StringBuffer sb = new StringBuffer();
+		sb.append("MleDensityAccumulator n=" + n + " occ=" + occ + "\n");
+		sb.append("xstat = " + Arrays.toString(mue) + "\n");
+		sb.append("x2stat = " + Arrays.toString(cov) + "\n");
+		
+		return sb.toString();		 
 	}
 	
 	/**
