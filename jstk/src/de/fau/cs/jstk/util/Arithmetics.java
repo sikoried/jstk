@@ -209,6 +209,17 @@ public final class Arithmetics {
 		for (int i = 0; i < a.length; ++i)
 			a[i] += c * b[i];
 	}
+	
+	/**
+	 * a += c * b * b' where c is scalar and a is an upper triangular matrix
+	 */
+	public static void vspaddsp(double [] a, double [] b, double c) {
+		int m = 0;
+		for (int k = 0; k < b.length; ++k)
+			for (int l = 0; l <= k; ++l)
+				a[m++] += c * b[k] * b[l];
+	}
+	
 	/**
 	 * c = a - b
 	 */
@@ -573,5 +584,39 @@ public final class Arithmetics {
 			s += a[i];
 		for (int i = 0; i < a.length; ++i)
 			a[i] /= s;
+	}
+	
+	public static double min(double [] a) {
+		double m = a[0];
+		for (int i = 1; i < a.length; ++i)
+			m = Math.min(m, a[i]);
+		return m;
+	}
+	
+	public static double max(double [] a) {
+		double m = a[0];
+		for (int i = 1; i < a.length; ++i)
+			m = Math.max(m, a[i]);
+		return m;
+	}
+	
+	public static double minsp(double [] a, int d) {
+		double m = a[0];
+		
+		for (int i = 1, j = d; i < d; /* nop */) {
+			m = Math.min(m, a[j]);
+			j += (d-i);
+		}
+		return m;
+	}
+	
+	public static double maxsp(double [] a, int d) {
+		double m = a[0];
+		
+		for (int i = 1, j = d; i < d; /* nop */) {
+			m = Math.max(m, a[j]);
+			j += (d-i);
+		}
+		return m;
 	}
 }

@@ -66,7 +66,10 @@ public final class Mixture {
 
 	/** log(score) after evaluation, but computed numerically more stable; 
 	 * might contain useful values even when score = Infinity */
-	private transient double logscore;
+	public transient double logscore;
+	
+	/** offset that was added after the the application of the log */
+	public transient double logoffset;
 	
 	/** helper to avoid allocating memory in each call of evaluate */
 	private transient double [] logscoreHelp = null;	
@@ -209,25 +212,23 @@ public final class Mixture {
 		
 		for (Density d : components) {
 			score += d.evaluate(x);
-			llh += d.lh;
-			
 			logscoreHelp[i++] = d.lh;
 		}
 		
 		/* compute log(score), avoiding Infinity */
 		
 		/* - find maximum */
-		double max = logscoreHelp[0];
+		logoffset = logscoreHelp[0];
 		for (double d : logscoreHelp)
-			if (d > max)
-				max = d;
+			if (d > logoffset)
+				logoffset = d;
 				
 		/* - subtract max, sum up exponents */			
 		double tmp = 0.;
 		for (i = 0; i < logscoreHelp.length; i++)
-			tmp += Math.exp(logscoreHelp[i] - max);
+			tmp += Math.exp(logscoreHelp[i] - logoffset);
 		
-		logscore = max + Math.log(tmp);				
+		llh += (logscore = logoffset + Math.log(tmp));
 				
 		return score;
 	}
