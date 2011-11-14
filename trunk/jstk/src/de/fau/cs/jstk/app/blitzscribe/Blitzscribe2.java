@@ -72,12 +72,12 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author sikoried
  *
  */
-public class Blitzscribe extends JFrame implements WindowListener {
+public class Blitzscribe2 extends JFrame implements WindowListener {
 	private static final long serialVersionUID = 1L;
 
 	private static final String USAGE =
 		"After loading a transcription file, use the following key short cuts\n" +
-		"to control Blitzscribe:\n\n" +
+		"to control Blitzscribe2:\n\n" +
 		"[ENTER] Go to next segment and start playback\n" +
 		"[SHIFT+ENTER] Same as [ENTER], but don't start playback\n" +
 		"[SHIFT+BACKSPACE] Go to previous segment\n" +
@@ -109,7 +109,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	
 	private JFileChooser fc = new JFileChooser();
 	
-	public Blitzscribe() {
+	public Blitzscribe2() {
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		fc.setFileFilter(new FileNameExtensionFilter("transcription files", "trl"));
 		
@@ -161,7 +161,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	}
 	
 	private void initUI() {
-		setTitle("Blitzscribe");
+		setTitle("Blitzscribe2");
 		JPanel root = new JPanel();
 		GridBagConstraints c = new GridBagConstraints();
 		root.setLayout(new GridBagLayout());
@@ -219,7 +219,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		btnOpen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// we only need this once
-				int r = fc.showOpenDialog(Blitzscribe.this);
+				int r = fc.showOpenDialog(Blitzscribe2.this);
 				if (r == JFileChooser.APPROVE_OPTION)
 					loadTrl(fc.getSelectedFile());
 				tfTranscription.requestFocus();
@@ -229,14 +229,14 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		btnSave.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (curFile != null)
-					saveTrl(Blitzscribe.this.curFile);
+					saveTrl(Blitzscribe2.this.curFile);
 				tfTranscription.requestFocus();
 			}
 		});
 		
 		btnSaveAs.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int r = fc.showOpenDialog(Blitzscribe.this);
+				int r = fc.showOpenDialog(Blitzscribe2.this);
 				if (r == JFileChooser.APPROVE_OPTION)
 					saveTrl(fc.getSelectedFile());
 				tfTranscription.requestFocus();
@@ -245,7 +245,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		
 		btnHelp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(Blitzscribe.this, USAGE, "How to use this Blitzscribe", JOptionPane.PLAIN_MESSAGE);
+				JOptionPane.showMessageDialog(Blitzscribe2.this, USAGE, "How to use this Blitzscribe", JOptionPane.PLAIN_MESSAGE);
 				tfTranscription.requestFocus();
 			}
 		});
@@ -404,7 +404,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			curDir = (file.getParent() == null ? "" : file.getParent() + System.getProperty("file.separator"));
 			curFile = file;
 			
-			setTitle("Blitzscribe: " + file.getName());
+			setTitle("Blitzscribe2: " + file.getName());
 			
 			// go forward to the first empty transcription
 			int p = 0;
@@ -475,7 +475,7 @@ public class Blitzscribe extends JFrame implements WindowListener {
 	public void windowOpened(WindowEvent arg0) { }
 
 	public static void main(String [] args) {
-		Blitzscribe bs = new Blitzscribe();
+		Blitzscribe2 bs = new Blitzscribe2();
 		bs.setVisible(true);
 	}
 }
