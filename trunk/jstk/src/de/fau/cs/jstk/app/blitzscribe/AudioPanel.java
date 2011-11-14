@@ -133,7 +133,10 @@ public class AudioPanel extends JPanel {
 		});
 	
 		vss.setPreferredSize(new Dimension(100, 150));
+		vss.setMinimumSize(new Dimension(100, 150));
+		
 		progressBar.setPreferredSize(new Dimension(100, 30));
+		progressBar.setMinimumSize(new Dimension(100, 30));
 		
 		c.fill = GridBagConstraints.BOTH; c.weightx = 1.0;
 		c.weighty = 0.8; c.gridx = 0; c.gridy = 0; add(vss, c);
