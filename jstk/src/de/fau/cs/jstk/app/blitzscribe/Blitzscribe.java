@@ -21,6 +21,8 @@
 
 package de.fau.cs.jstk.app.blitzscribe;
 
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -40,6 +42,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -81,12 +84,19 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		"[CTRL+SPACE] Start/pause/resume audio playback\n" +
 		"[CTRL+BACKSPACE] Restart playback from beginning\n\n" +
 		"Furthermore, double-click into the progress bar above the transcription\n" +
-		"field to jump to a certain part of the segment.";
+		"field to jump to a certain part of the segment.\n\n" +
+		"[F2] Toggle highlight word abandonments\n" +
+		"[F3] Toggle highlight unknown words\n" +
+		"[F4] Toggle highlight unintelligible words\n";
 	
 	private JButton btnOpen = new JButton("Open");
 	private JButton btnSave = new JButton("Save");
 	private JButton btnSaveAs = new JButton("Save as...");
 	private JButton btnHelp = new JButton("Help!");
+
+	private boolean highlightInterrupts = false;
+	private boolean highlightUnknowns = false;
+	private boolean highlightUnintellis = false;
 	
 	private JTextField tfTranscription = new JTextField();
 	
@@ -118,6 +128,36 @@ public class Blitzscribe extends JFrame implements WindowListener {
 		
 		liFileList.setModel(listModel);
 		liFileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		liFileList.setCellRenderer(new MyCellRenderer());
+	}
+	
+	public final class MyCellRenderer extends DefaultListCellRenderer {
+		private static final long serialVersionUID = 1L;
+		public Component getListCellRendererComponent(JList list, Object value,
+				int index, boolean isSelected, boolean cellHasFocus) {
+			super.getListCellRendererComponent(list, value, index, isSelected,
+					cellHasFocus);
+			if ((highlightInterrupts && ((Turn) value).text.contains("*")) || 
+				(highlightUnknowns && ((Turn) value).text.contains("?")) ||
+				(highlightUnintellis && ((Turn) value).text.contains("#ui")))
+				setBackground(isSelected ? Color.pink : Color.orange);
+			return this;
+		}
+	}
+	
+	public void toggleHighlightInterrupts() {
+		highlightInterrupts = !highlightInterrupts;
+		liFileList.repaint();
+	}
+	
+	public void toggleHighlightUnknowns() {
+		highlightUnknowns = !highlightUnknowns;
+		liFileList.repaint();
+	}
+	
+	public void toggleHighlightUnintellis() {
+		highlightUnintellis = !highlightUnintellis;
+		liFileList.repaint();
 	}
 	
 	private void initUI() {
@@ -143,6 +183,15 @@ public class Blitzscribe extends JFrame implements WindowListener {
 					e.consume();
 				} else if (e.getKeyCode() == KeyEvent.VK_BACK_SPACE && e.isControlDown()) {
 					ap.play(0);
+					e.consume();
+				} else if (e.getKeyCode() == KeyEvent.VK_F2) {
+					toggleHighlightInterrupts();
+					e.consume();
+				} else if (e.getKeyCode() == KeyEvent.VK_F3) {
+					toggleHighlightUnknowns();
+					e.consume();
+				} else if (e.getKeyCode() == KeyEvent.VK_F4) {
+					toggleHighlightUnintellis();
 					e.consume();
 				}
 			}
@@ -359,8 +408,13 @@ public class Blitzscribe extends JFrame implements WindowListener {
 			
 			// go forward to the first empty transcription
 			int p = 0;
-			while (((Turn) listModel.get(p)).text.length() > 0)
+			while ( p < listModel.size() && ((Turn) listModel.get(p)).text.length() > 0)
 				p++;
+			
+			if (p == listModel.size()) {
+				JOptionPane.showMessageDialog(this, "It seems that all turns are already transcribed!", "Information", JOptionPane.INFORMATION_MESSAGE);
+				p = 0;
+			}
 			
 			modified = false;
 			display(p);
