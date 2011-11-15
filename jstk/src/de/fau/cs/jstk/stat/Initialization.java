@@ -52,10 +52,11 @@ public abstract class Initialization {
 	/**
 	 * Compute a fast initialization for a mixture density. Available strategies
 	 * are "sequential[_N]" (put the next N samples in the next cluster, rotate
-	 * through clusters as long as there are sampled), "random[_N]" (as 
-	 * sequential, just random cluster allocation) and "uniform" (as sequential
+	 * through clusters as long as there are samples), "random[_N]" (as 
+	 * sequential, just random cluster allocation), "uniform" (as sequential
 	 * however N is adjusted so that all data is linearly distributed on the 
-	 * clusters).
+	 * clusters), and "uniform_N" (uses sequences of N samples, drawn from positions
+	 * distributed linearly over all data) 
 	 * @param data
 	 * @param nd number of densitites
 	 * @param diagonalCovariances use diagonal covariances?
@@ -69,12 +70,18 @@ public abstract class Initialization {
 		
 		// compute number of samples per chunk (default: 1)
 		int n = 1;
+		int max = Integer.MAX_VALUE;
 		if (method.startsWith("sequential_"))
 			n = Integer.parseInt(method.substring("sequential_".length()));
 		else if (method.startsWith("random_"))
 			n = Integer.parseInt(method.substring("random_".length()));
 		else if (method.equals("uniform"))
 			n = data.size() / nd;
+		else if (method.startsWith("uniform_")){
+			n = data.size() / nd;
+			max = Integer.parseInt(method.substring("uniform_".length()));
+			System.err.println("maximally using " + max + " samples per cluster");
+		}
 		
 		logger.info("Initialization.fastInit(): This will be a " + method + " initialization; chunk-size=" + n);
 		
@@ -90,8 +97,11 @@ public abstract class Initialization {
 			int actual = ndx % nd;
 			if (random)
 				actual = (int)(Math.random() * nd);
-			for (int i = 0; i < n && data.size() > 0; ++i)
-				lists.get(actual).add(data.remove(0));
+			for (int i = 0; i < n && data.size() > 0; ++i){
+				Sample sample = data.remove(0);
+				if (i < max)
+					lists.get(actual).add(sample);
+			}
 			ndx++;
 		}
 		
