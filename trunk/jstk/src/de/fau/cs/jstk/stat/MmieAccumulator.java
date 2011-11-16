@@ -242,7 +242,7 @@ public final class MmieAccumulator {
 			MmieStats s = statistics.get(id);
 			
 			for (int i = 0; i < min.nd; ++i) {
-				double D = opts.E * s.dy[i];
+				double D = opts.E * s.dy[i] / 2.;
 				
 				int it, maxit = 100;
 				for (it = 0; it < maxit; ++it) {
