@@ -181,7 +181,7 @@ public final class MleMixtureAccumulator {
 		"usage: stat.MleMixtureAccumulator [command] [arguments]\n" +
 		"  acc   mixture-list prot-file data-in-out-list\n" +
 		"  mle   mixture-old mixture-new acc-list\n" +
-		"  mmie  mixture-in-out-list prot-file-with-labels\n" +
+		"  mmie  mixture-in-out-list prot-file-with-labels [wmv]\n" +
 		"  disp  accumulator1 [accumulator2 ...]\n";
 	
 	public static void main(String [] args) throws Exception {
@@ -303,7 +303,7 @@ public final class MleMixtureAccumulator {
 	}
 	
 	private static void dommie(String [] args) throws Exception {
-		if (args.length != (2+1)) {
+		if (args.length < (2+1)) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
@@ -360,9 +360,19 @@ public final class MleMixtureAccumulator {
 		
 		logger.info("read " + j + " MLE accumulators");
 		
+		Flags flags = Flags.fAllParams;
+		if (args.length > 3) {
+			String wmv = args[3].toLowerCase();
+			boolean w = wmv.contains("w");
+			boolean m = wmv.contains("m");
+			boolean v = wmv.contains("v");
+			
+			flags = new Flags(w, m, v);
+		}
+		
 		// reestimate the Mixtures
 		HashMap<Integer, Mixture> invout = new HashMap<Integer, Mixture>();
-		MmieAccumulator.MmieUpdate(inventory, MmieOptions.pDefaultOptions, Flags.fAllParams, ma.statistics, invout);
+		MmieAccumulator.MmieUpdate(inventory, MmieOptions.pDefaultOptions, flags, ma.statistics, invout);
 		
 		logger.info("writing out mixtures");
 		for (int i = 0; i < iolist.size(); ++i) {
