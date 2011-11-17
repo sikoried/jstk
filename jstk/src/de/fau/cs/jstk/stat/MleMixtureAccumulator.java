@@ -207,6 +207,7 @@ public final class MleMixtureAccumulator {
 	private static void doacc(String [] args) throws Exception {
 		if (args.length != (3+1)) {
 			System.err.println(SYNOPSIS);
+			System.err.println("cmd-line was:" + Arrays.toString(args));
 			System.exit(1);
 		}
 		
@@ -303,7 +304,10 @@ public final class MleMixtureAccumulator {
 	}
 	
 	private static void dommie(String [] args) throws Exception {
+		final double C = 2.0;
+		
 		if (args.length < (2+1)) {
+			System.err.println("cmd-line was:" + Arrays.toString(args));
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
@@ -354,7 +358,7 @@ public final class MleMixtureAccumulator {
 			
 			long segl = Long.parseLong(sl[2]);
 			
-			ma.addSegment(t, logscores, statistics, 2.0 / segl);
+			ma.addSegment(t, logscores, statistics, C / segl);
 			j++;
 		}
 		

@@ -287,10 +287,15 @@ public class AudioPlay implements LineListener {
 		
 		int readBytes = readFrames * fs;
 		
+		// error?
 		if (readFrames < 0) {
 			tearDown();
 			return -1;
 		}
+		
+		// save your breath
+		if (readFrames == 0)
+			return 0;
 		
 		// set rest to zero
 		if (readFrames < frames)
