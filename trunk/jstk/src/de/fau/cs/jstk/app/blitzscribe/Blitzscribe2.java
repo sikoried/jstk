@@ -85,9 +85,9 @@ public class Blitzscribe2 extends JFrame implements WindowListener {
 		"[CTRL+BACKSPACE] Restart playback from beginning\n\n" +
 		"Furthermore, double-click into the progress bar above the transcription\n" +
 		"field to jump to a certain part of the segment.\n\n" +
-		"[F2] Toggle highlight word abandonments\n" +
-		"[F3] Toggle highlight unknown words\n" +
-		"[F4] Toggle highlight unintelligible words\n";
+		"[F2] Toggle highlight word abandonments or mispronounciations (*)\n" +
+		"[F3] Toggle highlight unknown words (?)\n" +
+		"[F4] Toggle highlight unintelligible words (#ui)\n";
 	
 	private JButton btnOpen = new JButton("Open");
 	private JButton btnSave = new JButton("Save");

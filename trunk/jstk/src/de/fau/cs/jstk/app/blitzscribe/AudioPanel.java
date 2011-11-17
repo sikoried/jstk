@@ -157,6 +157,9 @@ public class AudioPanel extends JPanel {
 			while(bas.stillReading)
 				Thread.sleep(10);
 			
+			if (bas.getBufferSize() == 0)
+				throw new IOException("Empty recording!");
+			
 			// update the visualizer
 			vss.xPerPixel = (double) bas.getBufferSize() / vss.getWidth();
 			vss.setBufferedAudioSource(bas);
@@ -173,6 +176,9 @@ public class AudioPanel extends JPanel {
 	public void play(int sample) {
 		try {
 			stop();
+			
+			if (bas.getBufferSize() == 0)
+				return;
 			
 			System.err.println("starting playback from 0");
 			

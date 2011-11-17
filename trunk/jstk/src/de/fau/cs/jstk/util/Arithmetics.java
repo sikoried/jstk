@@ -21,6 +21,9 @@
  */
 package de.fau.cs.jstk.util;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+
 /**
  * This class provides basic linear algebra routines used in the whole project
  * 
@@ -618,5 +621,39 @@ public final class Arithmetics {
 			j += (d-i);
 		}
 		return m;
+	}
+	
+	/**
+	 * Add a list of double values in a numerically stable way by adding always
+	 * two consecutive values (which are expected to be of similar size), to
+	 * avoid the floating-point issues that arise when adding numbers of
+	 * different size
+	 * @param vals
+	 * @return
+	 */
+	public static double stableadd(LinkedList<Double> vals) {
+		LinkedList<Double> li1 = vals;
+		LinkedList<Double> li2 = new LinkedList<Double>();
+		
+		while (li1.size() > 1) {
+			Iterator<Double> it = li1.iterator();
+			
+			for (int i = 0; i < li1.size() / 2; ++i) {
+				double v1 = it.next();
+				double v2 = it.next();
+				
+				li2.add(v1 + v2);
+			}
+			
+			if (li1.size() % 2 == 1)
+				li2.addFirst(it.next());
+			
+			li1.clear();
+			LinkedList<Double> tmp = li1;
+			li1 = li2;
+			li2 = tmp;
+		}
+		
+		return li1.get(0);
 	}
 }
