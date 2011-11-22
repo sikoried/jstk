@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.LineNumberReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -41,9 +42,11 @@ import org.apache.log4j.BasicConfigurator;
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
 import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.io.LabelFrameInputStream;
 import de.fau.cs.jstk.io.SampleInputStream;
 import de.fau.cs.jstk.stat.Sample;
 import de.fau.cs.jstk.util.Arithmetics;
+import de.fau.cs.jstk.util.LabelTranslator;
 import de.fau.cs.jstk.util.Pair;
 
 public class LDA extends Projection {
@@ -183,7 +186,7 @@ public class LDA extends Projection {
 		mean = global.getMean();
 		
 		// keep (num classes - 1) eigenvectors
-		int numv = stats.size() - 1;
+		int numv = Math.min(stats.size() - 1, sortedEV.size());
 		proj = new double [numv][];
 		evals = new double [numv];
 		Iterator<Pair<double [], Double>> it = sortedEV.iterator();
@@ -241,20 +244,46 @@ public class LDA extends Projection {
 		String [] lifs = new String [args.length - 2];
 		System.arraycopy(args, 1, lifs, 0, lifs.length);
 		
+		LabelTranslator lt = new LabelTranslator("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+		
 		LDA lda = null;
 		
 		if (lifs.length == 1) {
 			// only single list: assume binary frame format
-			BufferedReader br = new BufferedReader(new FileReader(lifs[0]));
+			LineNumberReader br = new LineNumberReader(new FileReader(lifs[0]));
 			String line;
 			while ((line = br.readLine()) != null) {
-				SampleInputStream sis = new SampleInputStream(new FileInputStream(indir + line));
-				Sample s;
-				while ((s = sis.read()) != null) {
+				
+				String [] spl = line.split("\\s+");
+				
+				if (spl.length == 1) {
+					SampleInputStream sis = new SampleInputStream(new FileInputStream(indir + line));
+					Sample s;
+					while ((s = sis.read()) != null) {
+						if (lda == null)
+							lda = new LDA(s.x.length);
+						lda.accumulate(s);
+					}
+				} else if (spl.length == 2) {
+					FrameInputStream fis = new FrameInputStream(new File(indir + spl[0]));
+					FileInputStream lis = new FileInputStream(indir + spl[1]);
+					LabelFrameInputStream lfis = new LabelFrameInputStream(lis, fis);
+					
+					double [] x = new double [lfis.getFrameSize()];
+					
+					// init LDA
 					if (lda == null)
-						lda = new LDA(s.x.length);
-					lda.accumulate(s);
-				}
+						lda = new LDA(x.length);
+					
+					while (lfis.read(x)) {
+						int l = lt.labelToId(lfis.getLabel());
+						lda.accumulate((short) l, x);
+					}
+					
+					fis.close();
+					lis.close();
+				} else
+					throw new IOException("invalid line " + br.getLineNumber() + " : " + line);
 			}
 			
 			br.close();
