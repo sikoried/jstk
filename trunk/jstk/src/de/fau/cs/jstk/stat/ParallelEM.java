@@ -79,6 +79,11 @@ public final class ParallelEM {
 		throws IOException {
 		this(initial, data, MleDensityAccumulator.MleOptions.pDefaultOptions, Density.Flags.fAllParams, numThreads);
 	}
+		
+	public ParallelEM(Mixture initial, ChunkedDataSet data, int numThreads, Density.Flags flags)  
+			throws IOException {
+			this(initial, data, MleDensityAccumulator.MleOptions.pDefaultOptions, flags, numThreads);
+	}
 	
 	public ParallelEM(Mixture initial, ChunkedDataSet data, 
 			MleDensityAccumulator.MleOptions opts, Density.Flags flags, 

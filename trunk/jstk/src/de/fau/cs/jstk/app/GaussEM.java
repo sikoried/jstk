@@ -31,6 +31,8 @@ import org.apache.log4j.Logger;
 
 import de.fau.cs.jstk.io.ChunkedDataSet;
 import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.stat.Density;
+import de.fau.cs.jstk.stat.Density.Flags;
 import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.stat.ParallelEM;
 import de.fau.cs.jstk.stat.Sample;
@@ -58,6 +60,8 @@ public class GaussEM {
 		"    Parallelize the EM algorithm on num cores (threads). Use 0 for \n" +
 		"    maximum available number of cores. NB: -p 1 is different from -s as\n" +
 		"    it doesn't cache the entire data set.\n" +
+		"  --update [wmv]\n" +
+		"    Update selected parameters: [w]eights [m]eans and [v]ariances\n" +
 		"  -s\n" +
 		"    Do a standard single-core EM with a complete caching of the data.\n" +
 		"    This might be faster than -p for small problems with less files.\n" +
@@ -87,6 +91,8 @@ public class GaussEM {
 		// number of cores
 		int c = Runtime.getRuntime().availableProcessors();
 		
+		Density.Flags flags = Flags.fAllParams;
+		
 		for (int i = 0; i < args.length; ++i) {
 			if (args[i].equals("-i"))
 				inf = args[++i];
@@ -106,7 +112,10 @@ public class GaussEM {
 				lif = args[++i];
 			else if (args[i].equals("-d"))
 				inDir = args[++i];
-			else if (args[i].equals("--save-partial-estimates"))
+			else if (args[i].equals("--update")) {
+				String arg = args[++i].toLowerCase();
+				flags = new Density.Flags(arg.contains("w"), arg.contains("m"), arg.contains("v"));
+			} else if (args[i].equals("--save-partial-estimates"))
 				savePartialEstimates = true;
 		}
 		
@@ -156,7 +165,7 @@ public class GaussEM {
 		} else {
 			logger.info("Starting " + n + " EM iterations on " + c + " cores");
 
-			ParallelEM pem = new ParallelEM(initial, new ChunkedDataSet(new File(lif), inDir, 0), c);
+			ParallelEM pem = new ParallelEM(initial, new ChunkedDataSet(new File(lif), inDir, 0), c, flags);
 
 			for (int i = 0; i < n; ++i) {
 				pem.iterate();
