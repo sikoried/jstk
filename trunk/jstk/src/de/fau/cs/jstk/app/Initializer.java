@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import junit.framework.Assert;
-
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -106,9 +104,6 @@ public class Initializer {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
-		
-		// FIXME: remove
-		Assert.assertEquals(1, 1);
 
 		BasicConfigurator.configure();
 		Logger.getLogger("de.fau.cs.jstk").setLevel(Level.INFO);
