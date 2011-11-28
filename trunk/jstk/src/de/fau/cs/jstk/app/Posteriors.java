@@ -56,9 +56,9 @@ public class Posteriors {
 				}
 			}
 			
-			System.out.printf("%s %d %.3f", l, mp, mv);
+			System.out.printf("%s %d %.5f", l, mp, mv);
 			for (double d : logpsum)
-				System.out.printf(" %.3f", d);
+				System.out.printf(" %.5f", d);
 			System.out.println();			
 		}
 		

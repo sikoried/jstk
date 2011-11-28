@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -73,9 +72,9 @@ public class MVN implements FrameSource {
 		loadFromFile(parameterFile);
 	}
 
-	public void setUniformVariance() {
-		Arrays.fill(variances, 1.0);
-		Arrays.fill(sigmas, 1.0);
+	public void setNormalizations(boolean means, boolean variances) {
+		this.normalizeMeans = means;
+		this.normalizeVars = variances;
 	}
 	
 	public FrameSource getSource() {
@@ -125,11 +124,22 @@ public class MVN implements FrameSource {
 			return false;
 		
 		// mean and variance normalization
-		for (int i = 0; i < buf.length; ++i)
-			buf[i] = (buf[i] - means[i]) / sigmas[i];
+		if (normalizeMeans && normalizeVars) {
+			for (int i = 0; i < buf.length; ++i)
+				buf[i] = (buf[i] - means[i]) / sigmas[i];
+		} else if (normalizeMeans && !normalizeVars) {
+			for (int i = 0; i < buf.length; ++i)
+				buf[i] = (buf[i] - means[i]);
+		} else if (!normalizeMeans && normalizeVars) {
+			for (int i = 0; i < buf.length; ++i)
+				buf[i] /= sigmas[i];
+		}
 
 		return true;
 	}
+	
+	private boolean normalizeMeans = true;
+	private boolean normalizeVars = true;
 	
 	/** 
 	 * Reset all internal statistics to clear the normalization parameters.
@@ -433,7 +443,7 @@ public class MVN implements FrameSource {
 			work.loadFromFile(parameterInputFile);
 			
 			if (novar)
-				work.setUniformVariance();
+				work.setNormalizations(true, false);
 			
 			logger.info(work.toString());
 		}
@@ -453,7 +463,7 @@ public class MVN implements FrameSource {
 				System.exit(0);
 			
 			if (novar)
-				work.setUniformVariance();
+				work.setNormalizations(true, false);
 		}
 		
 		for (Pair<String, String> p : iolist) {

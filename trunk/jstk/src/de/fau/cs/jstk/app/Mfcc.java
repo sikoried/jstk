@@ -278,6 +278,11 @@ public class Mfcc implements FrameSource {
 		asource.tearDown();
 	}
 	
+	public void setVarianceNormalization(boolean flag) {
+		if (mvn != null)
+			mvn.setNormalizations(true, flag);
+	}
+	
 	private long nframes = 0;
 	
 	public boolean read(double [] buf) throws IOException {
@@ -377,6 +382,8 @@ public class Mfcc implements FrameSource {
 		"--turn-wise-mvn\n" +
 		"  Apply MVN to each turn; this is an individual offline mean and variance\n" +
 		"  normalization\n" +
+		"--novar\n" +
+		"  No variance normalization\n" +
 		"-d \"[tirol,]context:order[:scale][,context:order[:scale]]+\"\n" +
 		"  compute oder <order> derivatives over context <context>, and optionally\n" +
 		"  scale by <scale>, separate multiple derivatives by comma; deltas are\n" +
@@ -400,6 +407,8 @@ public class Mfcc implements FrameSource {
 		boolean onlySpectrum = false;
 		boolean doShortTimeEnergy = true;
 
+		boolean novar = false;
+		
 		String inFile = null;
 		String outFile = null;
 		String outDir = null;
@@ -468,7 +477,9 @@ public class Mfcc implements FrameSource {
 				else if (args[i].equals("--vtln")) {
 					vtln = new Vtln(Double.parseDouble(args[++i]), Double.parseDouble(args[++i]), Double.parseDouble(args[++i]));
 				}
-				
+				else if (args[i].equals("--novar")) {
+					novar = true;
+				}
 				// deltas
 				else if (args[i].equals("-d")) {
 					deltaFormatString = args[++i];
@@ -587,6 +598,9 @@ public class Mfcc implements FrameSource {
 					noFilterbank ? null : filterFormatString, 
 					onlySpectrum, doShortTimeEnergy, selectionFormatString, 
 					deltaFormatString, turnwisemvn ? tf.getCanonicalPath() : mvnParamFile, vtln);
+			
+			if (novar)
+				mfcc.setVarianceNormalization(false);
 			
 			// output pipeline?
 			if (showPipeline) {

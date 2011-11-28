@@ -20,6 +20,7 @@
 */
 package de.fau.cs.jstk.io;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
@@ -36,7 +37,7 @@ public final class LabelFrameInputStream implements FrameSource {
 	private int [] ignore = null;
 	
 	public LabelFrameInputStream(InputStream labelstream, FrameSource source) {
-		this.labelstr = labelstream;
+		this.labelstr = new BufferedInputStream(labelstream);
 		this.source = source;
 	}
 	
