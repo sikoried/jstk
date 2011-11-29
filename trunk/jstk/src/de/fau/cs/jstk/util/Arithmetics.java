@@ -603,20 +603,22 @@ public final class Arithmetics {
 		return m;
 	}
 	
+	/** Get the minimum of the trace of a upper triangular matrix */
 	public static double minsp(double [] a, int d) {
 		double m = a[0];
 		
-		for (int i = 1, j = d; i < d; /* nop */) {
+		for (int i = 1, j = d; i < d; ++i) {
 			m = Math.min(m, a[j]);
 			j += (d-i);
 		}
 		return m;
 	}
 	
+	/** Get the m maximum of the trace of a upper triangular matrix */
 	public static double maxsp(double [] a, int d) {
 		double m = a[0];
 		
-		for (int i = 1, j = d; i < d; /* nop */) {
+		for (int i = 1, j = d; i < d; ++i) {
 			m = Math.max(m, a[j]);
 			j += (d-i);
 		}
