@@ -24,6 +24,7 @@ package de.fau.cs.jstk.sampled;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
@@ -70,7 +71,7 @@ public class RawCapturer implements Runnable, LineListener{
 	OutputStream os;
 	AudioFormat format;
 	
-	TargetDataLine line;
+	TargetDataLine line = null;
 	
 	double desiredBufSize;
 	
@@ -119,13 +120,14 @@ public class RawCapturer implements Runnable, LineListener{
 		if (getMixer() == null)
 			System.err.println("Error: could not find mixer " + mixerName);			
 
-		System.out.println(String.format("mixer: Description = %s, Name = %s, Vendor = %s, Version = %s",
+		System.err.println(String.format("mixer: Description = %s, Name = %s, Vendor = %s, Version = %s",
 				getMixer().getDescription(),
 				getMixer().getName(),
 				getMixer().getVendor(),
 				getMixer().getVersion()));
 	}
 	
+	/* outdated
 	public void dispose(boolean shutdownInProgress){
 		stopCapturing();
 		
@@ -150,20 +152,23 @@ public class RawCapturer implements Runnable, LineListener{
 		shutdownHook = null;
 
 	}
+	*/
 	
 	public void addStateListener(CaptureEventListener client) {
 		dependents.add(client);
 	}
+	/* outdated; just do a stopPlaying and set object to null
 	public void removeStateListener(CaptureEventListener client) {
 		dependents.remove(client);
 	}
+	*/
 	private void notifyStart() {
 		System.err.println("RawCapturer: notifyStart for " + dependents.size());		
 		for (CaptureEventListener s : dependents)
 			s.captureStarted(this);
 	}
 	private void notifyStop() {
-		System.err.println("RawCapturer: notifyStop for " + dependents.size());
+		System.err.println(new Date() + ": RawCapturer: notifyStop for " + dependents.size());
 		for (CaptureEventListener s : dependents)
 			s.captureStopped(this);
 	}
@@ -191,10 +196,16 @@ public class RawCapturer implements Runnable, LineListener{
 	public void startCapture(){
 		Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread(){
 			public void run() {
-				
-				System.err.println("RawCapturer: Inside Shutdown Hook: stopping capturing...");
-				stopCapturing();
-				System.err.println("capturing stopped");
+				// free audio device
+				if (line != null){
+					System.err.println("RawCapturer: Inside Shutdown Hook: closing line...");				
+					line.close();
+					System.err.println("RawCapturer: Inside Shutdown Hook: line closed.");
+				}
+				else{
+					System.err.println("RawCapturer: Inside Shutdown Hook: line = null -> nothing to do.");
+				}
+
 			}			
 		});		
 		thread.start();		
@@ -222,10 +233,13 @@ public class RawCapturer implements Runnable, LineListener{
 			return;
 		}			
 		
+		// not setting "stopped = true" here, but rather
+		// stop line, and let update set stopped to true.
+		
 		// the stop() sometime hangs quite a while!?!
-		System.err.println("stopCapturing: line.stop()...");
+		System.err.println(new Date() + ": stopCapturing: line.stop()...");
 		line.stop();
-		System.err.println("stopCapturing: ... line.stop() done");
+		System.err.println(new Date() + ": stopCapturing: ... line.stop() done");
 		
 		stopMutex.release();
 		
@@ -371,6 +385,15 @@ public class RawCapturer implements Runnable, LineListener{
 
 		System.err.println("line.close()");
 		line.close();		
+		line = null;
+		
+		if (shutdownHook != null){
+			System.err.println("RawPlayer.run: removing shutdownHook...");
+		
+			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		}
+		else
+			System.err.println("RawPlayer.run: warning: no shutdownHook ?!?");
 		
 		System.err.println("leaving");				
 	}
@@ -380,11 +403,14 @@ public class RawCapturer implements Runnable, LineListener{
 		if (!le.getLine().equals(line))
 			return;
 		
-		System.err.println("RawCapturer: update: " + le);
+		System.err.println(new Date() + ": RawCapturer.update: " + le);
 		
-		if (le.getType() == LineEvent.Type.START)
+		if (le.getType() == LineEvent.Type.START){
+			System.err.println("RawCapturer.update: notifyStart()");
 			notifyStart();
+		}
 		else if (le.getType() == LineEvent.Type.STOP){
+			System.err.println("RawCapturer.update: notifyStop()");
 			stopped = true;
 			notifyStop();						
 		}

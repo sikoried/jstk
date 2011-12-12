@@ -71,7 +71,7 @@ public class RawPlayer implements Runnable, LineListener{
 	
 	AudioInputStream ais;
 	
-	SourceDataLine line;
+	SourceDataLine line = null;
 	
 	double desiredBufSize;
 	
@@ -128,34 +128,38 @@ public class RawPlayer implements Runnable, LineListener{
 	
 	}	
 
-	public void dispose(boolean shutdownInProgress){
-		stopPlaying();
-		
-		if (line != null)
-			line.removeLineListener(this);
-		line = null;
-		
-		if (dependents != null)
-			dependents.clear();		
-		dependents = null;
-		
-		thread = null;
-		ais = null;
-		
-		setMixer(null);
-		if (shutdownHook != null && !shutdownInProgress)
-			Runtime.getRuntime().removeShutdownHook(shutdownHook);
-		shutdownHook = null;
-		
-	}
+	/**
+	 * disregisters this as a lineListener and .
+	 * @param shutdownInProgress
+	 * 
+	 * outdated, as player removes shutdownhook when ready with playing, which should suffice.
+	 */
+//	private void dispose(){
+//		
+//		if (line != null)
+//			line.removeLineListener(this);
+//		line = null;
+//		
+//		if (dependents != null)
+//			dependents.clear();		
+//		dependents = null;
+//		
+////		thread = null;
+////		ais = null;
+////		
+////		setMixer(null);		
+//		
+//	}
 	
 	public void addStateListener(PlayEventListener client) {
 		dependents.add(client);
 	}
 	
+	/* outdated; just do a stopPlaying and set object to null
 	public void removeStateListener(PlayEventListener client) {
 		dependents.remove(client);
 	}
+	*/
 	
 	private void notifyStart() {
 		System.err.println("RawPlayer: notifyStart for " + dependents.size());
@@ -194,13 +198,20 @@ public class RawPlayer implements Runnable, LineListener{
 	}
 	
 	public void start(){
+		if (shutdownHook != null){
+			System.err.println("RawPlayer.start() error: shutdownHook != null!");
+		}
 		Runtime.getRuntime().addShutdownHook(shutdownHook = new Thread(){
 			public void run() {
-				
-				System.err.println("RawPlayer: Inside Shutdown Hook: stopping player...");
-				
-				stopPlaying();
-				System.err.println("player stopped");
+				// free audio device
+				if (line != null){
+					System.err.println("RawPlayer: Inside Shutdown Hook: closing line...");				
+					line.close();
+					System.err.println("RawPlayer: Inside Shutdown Hook: line closed.");
+				}
+				else{
+					System.err.println("RawPlayer: Inside Shutdown Hook: line = null -> nothing to do.");
+				}
 			}			
 		});		
 		thread.start();
@@ -215,6 +226,10 @@ public class RawPlayer implements Runnable, LineListener{
 		}
 	}
 	
+	
+	/**
+	 * stops playback, waits for playing thread (to free audio resources and exit).
+	 */
 	public void stopPlaying(){		
 		try {
 			stopMutex.acquire();
@@ -359,6 +374,15 @@ public class RawPlayer implements Runnable, LineListener{
 			line.flush();			
 		}
 		line.close();
+		line = null;
+		
+		if (shutdownHook != null){
+			System.err.println("RawPlayer.run: removing shutdownHook...");
+		
+			Runtime.getRuntime().removeShutdownHook(shutdownHook);
+		}
+		else
+			System.err.println("RawPlayer.run: warning: no shutdownHook ?!?");
 		
 		stopped = true;		
 				
