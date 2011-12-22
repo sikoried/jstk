@@ -38,6 +38,10 @@ import de.fau.cs.jstk.sampled.AudioSource;
  */
 public class IIRFilter implements AudioSource {
 
+	private static int ID_CNT = 0;
+	
+	private int id = ID_CNT++;
+	
 	protected AudioSource source;
 	
 	/** local signal buffer to read from source */
@@ -110,6 +114,13 @@ public class IIRFilter implements AudioSource {
 			for (int i = 0; i < b.length; ++i)
 				b[i] /= a[0];
 		}
+		
+		// we need to make sure that the px and py are correct, in case the
+		// arrays got smaller!
+		if (px >= xv.length)
+			px = 0;
+		if (py >= yv.length)
+			py = 0;
 	}
 	
 	public int read(double [] buf) throws IOException {
@@ -127,7 +138,13 @@ public class IIRFilter implements AudioSource {
 		// apply the filter
 		for (int i = 0; i < r; ++i) {
 			// get the new sample
-			xv[px] = this.buf[i];
+			System.err.println(this.id + " px = " + px + " i = " + i);
+			try {
+				xv[px] = this.buf[i];
+			} catch (Exception e) {
+				System.err.println(e.toString());
+				System.err.println("px = " + px + " i = " + i + " xv.length = " + xv.length + "  this.buf.length = " + this.buf.length);
+			}
 			
 			// compute the output
 			buf[i] = b[0] * xv[px];
