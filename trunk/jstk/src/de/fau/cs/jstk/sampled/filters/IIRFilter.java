@@ -138,14 +138,8 @@ public class IIRFilter implements AudioSource {
 		// apply the filter
 		for (int i = 0; i < r; ++i) {
 			// get the new sample
-			System.err.println(this.id + " px = " + px + " i = " + i);
-			try {
-				xv[px] = this.buf[i];
-			} catch (Exception e) {
-				System.err.println(e.toString());
-				System.err.println("px = " + px + " i = " + i + " xv.length = " + xv.length + "  this.buf.length = " + this.buf.length);
-			}
-			
+			xv[px] = this.buf[i];
+						
 			// compute the output
 			buf[i] = b[0] * xv[px];
 			for (int j = 1; j < b.length; ++j)
