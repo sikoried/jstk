@@ -167,7 +167,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 
 		stillReading = false;
 		informAudioBufferListeners();
-		System.err.println("Reading finished: " + numSamples + " samples");
+		// System.err.println("Reading finished: " + numSamples + " samples");
 
 		try {
 			audioSource.tearDown();
