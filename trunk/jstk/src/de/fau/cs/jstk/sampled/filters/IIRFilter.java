@@ -38,10 +38,6 @@ import de.fau.cs.jstk.sampled.AudioSource;
  */
 public class IIRFilter implements AudioSource {
 
-	private static int ID_CNT = 0;
-	
-	private int id = ID_CNT++;
-	
 	protected AudioSource source;
 	
 	/** local signal buffer to read from source */
