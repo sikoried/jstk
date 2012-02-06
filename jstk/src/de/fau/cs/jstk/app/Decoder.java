@@ -125,8 +125,8 @@ public class Decoder {
 		
 		// load language model
 		HashMap<Tokenization, Float> sil = new HashMap<Tokenization, Float>();
-		// sil.put(conf.tok.getWordTokenization("si"), silprob);
-		// sil.put(conf.tok.getWordTokenization("unk"), silprob);
+		// sil.put(conf.tok.getWordTokenization("pau"), silprob);
+		// sil.put(conf.tok.getWordTokenization("h#"), silprob);
 		Bigram lm = new Bigram(conf.tok, conf.th, sil);
 		lm.loadSrilm(new File(args[z++]));
 		

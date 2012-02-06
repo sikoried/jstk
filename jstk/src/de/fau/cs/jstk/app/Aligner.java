@@ -241,9 +241,12 @@ public class Aligner {
 						logger.info("Aligner.BWorker.run(): " + t.fileName + " no best hypothesis, falling back to regular Viterbi!");
 						fs = new FrameInputStream(new File(t.canonicalInputName()));
 						ma = new MetaAlignment(fs, tok.getSentenceTokenization(t.transcription), th, true);
-					} else
+						logger.info("alg-score " + t.fileName + " " + obs.size() + " " + ma.score + " " + (ma.score / obs.size()));
+					} else {
 						ma = h0.toMetaAlignment(th);
-					 
+						logger.info("alg-score " + t.fileName + " " + obs.size() + " " + h0.as + " " +  h0.vs + " " + (h0.as / obs.size()) + " " + (h0.vs / obs.size()));
+					}
+					
 					BufferedWriter bw = new BufferedWriter(new FileWriter(t.canonicalOutputName()));
 					ma.write(bw);
 					
