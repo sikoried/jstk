@@ -38,7 +38,6 @@ import de.fau.cs.jstk.arch.TokenHierarchy;
 import de.fau.cs.jstk.arch.Tokenization;
 import de.fau.cs.jstk.exceptions.AlignmentException;
 import de.fau.cs.jstk.exceptions.OutOfVocabularyException;
-import de.fau.cs.jstk.exceptions.TrainingException;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameSource;
 
@@ -77,7 +76,8 @@ public class MetaAlignment {
 				throw new IllegalArgumentException("missing transcription in line " + line);
 			
 			fileName = trim.substring(0, pos);
-			transcription = "<sil> " + trim.substring(pos + 1) + " <sil>";
+			//transcription = "<sil> " + trim.substring(pos + 1) + " <sil>";
+			transcription = trim.substring(pos + 1);
 			
 			this.inDir = inDir;
 			this.outDir = outDir;
@@ -325,6 +325,7 @@ public class MetaAlignment {
 		
 		// read alignments
 		String line;
+		int ignored = 0;
 		while ((line = in.readLine()) != null) {
 			String [] split = line.split("\\s+");
 			
@@ -341,9 +342,12 @@ public class MetaAlignment {
 			int length = Integer.parseInt(split[1]);
 			if (data.size() < length) {
 				// throw new IOException("MetaAlignment.read(): Alignment is too long for feature file, aborting.");
-				logger.info("MetaAlignment.read(): alignment is too long, shortening to feature sequence! Are you using manual alignments?");
-				if (source instanceof FrameInputStream)
-					logger.info("possibly broken file or transcription: " + ((FrameInputStream) source).getFileName(true));
+				if (length - data.size() > 1) {
+					logger.info("MetaAlignment.read(): alignment is too long by " + (length - data.size()) + ", shortening to feature sequence! Are you using manual alignments?");
+					if (source instanceof FrameInputStream)
+						logger.info("possibly broken file or transcription: " + ((FrameInputStream) source).getFileName(true));
+				}
+				
 				length = data.size();
 			}
 			
@@ -362,8 +366,11 @@ public class MetaAlignment {
 			}
 			
 			// validate alignment
-			if (seq.size() < model.ns)
-				throw new TrainingException("Alignment for " + split[0] + "too short! Check your alignment file.");
+			if (seq.size() < model.ns) {
+				// logger.info("Alignment for " + split[0] + " too short! Check your alignment file. [ignoring this partial alignment]");
+				ignored++;
+				continue;
+			}
 			
 			// initialize the new alignment
 			if (qstar != null)
@@ -378,6 +385,9 @@ public class MetaAlignment {
 				alignments.add(alg);
 			}
 		}
+		
+		if (ignored > 0)
+			logger.info("Ignored " + ignored + " too short alignments, check your alignment file.");
 	}
 	
 	/**
