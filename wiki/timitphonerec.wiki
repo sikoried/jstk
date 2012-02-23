@@ -2,9 +2,12 @@
 #labels example
 
 = Introduction =
-This example shows how to train and evaluate a phoneme recognizer with JSTK.
+This example shows how to train and evaluate a phoneme recognizer with JSTK. To follow this example, you need the TIMIT Corpus [1] (ideally in CD distribution form), SRILM [2] and NIST sclite [3].
 
 
+[1] http://www.ldc.upenn.edu/Catalog/CatalogEntry.jsp?catalogId=LDC93S1
+[2] http://www.speech.sri.com/projects/srilm/
+[3] http://www.itl.nist.gov/iad/mig/tools/
 
 = Alphabet and Lexicon =
 The used alphabet and lexicon refers to the reduced phoneme set (39 distinct phones), as with most systems. The lexicon is basically the same as the alphabet, as the phones are already the words.
@@ -148,7 +151,7 @@ ngram-count -order 2 -text train.txt -lm bigram.lm -no-sos -no-eos
 
 # alphabet and lexicon
 mkdir -p conf/
-cut -d' ' -f1 malign/* | sed -e "s/\///g" | sort -u > conf/timit.a
+cut -d' ' -f1 malign/* | sed -e "s/\///g" | sort -u > conf/timit.a  #*/
 # now manally add number of states!
 awk '{print $1, $1}' conf/timit.a > conf/timit.l
 
@@ -217,3 +220,5 @@ Using a bi-gram LM estimated on the training data, the sclite shows an average W
 | Median | 10.0  375.0 | 66.2   21.9   11.3    4.0   37.9  100.0 |
 `----------------------------------------------------------------'
 }}}
+
+Word insertion penalty, beam size and LM weight may not be chosen optimal, other codebook settings may produce better results, esp. continuous density HMM.
