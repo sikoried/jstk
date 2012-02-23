@@ -209,6 +209,7 @@ sclite -r test-nosil.ref -h rec-nosil.hyp -i rm
 =Results=
 Using a bi-gram LM estimated on the training data, the sclite shows an average WER (in this case: PER) of 38.2%
 {{{
+| SPKR   | # Snt # Wrd | Corr    Sub    Del    Ins    Err  S.Err |
 | Sum/Avg| 1680  62901 | 66.2   22.3   11.5    4.4   38.2  100.0 |
 |================================================================|
 |  Mean  | 10.0  374.4 | 66.2   22.3   11.5    4.4   38.2  100.0 |
