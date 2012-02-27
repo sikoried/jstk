@@ -47,9 +47,9 @@ import Jama.Matrix;
  *
  */
 public final class DensityFull extends Density {
-	private static Logger logger = Logger.getLogger(DensityFull.class);
+	public static Logger logger = Logger.getLogger(DensityFull.class);
 	
-	/** cov = L L^T where L is a lower triangular, packed matrix; Cholesky decomposition! */
+	/** cov = L L^T where L is a lower triangular, packed matrix; Cholesky decomposition!, diagonal element is stored inverted */
 	transient public double [] L;
 	
 	/** cache for forward substitution */
@@ -207,6 +207,9 @@ public final class DensityFull extends Density {
 			for (int j = 0; j <= i; ++j)
 				L[k++] = mat.get(i, j);
 		}
+		
+		for (int i = 0; i < fd; ++i) 
+			L[i * (i+1) / 2 + i] = 1.0 / L[i * (i+1) / 2 + i];
 	}
 	
 	/**
@@ -233,10 +236,10 @@ public final class DensityFull extends Density {
 		// ...
 		int k = 0;
 		for (int i = 0; i < fd; ++i) {
-			y[i] = x[i] - mue[i];
+			double tmp = x[i] - mue[i];
 			for (int j = 0; j < i; ++j)
-				y[i] -= y[j] * L[k++];
-			y[i] /= L[k++];
+				tmp -= y[j] * L[k++];
+			y[i] = tmp * L[k++]; // L[diag] is stored as inverse!
 		}
 		
 		// scalar product

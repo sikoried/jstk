@@ -36,6 +36,8 @@ import org.apache.log4j.Logger;
 public final class DensityDiagonal extends Density {
 	private static Logger logger = Logger.getLogger(DensityDiagonal.class);
 	
+	private double [] icov;
+	
 	/**
 	 * Create a new Density with diagonal covariance.
 	 * @param dim Feature dimension
@@ -43,6 +45,7 @@ public final class DensityDiagonal extends Density {
 	public DensityDiagonal(int dim) {
 		super(dim);
 		cov = new double [fd];
+		icov = new double [fd];
 	}
 	
 	/**
@@ -132,6 +135,8 @@ public final class DensityDiagonal extends Density {
 				cov[i] = MIN_COV;
 				minc++;
 			}
+			
+			icov[i] = 1.0 / cov[i];
 		}
 
 		logdet = 0.;		
@@ -167,8 +172,9 @@ public final class DensityDiagonal extends Density {
 		double h;
 		for (int i = 0; i < fd; ++i) {
 			h = x[i] - mue[i];
-			h *= h;
-			score +=  h / cov[i];
+			// h *= h;
+			// score +=  h / cov[i];
+			score += h * h * icov[i]; 
 		}
 		
 		score *= -.5;

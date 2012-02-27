@@ -184,6 +184,10 @@ public abstract class Density {
 	 */
 	public abstract void update();
 	
+	public double getOffs() {
+		return logpiconst + logdet;
+	}
+	
 	/**
 	 * Interpolate the local parameters (!) with the referenced ones. 
 	 * @param weight this = weight * source + (1 - weight) * this
