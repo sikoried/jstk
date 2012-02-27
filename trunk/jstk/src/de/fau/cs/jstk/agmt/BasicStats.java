@@ -112,6 +112,22 @@ public class BasicStats {
 		med = data[data.length / 2];
 	}
 	
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append(
+			"obs    = " + obs + "\n" +
+			"min    = " + min + "\n" +
+			"max    = " + max + "\n" +
+			"mean   = " + mean + "\n" +
+			"median = " + med + "\n" +
+			"sdev   = " + sdev
+			
+		);
+		
+		return sb.toString();
+	}
+	
 	public static final String SYNOPSIS = 
 		"usage: BasicStats data-file-1 <data-file-2 ...>";
 	
