@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-class DCShiftRemover {
+public class DCShiftRemover {
 	/** Default context for measuring the DC shift (in ms)*/
 	public static final int DEFAULT_CONTEXT_SIZE = 1000;
 	
@@ -117,5 +117,24 @@ class DCShiftRemover {
 		
 		// increment the ring buffer index
 		ind = (ind + transferred) % css;
+	}
+	
+	/**
+	 * Local DC shift removal (simple mean subtraction)
+	 * @param buf
+	 */
+	public static void removeDC(double [] buf) {
+		removeDC(buf, buf.length);
+	}
+	
+	public static void removeDC(double [] buf, int n) {
+		double m = 0.;
+		double k = 1.0 / n;
+		
+		for (int i = 0; i < n; ++i)
+			m += k * buf[i];
+		
+		for (int i = 0; i < n; ++i)
+			buf[i] -= m;
 	}
 }

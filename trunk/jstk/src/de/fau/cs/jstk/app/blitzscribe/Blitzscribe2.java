@@ -105,11 +105,11 @@ public class Blitzscribe2 extends JFrame implements WindowListener {
 	
 	private BufferedWriter logw = null;
 	
-	private AudioPanel ap = new AudioPanel();
+	private AudioPanel ap;
 	
 	private JFileChooser fc = new JFileChooser();
 	
-	public Blitzscribe2() {
+	public Blitzscribe2(String mixerName) {
 		setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		fc.setFileFilter(new FileNameExtensionFilter("transcription files", "trl"));
 		
@@ -122,6 +122,9 @@ public class Blitzscribe2 extends JFrame implements WindowListener {
 		
 		// add the listeners
 		addWindowListener(this);
+		
+		// init audio panel
+		ap = new AudioPanel(mixerName);
 		
 		// layout
 		initUI();
@@ -475,7 +478,12 @@ public class Blitzscribe2 extends JFrame implements WindowListener {
 	public void windowOpened(WindowEvent arg0) { }
 
 	public static void main(String [] args) {
-		Blitzscribe2 bs = new Blitzscribe2();
+		String mix = null;
+		
+		if (args.length == 1)
+			mix = args[0];
+		
+		Blitzscribe2 bs = new Blitzscribe2(mix);
 		bs.setVisible(true);
 	}
 }
