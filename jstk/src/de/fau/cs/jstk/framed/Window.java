@@ -27,6 +27,7 @@ import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
 import de.fau.cs.jstk.io.FrameOutputStream;
 import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioSource;
+import de.fau.cs.jstk.sampled.DCShiftRemover;
 import de.fau.cs.jstk.sampled.RawAudioFormat;
 
 public abstract class Window implements FrameSource {
@@ -36,6 +37,8 @@ public abstract class Window implements FrameSource {
 	public static final int HANN_WINDOW = 2;
 	public static final int RECTANGULAR_WINDOW = 3;
 
+	private boolean rmdc = true;
+	
 	/** frame length in ms */
 	private int wl;
 
@@ -131,6 +134,14 @@ public abstract class Window implements FrameSource {
 		w = initWeights();
 	}
 
+	public boolean getRmdc() {
+		return rmdc;
+	}
+	
+	public void setRmdc(boolean doRmDc) {
+		rmdc = doRmDc;
+	}
+	
 	public double getNumberOfFramesPerSecond() {
 		return 1000. / ws;
 	}
@@ -169,6 +180,10 @@ public abstract class Window implements FrameSource {
 			if (n <= 0)
 				return false;
 
+			if (rmdc)
+				DCShiftRemover.removeDC(buf);
+			
+			
 			// apply window function to signal
 			cind = 0;
 			for (int i = 0; i < nsw; ++i)
@@ -179,6 +194,9 @@ public abstract class Window implements FrameSource {
 		} else if (ps == 0) {
 			// default: read from the source...
 			n = source.read(rb_helper);
+			
+			if (rmdc)
+				DCShiftRemover.removeDC(rb_helper, n);
 		}
 
 		// anything read at all? if not, we also need no padding!

@@ -50,6 +50,7 @@ public class AudioPanel extends JPanel {
 	private ThreadedPlayer player = new ThreadedPlayer();
 	private JProgressBar progressBar = new JProgressBar();
 	private ProgressListener progressListener;
+	private String mixerName = null;
 	
 	private VisualizerSpeechSignal vss = new VisualizerSpeechSignal("", bas);
 	
@@ -144,6 +145,12 @@ public class AudioPanel extends JPanel {
 		
 	}
 	
+	public AudioPanel(String mixerName) {
+		this();
+		
+		this.mixerName = mixerName;
+	}
+	
 	public void setAudioFile(File file) throws IOException, UnsupportedAudioFileException {
 		try {
 			stop();
@@ -182,7 +189,7 @@ public class AudioPanel extends JPanel {
 			
 			System.err.println("starting playback from 0");
 			
-			player.setup(null, bas.getReader(sample, bas.getBufferSize()), 0.);
+			player.setup(mixerName, bas.getReader(sample, bas.getBufferSize()), 0.);
 			player.start();
 
 		} catch (LineUnavailableException e) {
