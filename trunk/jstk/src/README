@@ -37,6 +37,7 @@ jspeex - http://sourceforge.net/projects/jspeex/files/jspeex
 	jspeex is used for decoding speex-compressed (*.spx) files. speex is a lossy
 	codec comparable to MP3 or Ogg Vorbis, but optimized for speech, see http://www.speex.org.
 	Currently using version 0.9.7.
+                 (under debian just do "aptitude install libjspeex-java")
 
 junit - http://www.junit.org
 	Testing framework for java. currently used only sporadically.

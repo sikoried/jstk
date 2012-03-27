@@ -68,7 +68,16 @@ public class Utterance implements Serializable, PubliclyCloneable{
 	/** 
 	 * phrase Boundaries (B2, B3 boundaries)
 	 */
-	private Boundary [] boundaries = null;	
+	private Boundary [] boundaries = null;
+	
+	public enum Mood{
+		STATEMENT{  public String toString(){return "."; }},
+		QUESTION{   public String toString(){return "?"; }},
+		COMMAND{    public String toString(){return "!"; }},
+		EXCLAMATION{public String toString(){return "!!";}}
+	};
+	
+	private Mood mood = null; 
 	
 	/**
 	 * Possible subdivisions of this utterance, e.g. for a novice second language learner
@@ -88,13 +97,16 @@ public class Utterance implements Serializable, PubliclyCloneable{
 	
 	public Utterance(String orthography, String role,
 			Word [] words,
-			Boundary [] boundaries, Subdivision [] subdivisions,
+			Boundary [] boundaries,
+			Mood mood,
+			Subdivision [] subdivisions,
 			String segmentId, String segmentTrack, String segmentRev, String segmentFilename) {
 		this.setOrthography(orthography);
 
 		setWords(words);
 		this.setRole(role);
 		setBoundaries(boundaries);
+		this.mood = mood;
 		setSubdivisions(subdivisions);
 		this.segmentId = segmentId;
 		this.segmentTrack = segmentTrack;
@@ -220,7 +232,8 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		return new Utterance(orthography, speaker,
 				words.toArray(wordDummy),
 				boundaries.toArray(boundaryDummy),
-				subdivisions.toArray(subdivisionDummy),
+				Utterance.guessMood(orthography),
+				subdivisions.toArray(subdivisionDummy),				
 				segmentId, segmentTrack, segmentRev, segmentFilename);
 	}
 	
@@ -366,6 +379,21 @@ public class Utterance implements Serializable, PubliclyCloneable{
 	}
 	
 	/**
+	 * @param word
+	 * @return boundary before word or null if there's no boundary 
+	 */
+	public Boundary getBoundaryBeforeWord(int word){
+		if (word > words.length){
+			throw new IndexOutOfBoundsException("index = " + word + " but number of words is only " + words.length);
+		}
+		for (Boundary b: boundaries){
+			if (b.getIndex() == word)
+				return b;			
+		}
+		return null;
+	}
+	
+	/**
 	 * B3 boundaries divide the utterance into main phrases.
 	 * @return B3 boundaries
 	 */
@@ -484,7 +512,7 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		else
 			lastWord = subdivisions[last + 1].getIndex() - 1; 
 		
-//		System.out.printf("firstWord=%d, lastWord=%d\n", firstWord, lastWord);
+		System.err.printf("firstWord=%d, lastWord=%d\n", firstWord, lastWord);
 		
 		// search for start of new boundaries
 		for (i = 0; i < boundaries.length; i++)
@@ -496,27 +524,132 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		for (i = boundaries.length - 1; i >= 0; i--)
 			if (boundaries[i].getIndex() <= lastWord)
 				break;
-		int lastBoundary = i;		
+		int lastBoundary = i;
 		
-		Boundary [] newBoundaries = new Boundary[lastBoundary - firstBoundary + 1];
+		int B2before = 0;
+		if (getBoundaryBeforeWord(firstWord) != null &&
+				getBoundaryBeforeWord(firstWord).getType() == BOUNDARIES.B2)
+			B2before = 1;
+				
+		int B2after = 0;
+		if (getBoundaryBeforeWord(lastWord + 1) != null &&
+				getBoundaryBeforeWord(lastWord + 1).getType() == BOUNDARIES.B2)
+			B2after = 1;
+		System.err.printf("B2before=%d, B2after=%d\n", B2before, B2after);
+		
+		Boundary [] newBoundaries = new Boundary[lastBoundary - firstBoundary + 1 + B2before + B2after];
+		
+		if (B2before == 1)
+			newBoundaries[0] = new Boundary(BOUNDARIES.B2, 0);
+		if (B2after == 1)
+			newBoundaries[lastBoundary - firstBoundary + 1 + B2before] = new Boundary(BOUNDARIES.B2,
+					lastWord - firstWord + 1);
+					
 		for (i = firstBoundary; i <= lastBoundary; i++)
-			newBoundaries[i - firstBoundary] = new Boundary(boundaries[i].getType(), 
+			newBoundaries[i - firstBoundary + B2before] = new Boundary(boundaries[i].getType(), 
 					boundaries[i].getIndex() - firstWord);		 
 		
 		Subdivision [] newSubdivisions = new Subdivision[last - first + 1];
 		for (i = first; i <= last; i++)
 			newSubdivisions[i - first] = new Subdivision(subdivisions[i].getIndex() - firstWord);
 		
+		System.err.println("boundaries = " + Arrays.deepToString(newBoundaries));
+		
 		return new Utterance(orthography, getRole(),
 				Arrays.copyOfRange(words,
 						firstWord, lastWord + 1),		
 				newBoundaries,
+				mood,
 				newSubdivisions,
 				segmentId, segmentTrack,
 				// TODO
 				null,//segmentRev, 
 				null//segmentFilename
 				);
+	}
+	
+	/**
+	 * 
+	 * @return mood as indicated by punctuation ("?", "!", "!!", or "." at end of orthography)
+	 */
+	public static Mood guessMood(String orthography){
+		// remove trailing white spaces
+		String tmp = orthography.replaceAll("\\s+$", "");
+		String candidate = tmp.substring(tmp.length() - 1, tmp.length());
+		if (candidate.endsWith("!!"))
+			return Mood.EXCLAMATION;
+		if (candidate.endsWith("!"))
+			return Mood.COMMAND;
+		if (candidate.endsWith("?"))
+			return Mood.QUESTION;
+		return Mood.STATEMENT;
+	}	
+
+	/**
+	 * Generates a textual representation of this utterance 
+	 * (e.g. "What should we do tonight?").
+	 * @param includePhraseAnnotation
+	 *        if true, include phrase boundaries and accents, e.g.
+	 *        "What SA should we do PA tonight SA?"
+	 * @return the textual representation 
+	 */
+	public String toTextString(boolean includePhraseAnnotation){
+		String ret = "";
+		
+		// B2 before first word? (i.e. from a subdivided utterance)
+		Boundary b = getBoundaryBeforeWord(0);
+		if (b != null && b.getIndex() == 0 &&
+				b.getType() == BOUNDARIES.B2)
+			ret += "B2 ";
+		
+		for (int i = 0; i < words.length; i++){
+			Word w = words[i];
+
+			ret += w.getGraphemes() + " ";
+			if (includePhraseAnnotation){
+				switch(w.getPhraseAccent()){
+				case NONE:
+					break;
+				case PRIMARY:
+					ret += "PA ";
+					break;
+				case SECONDARY:
+					ret += "SA ";
+					break;
+				case EXTRA:
+					ret += "EA ";
+					break;
+				default: 
+					throw new Error("unknown phrase accent value " + w.getPhraseAccent());
+				}
+				
+				b = getBoundaryBeforeWord(i + 1);
+				
+				if (b != null)
+					switch (b.getType()){
+					case B2:
+						ret += "B2 ";
+						break;
+					case B3:
+						ret += "B3 ";
+						break;
+					default:
+						throw new Error("unknown phrase boundary value " + b.getType());
+					}
+			}
+		}
+		
+		ret += mood.toString();
+		return ret;
+	
+	}
+
+	public Mood getMood() {
+		return mood;
+	}
+
+	public void setMood(Mood mood) {
+		this.mood = mood;
 	}
 	
 //	public void setPhraseAccents(PhraseAccent [] phraseAccents) {
