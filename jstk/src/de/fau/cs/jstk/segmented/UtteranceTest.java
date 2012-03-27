@@ -32,7 +32,7 @@ public class UtteranceTest {
 	
 	public static Utterance getExample(){
 		return new Utterance(
-				"I'm not that hungry. Besides, I don't like curry.",
+				"I'm not that hungry; besides, I don't like curry.",
 				"Prince Hamlet",
 				new Word[]{
 						new Word("i'm", new Syllable[]{new Syllable()}, 
@@ -53,13 +53,14 @@ public class UtteranceTest {
 						new Word("curry", new Syllable[]{new Syllable(), new Syllable()}, 
 								new Phoneme[]{new Phoneme("x")}, PHRASE_ACCENT.NONE)
 				},
-				new Boundary[]{new Boundary(BOUNDARIES.B3, 4)},
+				new Boundary[]{new Boundary(BOUNDARIES.B2, 4)},
+				Utterance.Mood.STATEMENT,
 				new Subdivision[]{new Subdivision(0), new Subdivision(4)}, null, null, null, null);
 	}
 	
 	public static Utterance getExamplePart1(){
 		return new Utterance(
-				"I'm not that hungry. ",
+				"I'm not that hungry; ",
 				"Prince Hamlet",
 				new Word[]{
 						new Word("i'm", new Syllable[]{new Syllable()}, 
@@ -71,13 +72,14 @@ public class UtteranceTest {
 						new Word("hungry", new Syllable[]{new Syllable(0, 3, SYLLABLE_STRESS.PRIMARY), new Syllable(3, 3,SYLLABLE_STRESS.NONE)}, 
 								new Phoneme[]{new Phoneme("x")}, PHRASE_ACCENT.NONE)						
 				},				
-				new Boundary[0],
+				new Boundary[]{new Boundary(BOUNDARIES.B2, 4)},
+				Utterance.Mood.STATEMENT,
 				new Subdivision[]{new Subdivision(0)}, null, null, null, null);
 	}
 	
 	public static Utterance getExamplePart2(){
 		return new Utterance(
-				"Besides, I don't like curry.",
+				"besides, I don't like curry.",
 				"Prince Hamlet",
 				new Word[]{
 						new Word("besides", new Syllable[]{new Syllable(), new Syllable()}, 
@@ -89,8 +91,9 @@ public class UtteranceTest {
 								new Phoneme[]{new Phoneme("x")}, PHRASE_ACCENT.NONE),
 						new Word("curry", new Syllable[]{new Syllable(), new Syllable()}, 
 								new Phoneme[]{new Phoneme("x")}, PHRASE_ACCENT.NONE)
-				},
-				new Boundary[0],
+				},				
+				new Boundary[]{new Boundary(BOUNDARIES.B2, 0)},
+				Utterance.Mood.STATEMENT,
 				new Subdivision[]{new Subdivision(0)}, null, null, null, null);
 	}
 	
@@ -99,9 +102,9 @@ public class UtteranceTest {
 		Utterance u = getExample();
 		
 		// including the trailing space!
-		Assert.assertEquals("I'm not that hungry. ", u.getOrthography(0, 4)); 
+		Assert.assertEquals("I'm not that hungry; ", u.getOrthography(0, 4)); 
 		
-		Assert.assertEquals("Besides, I don't like curry.", u.getOrthography(4, 9));		
+		Assert.assertEquals("besides, I don't like curry.", u.getOrthography(4, 9));		
 
 		// syllables in "hungry"
 		Assert.assertEquals(0, u.getWords()[3].getSyllables()[0].getPosition());
