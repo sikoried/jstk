@@ -52,7 +52,7 @@ public class F0 implements FrameSource {
 	private double sr;
 	
 	/** source to read from */
-	private FrameSource source;
+	private AutoCorrelation source;
 	
 	/** buffer used to read from source */
 	private double [] ac;
@@ -114,9 +114,14 @@ public class F0 implements FrameSource {
 		ind_lb = (int) (sr / ub);
 		ind_ub = (int) (sr / lb);
 		
-		if (ind_ub >= fs_in) {
+		int s = 0;
+		if (source.firstIndexVUVDecision()) {
+			s = 1;
+		}
+		
+		if (ind_ub >= fs_in - s) {
 			// frequency is not observable, reset!
-			ind_ub = fs_in-1;
+			ind_ub = fs_in-1-s;
 			lb = sr / ind_ub;
 		}
 	}
@@ -144,18 +149,28 @@ public class F0 implements FrameSource {
 		Arrays.fill(maxv, -Double.MAX_VALUE);
 		Arrays.fill(buf, 0.);
 		
+		int s = 0;
+		if (source.firstIndexVUVDecision()) {
+			s = 1;
+			if (ac[0] == 0) {
+				return true;
+			} else {
+				// ignore first entry of array ac
+			}
+		}
+				
 		// locate maxima, omit first value
 		for (int i = ind_lb; i < ind_ub; ++i) {
-			if (ac[i] >= ac[i-1] && ac[i] >= ac[i+1] && ac[i] > maxv[0]) {
+			if (ac[s+i] >= ac[s+i-1] && ac[s+i] >= ac[s+i+1] && ac[s+i] > maxv[0]) {
 				// if we have a local max AND it's bigger than the smallest max
 				// then add it to the candidate list
 				if (nc == 1) {
-					maxv[0] = ac[i];
+					maxv[0] = ac[s+i];
 					buf[0] = sr / i;
 				} else {
 					// find the right position to insert
 					int p = 0;
-					while (p < nc - 1 && ac[i] > maxv[p+1])
+					while (p < nc - 1 && ac[s+i] > maxv[p+1])
 						p++;
 					
 					// shift the old maxima
@@ -165,7 +180,7 @@ public class F0 implements FrameSource {
 					}
 					
 					// insert the new max
-					maxv[p] = ac[i];
+					maxv[p] = ac[s+i];
 					buf[p] = sr / i;
 				}
 			}
@@ -199,9 +214,10 @@ public class F0 implements FrameSource {
 		double [] buf = new double [f0.getFrameSize()];
 		FrameOutputStream fos = new FrameOutputStream(buf.length);
 		
-		while (f0.read(buf))
-			fos.write(buf);
-		
+		while (f0.read(buf)) {
+			// fos.write(buf);
+			System.out.println(buf[0]);
+		}
 		fos.close();
 	}
 }
