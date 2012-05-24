@@ -38,7 +38,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 
 	private static final int BUFFER_SIZE_EXP = 18;
 	private static final int BUFFER_SIZE = 1 << BUFFER_SIZE_EXP; // ca. 16 s bei
-										 						// 16kHz
+	// 16kHz
 
 	private Vector<AudioBufferListener> audioBufferListeners;
 
@@ -159,10 +159,11 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 				buffer = new double[buffer.length + 128][];
 				System.arraycopy(save, 0, buffer, 0, save.length);
 			}
-			
+
 			Thread.yield();
-			
-			// System.err.println(numSamples + " samples available; " + more + " new samples");
+
+			// System.err.println(numSamples + " samples available; " + more +
+			// " new samples");
 		}
 
 		stillReading = false;
@@ -332,7 +333,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	 */
 	public double get(double index, int interpolation) {
 		if (stillReading) {
-			while ((index+500 >= numSamples) && stillReading) {
+			while ((index + 500 >= numSamples) && stillReading) {
 				try {
 					Thread.sleep(50);
 				} catch (InterruptedException e) {
