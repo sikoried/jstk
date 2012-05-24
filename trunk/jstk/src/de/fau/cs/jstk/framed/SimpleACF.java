@@ -44,6 +44,8 @@ public class SimpleACF implements AutoCorrelation {
 	/** frame size */
 	private int fs;
 
+	private boolean vuv;
+	
 	/**
 	 * Construct an AutoCorrelation object using the given source to read from.
 	 * 
@@ -53,6 +55,12 @@ public class SimpleACF implements AutoCorrelation {
 		this.source = source;
 		this.fs = source.getFrameSize();
 		this.buf = new double[fs];
+		this.vuv = false;
+	}
+	
+	public SimpleACF(VUVDetection source) {
+		this((FrameSource) source);
+		this.vuv = true;
 	}
 
 	public FrameSource getSource() {
@@ -75,23 +83,34 @@ public class SimpleACF implements AutoCorrelation {
 			return false;
 		
 		// compute autocorrelation
-		ac(this.buf, buf);
+		ac(this.buf, buf, vuv);
 		
 		return true;
 	}
 	
+	public static void ac(double [] in, double [] out) {
+		ac(in, out, false);
+	}
+
 	/**
 	 * Compute the autocorrelation (explicit way)
 	 * @param in
 	 * @param out
 	 */
-	public static void ac(double [] in, double [] out) {
+	public static void ac(double [] in, double [] out, boolean vuv) {
+		int s = (vuv) ? 1 : 0;
 		// compute autocorrelation
-		for (int j = 0; j < in.length; ++j) {
-			out[j] = 0.;
-			for (int i = 0; i < in.length - j; ++i)
-				out[j] += in[i + j] * in[i];
+		out[0] = in[0];
+		for (int j = 0; j < in.length - s; ++j) {
+			out[s+j] = 0.;
+			for (int i = 0; i < in.length - s; ++i) {
+				out[s+j] += in[s + (i + j) % (in.length - s)] * in[s + i];
+			}
 		}
+	}
+	
+	public boolean firstIndexVUVDecision() {
+		return vuv;
 	}
 	
 	public static final String SYNOPSIS = 
