@@ -29,5 +29,6 @@ import de.fau.cs.jstk.io.FrameSource;
  *
  */
 public interface AutoCorrelation extends FrameSource {
-	// this is a dummy interface
+	// this is a dummy interface -not any more :-)
+	public boolean firstIndexVUVDecision();
 }
