@@ -191,4 +191,9 @@ public class FastACF implements AutoCorrelation {
 		
 		fos.close();
 	}
+
+	@Override
+	public boolean firstIndexVUVDecision() {
+		return false;
+	}
 }
