@@ -36,9 +36,8 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	public static final int LINEAR_INTERPOLATION = 1;
 	public static final int SINC_INTERPOLATION = 2;
 
-	private static final int BUFFER_SIZE_EXP = 18;
-	private static final int BUFFER_SIZE = 1 << BUFFER_SIZE_EXP; // ca. 16 s bei
-	// 16kHz
+	private final int BUFFER_SIZE_EXP;
+	private final int BUFFER_SIZE; 										 			
 
 	private Vector<AudioBufferListener> audioBufferListeners;
 
@@ -98,17 +97,24 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	 *             cannot be read to end and buffered).
 	 */
 	public BufferedAudioSource(AudioSource source) {
+		this(source, 18, true); // buffer size about 16 seconds bei 16 kHz
+	}
+	
+	public BufferedAudioSource(AudioSource source, int bufferSizeExp, boolean autostart) {
+		BUFFER_SIZE_EXP = bufferSizeExp;
+		BUFFER_SIZE = 1 << BUFFER_SIZE_EXP;
+		
 		if (source instanceof AudioCapture) {
-			throw new IllegalArgumentException(
-					"The AudioSourceBuffer will not work for streams.");
+			// throw new IllegalArgumentException(
+			//		"The AudioSourceBuffer will not work for streams.");
 		}
 		audioSource = source;
 
 		audioBufferListeners = new Vector<AudioBufferListener>();
 
-		Thread t = new Thread(this);
-
-		t.start();
+		if (autostart) {
+			startReading();
+		}
 
 		/*
 		 * try { while (t.isAlive()) { Thread.sleep(100); } } catch
@@ -133,7 +139,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 
 			if (stopRequest) {
 				stillReading = false;
-				// System.err.println("Reading stopped");
+				System.err.println("Reading stopped");
 				break;
 			}
 
@@ -160,19 +166,23 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 				System.arraycopy(save, 0, buffer, 0, save.length);
 			}
 
-			Thread.yield();
-
-			// System.err.println(numSamples + " samples available; " + more +
-			// " new samples");
+			// Thread.yield();
+			
+			try {
+				Thread.sleep(64);
+			} catch (InterruptedException e) {
+			}
+						
+			// System.err.println(numSamples + " samples available; " + more + " new samples");
 		}
 
 		stillReading = false;
 		informAudioBufferListeners();
-		// System.err.println("Reading finished: " + numSamples + " samples");
+		System.err.println("Reading finished: " + numSamples + " samples");
 
 		try {
-			audioSource.tearDown();
-		} catch (IOException e) {
+			// audioSource.tearDown();
+		} catch (Exception e) {
 		}
 	}
 
@@ -194,6 +204,24 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	public int getSampleRate() {
 		return audioSource.getSampleRate();
 	}
+	
+	public void startReading() {
+		bufferIndex = 0;
+		bufferPosition = 0;
+		samplesRead = 0;
+		numSamples = 0;
+		buffer = null;
+		maximum = 0;
+		minimum = 0;
+		stopRequest = false;
+		Thread t = new Thread(this);
+		t.setPriority(1);
+		t.start();		
+	}
+	
+	public void stopReading() {
+		stopRequest = true;
+	}
 
 	public int read(double[] buf) throws IOException {
 		return read(buf, buf.length);
@@ -203,10 +231,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	public int read(double[] buf, int length) throws IOException {
 		if (stillReading) {
 			while ((samplesRead + length >= numSamples) && stillReading) {
-				try {
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-				}
+				Thread.yield();
 			}
 		}
 
