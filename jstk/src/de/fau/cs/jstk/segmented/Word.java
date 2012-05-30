@@ -65,6 +65,8 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	 */
 	private PHRASE_ACCENT phraseAccent = null;	
 	
+	private double stressWrongProb = 0.0;
+	
 	public Word(){
 	}
 	
@@ -107,7 +109,10 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	    
 	    PHRASE_ACCENT phraseAccent =
 	    	PHRASE_ACCENT.valueOf(
-	    			node.getAttributes().getNamedItem("phraseAccent").getNodeValue());	    
+	    			node.getAttributes().getNamedItem("phraseAccent").getNodeValue());
+	    
+	    String stressWrongProb = node.getAttributes().getNamedItem("stressWrongProb").getNodeValue();
+	        	
 
 		List<Syllable> syllables = new LinkedList<Syllable>();
 		List<Phoneme> phonemes = new LinkedList<Phoneme>();
@@ -137,8 +142,15 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 		Syllable[] syllableDummy = new Syllable[0];
 		Phoneme[] phonemeDummy = new Phoneme[0];
 	    
-	    return new Word(graphemes, syllables.toArray(syllableDummy), phonemes.toArray(phonemeDummy),
+		Word word = new Word(graphemes, syllables.toArray(syllableDummy), phonemes.toArray(phonemeDummy),
 	    		phraseAccent);
+		
+		if (stressWrongProb != null){
+			word.setStressWrongProb(Double.parseDouble(stressWrongProb));
+			System.err.println("stressWrongProb = " + word.getStressWrongProb());
+		}
+		
+	    return word;
 			
 	}
 
@@ -156,6 +168,14 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 
 	public PHRASE_ACCENT getPhraseAccent() {
 		return phraseAccent;
+	}
+
+	public double getStressWrongProb() {
+		return stressWrongProb;
+	}
+
+	public void setStressWrongProb(double stressWrongProb) {
+		this.stressWrongProb = stressWrongProb;
 	}
 
 }
