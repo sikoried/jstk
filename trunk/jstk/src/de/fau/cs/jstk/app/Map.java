@@ -53,7 +53,7 @@ public class Map {
 		"-a <mode>\n" +
 		"   Specify parameters to adapt: (p)riors, (m)eans, (c)ovariances; default 'pmc'\n" +
 		"-r <relevance>\n" +
-		"   Relevance factor to weight new statistics against old model; default 16\n" +
+		"   Relevance factor >= 0 to weight new statistics against old model. The higher, the more weight the old model gets. Default 16\n" +
 		"-n num-iterations\n" +
 		"   Number of MAP iterations; default 1\n" +
 		"-l list\n" +

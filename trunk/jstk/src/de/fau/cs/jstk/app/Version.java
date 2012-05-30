@@ -23,7 +23,7 @@ package de.fau.cs.jstk.app;
 
 public class Version {
 	// TODO, maybe: create a class with global settings, and put it there. Implement version number comparisons.
-	public static final String Version = "0.1.1-9";
+	public static final String Version = "0.1.2-0";
 
 	public static final String SYNOPSIS =
 		Version.class.getCanonicalName() + 

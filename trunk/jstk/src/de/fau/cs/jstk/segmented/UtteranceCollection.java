@@ -25,8 +25,11 @@ package de.fau.cs.jstk.segmented;
 
 import java.beans.XMLEncoder;
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
@@ -120,7 +123,7 @@ public class UtteranceCollection implements Serializable, PubliclyCloneable{
 
 		org.w3c.dom.Document doc = db.parse(new BufferedInputStream(in));
 		if (doc == null)
-			throw new Error("sf");
+			throw new Error("could not parse document!");
 
 		Node root;
 		root = doc.getFirstChild();
@@ -134,40 +137,6 @@ public class UtteranceCollection implements Serializable, PubliclyCloneable{
 		}
 		return n;
 	}
-	
-	public static void main(String[] args) {		
-		try {
-			UtteranceCollection session = UtteranceCollection.read(
-					new BufferedInputStream(
-					UtteranceCollection.class.getResource("/segmented/dialog.xml").openStream()));
-					//new BufferedInputStream(new FileInputStream(
-					//"pronunciation/test/dialog.xml")));
-			
-			
-			int i;
-			for (i = 0; i < session.getTurns().length; i++){
-				System.out.println(i + ": " + session.getTurns()[i].getOrthography() + 
-						session.getTurns()[i]);				
-			}
-			
-			{
-				XMLEncoder e = new XMLEncoder(System.out);
-				e.writeObject(session);
-				e.close();				
-			}
-			
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
 
 	public void setTurns(Utterance [] turns) {	
 		this.turns = ArrayUtils.arrayClone(turns);
@@ -176,4 +145,121 @@ public class UtteranceCollection implements Serializable, PubliclyCloneable{
 	public Utterance [] getTurns() {
 		return turns;
 	}
+	
+	
+	private static void synopsis() {
+		System.err.println("UtteranceCollection: options:\n" +
+	      "--input=bla.xml\n" +
+	      "--output=blu.xml\n" +
+	      "[--subdivide]\n" +
+	      "\n");	
+	}
+	
+	@SuppressWarnings("unused")
+	public static void main(String[] args) throws FileNotFoundException, Exception {
+
+		// process arguments
+		
+		String inputName = null, outputName = null;
+		UtteranceCollection inputSession = null;
+		boolean doSubdivide = false;
+		
+		for (int i = 0; i < args.length; i++) {
+			System.err.println("arg = " + args[i]);
+			if (args[i].equals("--help") || args[i].equals("-h")){
+				synopsis();
+				System.exit(1);
+			}
+			if (args[i].equals("--input")){
+				inputName = args[++i];
+				continue;
+			}
+			if (args[i].equals("--output")){
+				outputName = args[++i];
+				continue;
+			}
+			if (args[i].equals("--subdivide")){
+				doSubdivide = true;
+				continue;
+			}
+			System.err.println("unused argument: " + args[i]);
+		}
+		
+		if (inputName == null){
+			System.err.println("please give option --input");
+			System.exit(1);
+		}
+		inputSession = UtteranceCollection.read(new BufferedInputStream(new FileInputStream(inputName)));
+		
+		if (outputName == null){
+			System.err.println("please give option --output");
+			System.exit(1);
+		}
+		
+		PrintWriter outputWriter = new PrintWriter(new FileOutputStream(outputName));
+		
+		if (doSubdivide){
+			int i, j;
+			for (i = 0; i < inputSession.turns.length; i++){
+				Utterance u = inputSession.turns[i];
+				// put out plain
+				String text = u.toTextString(true);
+				outputWriter.println("sentence" + (i + 1) + " " + text);
+				if (u.getSubdivisions().length > 1){
+					for (j = 0; j < u.getSubdivisions().length; j++){
+						text = u.getSubUtterance(j, j).toTextString(true);
+						outputWriter.println("sentence" + (i + 1) + "." + j + " " + text);						
+					}
+				}
+				
+			}
+				
+			
+			outputWriter.close();
+			
+			
+		}
+		else{
+			throw new Exception("no action given!");
+		}
+		
+		System.err.println("inputName = " + inputName);
+		
+		if (false){
+			try {
+				UtteranceCollection session = UtteranceCollection.read(
+						new BufferedInputStream(
+								UtteranceCollection.class.getResource("/segmented/dialog.xml").openStream()));
+				//new BufferedInputStream(new FileInputStream(
+				//"pronunciation/test/dialog.xml")));
+
+
+				int i;
+				for (i = 0; i < session.getTurns().length; i++){
+					System.out.println(i + ": " + session.getTurns()[i].getOrthography() + 
+							session.getTurns()[i]);				
+				}
+
+				{
+					XMLEncoder e = new XMLEncoder(System.out);
+					e.writeObject(session);
+					e.close();				
+				}
+
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+	
+
 }

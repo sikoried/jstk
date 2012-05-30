@@ -51,10 +51,13 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		NR, ID, TRACK, REV, FILENAME, SPEAKER
 	}
 	
+	
 	/**
 	 * The utterance as displayed to the user/learner: with capitalization, punctuation etc.
 	 */
 	private String orthography = null;
+	
+	private double melody = 0.0;
 
 	/**
 	 * role which is speaking this, e.g. "Prince Hamlet" as in Prince Hamlet:
@@ -136,6 +139,7 @@ public class Utterance implements Serializable, PubliclyCloneable{
 
 	static Utterance read(Node textsegmentNode) throws Exception{
 		String nodeName = textsegmentNode.getNodeName();
+		String melody = null;
 		
 		if (nodeName.equals("#text")) {
 			textsegmentNode = textsegmentNode.getNextSibling();
@@ -206,6 +210,10 @@ public class Utterance implements Serializable, PubliclyCloneable{
 			else if (nodeName.equals("orthography")) {
 				orthography = utteranceNode.getTextContent();
 			}
+			
+			else if (nodeName.equals("melody")) {
+				melody = utteranceNode.getTextContent();
+			}
 
 			else if (nodeName.equals("boundary")){				
 				boundaries.add(Boundary.read(utteranceNode));
@@ -229,12 +237,19 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		Subdivision[] subdivisionDummy = new Subdivision[0];
 		Word [] wordDummy = new Word[0];
 				
-		return new Utterance(orthography, speaker,
+		Utterance utterance = new Utterance(orthography, speaker,
 				words.toArray(wordDummy),
 				boundaries.toArray(boundaryDummy),
 				Utterance.guessMood(orthography),
 				subdivisions.toArray(subdivisionDummy),				
 				segmentId, segmentTrack, segmentRev, segmentFilename);
+		
+		if (melody != null){
+			utterance.setMelody(Double.parseDouble(melody));
+			System.err.println("melody = " + utterance.getMelody());
+		}
+		
+		return utterance;
 	}
 	
 	public void setOrthography(String orthography) {
@@ -650,6 +665,14 @@ public class Utterance implements Serializable, PubliclyCloneable{
 
 	public void setMood(Mood mood) {
 		this.mood = mood;
+	}
+
+	public double getMelody() {
+		return melody;
+	}
+
+	public void setMelody(double melody) {
+		this.melody = melody;
 	}
 	
 //	public void setPhraseAccents(PhraseAccent [] phraseAccents) {
