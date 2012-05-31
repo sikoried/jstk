@@ -83,6 +83,8 @@ public class GaussEM {
 		String lif = null;
 		String inDir = null;
 		
+		int ufv = 0;
+		
 		boolean savePartialEstimates = false;
 		
 		// number of iterations
@@ -115,8 +117,16 @@ public class GaussEM {
 			else if (args[i].equals("--update")) {
 				String arg = args[++i].toLowerCase();
 				flags = new Density.Flags(arg.contains("w"), arg.contains("m"), arg.contains("v"));
-			} else if (args[i].equals("--save-partial-estimates"))
+			} else if (args[i].equals("--save-partial-estimates")) {
 				savePartialEstimates = true;
+			} else if (args[i].equals("--ufv")) {
+				ufv = Integer.parseInt(args[++i]);
+				
+			} else {
+				System.err.println("Unknown argument: "+ args[i]);
+				System.exit(-1);
+			}
+				
 		}
 		
 		if (inf == null) {
@@ -144,7 +154,7 @@ public class GaussEM {
 		if (c == -1) {
 			logger.info("Caching feature data...");
 			LinkedList<Sample> data = new LinkedList<Sample>();
-			ChunkedDataSet set = new ChunkedDataSet(new File(lif), inDir, 0);
+			ChunkedDataSet set = new ChunkedDataSet(new File(lif), inDir, ufv);
 			ChunkedDataSet.Chunk chunk;
 			while ((chunk = set.nextChunk()) != null) {
 				FrameInputStream r = chunk.getFrameReader();
@@ -165,7 +175,7 @@ public class GaussEM {
 		} else {
 			logger.info("Starting " + n + " EM iterations on " + c + " cores");
 
-			ParallelEM pem = new ParallelEM(initial, new ChunkedDataSet(new File(lif), inDir, 0), c, flags);
+			ParallelEM pem = new ParallelEM(initial, new ChunkedDataSet(new File(lif), inDir, ufv), c, flags);
 
 			for (int i = 0; i < n; ++i) {
 				pem.iterate();
