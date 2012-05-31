@@ -143,6 +143,10 @@ public class Initializer {
 				output = args[++i];
 			else if (args[i].equals("--ufv"))
 				ufv = Integer.parseInt(args[++i]);
+			else {
+				System.err.println("Unknown argument: "+ args[i]);
+				System.exit(-1);
+			}
 		}
 
 		if (inputList != null) {

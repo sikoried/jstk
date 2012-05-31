@@ -129,8 +129,10 @@ public class Map {
 				br.close();
 			} else if (args[i].equals("--ufv")) {
 				ufv = Integer.parseInt(args[++i]);
-			} else
-				System.err.println("ignoring unknown option " + args[i]);
+			} else {
+					System.err.println("Unknown argument: "+ args[i]);
+					System.exit(-1);
+			}	
 		}
 
 		if (infile == null) {
