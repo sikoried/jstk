@@ -134,6 +134,9 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		newUtterance.setBoundaries(boundaries);
 		newUtterance.setSubdivisions(subdivisions);
 		
+		// stuff that's not (yet?) in constructor
+		newUtterance.setMelody(melody);
+		
 		return newUtterance;
 	}
 
@@ -502,6 +505,12 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		return Arrays.equals(me, other);						
 	}
 	
+	
+	/** convenience shortcut to get a single subdivision */
+	public Utterance getSubUtterance(int subdivision) throws Exception {
+		return getSubUtterance(subdivision, subdivision);		
+	}
+	
 	/** create a new Utterance that comprises subdivisions 'first' through 'last' (inclusive) */ 
 	public Utterance getSubUtterance(int first, int last) throws Exception {
 		int i;		
@@ -570,17 +579,21 @@ public class Utterance implements Serializable, PubliclyCloneable{
 		
 		System.err.println("boundaries = " + Arrays.deepToString(newBoundaries));
 		
-		return new Utterance(orthography, getRole(),
-				Arrays.copyOfRange(words,
-						firstWord, lastWord + 1),		
-				newBoundaries,
-				mood,
-				newSubdivisions,
-				segmentId, segmentTrack,
-				// TODO
-				null,//segmentRev, 
-				null//segmentFilename
-				);
+		// FIXME: adapt when we have syllable-level scores 
+		Utterance utterance =
+				new Utterance(orthography, getRole(),
+						Arrays.copyOfRange(words,
+								firstWord, lastWord + 1),		
+								newBoundaries,
+								mood,
+								newSubdivisions,
+								segmentId, segmentTrack,
+								// TODO
+								null,//segmentRev, 
+								null//segmentFilename
+						);
+		utterance.setMelody(melody);
+		return utterance;
 	}
 	
 	/**

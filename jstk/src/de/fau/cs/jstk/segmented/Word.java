@@ -80,7 +80,9 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	
 	@Override
 	public Word clone(){		
-		return new Word(graphemes, syllables, phonemes, phraseAccent);
+		Word word = new Word(graphemes, syllables, phonemes, phraseAccent);;
+		word.setStressWrongProb(stressWrongProb);
+		return word;
 	}
 
 	public void setGraphemes(String graphemes) {
@@ -111,7 +113,7 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	    	PHRASE_ACCENT.valueOf(
 	    			node.getAttributes().getNamedItem("phraseAccent").getNodeValue());
 	    
-	    String stressWrongProb = node.getAttributes().getNamedItem("stressWrongProb").getNodeValue();
+	    Node stressWrongProb = node.getAttributes().getNamedItem("stressWrongProb");	    
 	        	
 
 		List<Syllable> syllables = new LinkedList<Syllable>();
@@ -146,7 +148,7 @@ public class Word implements Serializable, Cloneable, PubliclyCloneable {
 	    		phraseAccent);
 		
 		if (stressWrongProb != null){
-			word.setStressWrongProb(Double.parseDouble(stressWrongProb));
+			word.setStressWrongProb(Double.parseDouble(stressWrongProb.getNodeValue()));
 			System.err.println("stressWrongProb = " + word.getStressWrongProb());
 		}
 		
