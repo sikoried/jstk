@@ -85,6 +85,12 @@ public class RawCapturer implements Runnable, LineListener{
 	private Thread shutdownHook = null;
 	
 	Exception exception = null;
+
+	private boolean stopRequested = false;
+
+	private boolean stopRequestedFulfilled;
+
+	private double myBufDuration;
 	
 	public RawCapturer(BufferedOutputStream os, AudioFormat format){
 		this(os, format, null, 0.0);		
@@ -236,10 +242,34 @@ public class RawCapturer implements Runnable, LineListener{
 		// not setting "stopped = true" here, but rather
 		// stop line, and let update set stopped to true.
 		
+		// try to get rid of the line.stop()-hanging -seems to work now, at least under linux
+		stopRequested = true;		
+		
 		// the stop() sometime hangs quite a while!?!
+		double sleepDuration = myBufDuration / 10;
+		System.err.println("sleepDuration = " + sleepDuration);
+		double slept;
+		for (slept = 0; slept < 2 * myBufDuration; slept += sleepDuration){
+			try {
+				Thread.sleep((long) (1000 * sleepDuration));
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				break;
+			}
+			if (stopRequestedFulfilled)
+				break;
+		}
+		if (stopRequestedFulfilled)
+			System.err.println("stop request fulfilled after waiting sec: " + slept);
+		else
+			System.err.println("warning: stop request not fulfilled after waiting sec: " + slept);
+		
 		System.err.println(new Date() + ": stopCapturing: line.stop()...");
 		line.stop();
 		System.err.println(new Date() + ": stopCapturing: ... line.stop() done");
+		
+		stopRequestedFulfilled = false;
 		
 		stopMutex.release();
 		
@@ -304,7 +334,7 @@ public class RawCapturer implements Runnable, LineListener{
 			stopped = true;
 			return;
 		}		
-		System.err.println("Bufsize = " + line.getBufferSize());
+		System.err.println("line Bufsize = " + line.getBufferSize());
 		
 		System.err.println(String.format("desired bufsize = %f, actual = %f",
 				desiredBufSize, line.getBufferSize() / format.getFrameRate() / format.getFrameSize()));				
@@ -316,6 +346,8 @@ public class RawCapturer implements Runnable, LineListener{
 		// make sure to read integral number of frames:
 		bufSize = bufSize / format.getFrameSize() * format.getFrameSize();
 		byte [] buffer = new byte[bufSize];		
+		
+		myBufDuration = bufSize / format.getFrameRate() / format.getFrameSize();		
 				
 		line.addLineListener(this);
 		line.flush();
@@ -371,7 +403,14 @@ public class RawCapturer implements Runnable, LineListener{
 
 				while ((System.nanoTime() - startTime) < nanoSleep);
 			}
+			
+			if (stopRequested ){
+				stopRequestedFulfilled = true;
+				stopRequested = false;			
+				break;
+			}
 		}
+		
 		
 //		if (false){//!stopped){
 //			System.err.println("line.drain()");

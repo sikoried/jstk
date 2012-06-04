@@ -49,8 +49,7 @@ public class Utterance implements Serializable, PubliclyCloneable{
 
 	private static enum SegmentAttributes {
 		NR, ID, TRACK, REV, FILENAME, SPEAKER
-	}
-	
+	}	
 	
 	/**
 	 * The utterance as displayed to the user/learner: with capitalization, punctuation etc.
@@ -686,6 +685,37 @@ public class Utterance implements Serializable, PubliclyCloneable{
 
 	public void setMelody(double melody) {
 		this.melody = melody;
+	}
+
+	public String getAnnotationSummary() {
+		String melodyString = null;
+		
+		if (melody != 0.0)
+			melodyString = "melody = " + melody;
+		
+		String wordStressString = "";
+		for (Word word : getWords()){
+			if (word.getStressWrongProb() > 0 && word.getSyllables().length > 1){
+				if (wordStressString.isEmpty())
+					wordStressString += "stressWrongProbs: ";
+				else
+					wordStressString += ", ";
+
+				wordStressString += word.getGraphemes() + ": " + word.getStressWrongProb();
+			}
+		}
+		if (wordStressString.isEmpty())
+			wordStressString = null;
+		
+		if (melodyString != null && wordStressString == null)
+			return melodyString;
+		else if (melodyString == null && wordStressString != null)
+			return wordStressString;
+		else if (melodyString != null && wordStressString != null)
+			return melodyString + "; " + wordStressString;
+		else 
+			return null;
+				
 	}
 	
 //	public void setPhraseAccents(PhraseAccent [] phraseAccents) {
