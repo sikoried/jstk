@@ -62,17 +62,29 @@ public class FixedSequences implements LanguageModel {
 	
 	private int treeId = 0;
 	
+	private boolean force_keep_silences;
+	
+	
 	/**
 	 * Generate a new FixedSequences model based on the given TokenHierarchy
 	 * @param th
 	 */
-	public FixedSequences(Tokenizer tok, TokenHierarchy th, String [] silences) 
+	public FixedSequences(Tokenizer tok, TokenHierarchy th, String [] silences, 
+			boolean force_keep_silences) 
 		throws OutOfVocabularyException {
 		this.tok = tok;
 		this.th = th;
 		this.silences = new HashSet<Tokenization>();
 		for (String s : silences)
 			this.silences.add(tok.getWordTokenization(s));
+		this.force_keep_silences = force_keep_silences;
+	}
+	
+	/**
+	 * Convenience shortcut for FixedSequences(..., false)
+	 */
+	public FixedSequences(Tokenizer tok, TokenHierarchy th, String [] silences) throws OutOfVocabularyException{
+		this(tok, th, silences, false);	
 	}
 	
 	/**
@@ -92,7 +104,7 @@ public class FixedSequences implements LanguageModel {
 		TokenTree prev = null;
 		for (int i = 0; i < tok.length; ++i) {
 			// ignore silence tokens, these will be treatet in a special way
-			if (silences.contains(new Tokenization(tok[i])))
+			if (!force_keep_silences && silences.contains(new Tokenization(tok[i])))
 				continue;
 			
 			// build word tree
