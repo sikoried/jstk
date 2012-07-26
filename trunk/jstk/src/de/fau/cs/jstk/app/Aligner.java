@@ -167,8 +167,10 @@ public class Aligner {
 		int bs, bi;
 		double bw;
 		String silences;
+		boolean force_keep_silences;
 		
 		long jobs = 0;
+		
 		
 		/**
 		 * Initialize a new Worker with the given alphabet, tokenizer, hierarchy
@@ -180,7 +182,7 @@ public class Aligner {
 		 * @param bs size of the beam
 		 * @param latch count-down latch for thread synchronization
 		 */
-		BWorker(Tokenizer tok, TokenHierarchy th, Distributor d, int beam_size, int beam_incr, double bw, String silences, CountDownLatch latch) {
+		BWorker(Tokenizer tok, TokenHierarchy th, Distributor d, int beam_size, int beam_incr, double bw, String silences, boolean force_keep_silences, CountDownLatch latch) {
 			this.tok = tok;
 			this.th = th;
 			this.distributor = d;
@@ -188,6 +190,7 @@ public class Aligner {
 			this.bi = beam_incr;
 			this.bw = bw;
 			this.silences = silences;
+			this.force_keep_silences = force_keep_silences;
 			this.latch = latch;
 		}
 		
@@ -198,7 +201,8 @@ public class Aligner {
 					logger.info(t.fileName);
 					
 					// generate decoding tree
-					FixedSequences forced = new FixedSequences(tok, th, silences.split("\\s++"));
+					FixedSequences forced = new FixedSequences(tok, th, silences.split("\\s++"),
+							force_keep_silences);
 					forced.addSequence(t.transcription);
 					TreeNode root = forced.generateNetwork();
 					
@@ -285,12 +289,17 @@ public class Aligner {
 		"-b \"optional silence symbols\"\n" +
 		"  Do a beam alignment instead of a true Viterbi alignment with given optional\n" +
 		"  silence symbols (usually \"sil nv\"). This option is incompatible with --linear!\n" +
+		"--force-keep-silences\n" +
+		"  Tune beam alignment mode (option -b): do not discard silence symbols from\n" +
+		"  transcription. Warning: currently, as an undesired (and possibly problematic?)\n" +
+		"  side effect, multiple consecutive silence symbols may be generated.\n" +
 		"--beam-size <num>\n" +
 		"  Set the maximum beam size for decoding (default: 1000)\n" +
 		"--beam-incr <num>\n" +
 		"  Increase the beam size by <num> for each retry (default: 100)\n" + 
 		"--silent\n" +
 		"  Do not produce debug output.\n";
+		
 	
 	public static void main(String[] args) throws Exception {
 		BasicConfigurator.configure();
@@ -314,6 +323,7 @@ public class Aligner {
 		int beam_incr = 100;
 		double beam_width = Double.MAX_VALUE;
 		String sils = null;
+		boolean force_keep_silences = false;
 		
 		// parse args
 		int i = 0;
@@ -344,6 +354,8 @@ public class Aligner {
 				i += 3;
 			} else if (args[i].equals("--silent"))
 				Logger.getLogger("de.fau.cs.jstk").setLevel(Level.FATAL);
+			else if (args[i].equals("--force-keep-silences"))
+				force_keep_silences = true;
 			else if (args[i].equals("-b")) {
 				beam = true;
 				sils = args[++i];
@@ -379,7 +391,7 @@ public class Aligner {
 			conf.loadCodebook(new File(fCodebook));
 			
 			if (beam)
-				threads[j] = new BWorker(conf.tok, conf.th, dist, beam_size, beam_incr, beam_width, sils, latch);
+				threads[j] = new BWorker(conf.tok, conf.th, dist, beam_size, beam_incr, beam_width, sils, force_keep_silences, latch);
 			else
 				threads[j] = new Worker(conf.tok, conf.th, dist, forcedInsteadOfLinear, latch);
 		}
