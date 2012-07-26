@@ -291,7 +291,7 @@ public class Aligner {
 		"  silence symbols (usually \"sil nv\"). This option is incompatible with --linear!\n" +
 		"--force-keep-silences\n" +
 		"  Tune beam alignment mode (option -b): do not discard silence symbols from\n" +
-		"  transcription.\n" +
+		"  transcription. Warning: currently, consecutive silences may occur.\n" +
 		"--beam-size <num>\n" +
 		"  Set the maximum beam size for decoding (default: 1000)\n" +
 		"--beam-incr <num>\n" +

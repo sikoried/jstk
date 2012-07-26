@@ -75,8 +75,12 @@ public class FixedSequences implements LanguageModel {
 		this.tok = tok;
 		this.th = th;
 		this.silences = new HashSet<Tokenization>();
-		for (String s : silences)
+		for (String s : silences){
+			if (s.isEmpty())
+				continue;
+			System.err.println("adding silence \"" + s + "\"");
 			this.silences.add(tok.getWordTokenization(s));
+		}
 		this.force_keep_silences = force_keep_silences;
 	}
 	
@@ -122,7 +126,11 @@ public class FixedSequences implements LanguageModel {
 				
 				// link the previous words to the silence and the new tree
 				for (TreeNode n : prev.leaves()) {
-					if (!silences.contains(new Tokenization(tok[i - 1])))
+					if (!silences.contains(new Tokenization(tok[i - 1])) &&
+					    !silences.contains(new Tokenization(tok[i])) &&
+					    // FIXME: this still doesn't prevent that at the end, two consecutive silences can occur.
+					    (i == tok.length - 1 ||
+					     !silences.contains(new Tokenization(tok[i + 1]))))					    
 						n.setLst(silt.root);
 					n.addLst(tree.root);
 				}
