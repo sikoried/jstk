@@ -291,8 +291,7 @@ public class Aligner {
 		"  silence symbols (usually \"sil nv\"). This option is incompatible with --linear!\n" +
 		"--force-keep-silences\n" +
 		"  Tune beam alignment mode (option -b): do not discard silence symbols from\n" +
-		"  transcription. Warning: currently, as an undesired (and possibly problematic?)\n" +
-		"  side effect, multiple consecutive silence symbols may be generated.\n" +
+		"  transcription.\n" +
 		"--beam-size <num>\n" +
 		"  Set the maximum beam size for decoding (default: 1000)\n" +
 		"--beam-incr <num>\n" +
@@ -380,7 +379,7 @@ public class Aligner {
 		}
 		
 		
-		// variables for thread syncronization
+		// variables for thread synchronization
 		Distributor dist = new Distributor(turns);
 		CountDownLatch latch = new CountDownLatch(p);
 		

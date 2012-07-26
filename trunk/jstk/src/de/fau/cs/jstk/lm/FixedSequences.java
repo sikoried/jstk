@@ -103,7 +103,9 @@ public class FixedSequences implements LanguageModel {
 		// now build word trees and link correspondingly
 		TokenTree prev = null;
 		for (int i = 0; i < tok.length; ++i) {
-			// ignore silence tokens, these will be treatet in a special way
+			
+			// (unless force_keep_silences is true:)
+			// ignore silence tokens, these will be treated in a special way
 			if (!force_keep_silences && silences.contains(new Tokenization(tok[i])))
 				continue;
 			
@@ -120,7 +122,8 @@ public class FixedSequences implements LanguageModel {
 				
 				// link the previous words to the silence and the new tree
 				for (TreeNode n : prev.leaves()) {
-					n.setLst(silt.root);
+					if (!silences.contains(new Tokenization(tok[i - 1])))
+						n.setLst(silt.root);
 					n.addLst(tree.root);
 				}
 			} else {
