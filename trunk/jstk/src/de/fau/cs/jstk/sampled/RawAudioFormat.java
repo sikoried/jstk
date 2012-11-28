@@ -102,7 +102,7 @@ public class RawAudioFormat {
 	 * @param af AudioFormat (e.g. from AudioSystem.getAudioFileFormat(File).
 	 */
 	public RawAudioFormat(AudioFormat af) throws IOException {
-		sr = (int) af.getFrameRate();
+		sr = (int) af.getSampleRate();
 		bd = af.getSampleSizeInBits();
 		fs = bd / 8;
 		

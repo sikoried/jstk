@@ -100,7 +100,7 @@ public class SpeexFileReader implements AudioSource{
 
 	@Override
 	public int getSampleRate() {
-		return (int) audioFormat.getFrameRate();
+		return (int) audioFormat.getSampleRate();
 	}
 
 
