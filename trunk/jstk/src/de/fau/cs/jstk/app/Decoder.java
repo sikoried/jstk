@@ -44,6 +44,7 @@ import de.fau.cs.jstk.arch.TreeNode;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch;
 import de.fau.cs.jstk.decoder.ViterbiBeamSearch.Hypothesis;
 import de.fau.cs.jstk.io.FrameInputStream;
+import de.fau.cs.jstk.lm.Unigram;
 import de.fau.cs.jstk.lm.Bigram;
 
 public class Decoder {
@@ -127,7 +128,9 @@ public class Decoder {
 		HashMap<Tokenization, Float> sil = new HashMap<Tokenization, Float>();
 		// sil.put(conf.tok.getWordTokenization("pau"), silprob);
 		// sil.put(conf.tok.getWordTokenization("h#"), silprob);
-		Bigram lm = new Bigram(conf.tok, conf.th, sil);
+		
+		//Bigram lm = new Bigram(conf.tok, conf.th, sil);
+		Unigram lm = new Unigram(conf.tok, conf.th, sil);
 		lm.loadSrilm(new File(args[z++]));
 		
 		for (; z < args.length; ++z) {

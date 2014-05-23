@@ -43,6 +43,8 @@ public class CModelFactory implements ModelFactory {
 	/** index of mixtures to use for the tokens */
 	private HashMap<String, Mixture> mixtures = new HashMap<String, Mixture>();
 	
+	private Mixture template = null;
+	
 	/**
 	 * Allocate a new continuous model factory with the given Alphabet and topology
 	 * @param a
@@ -51,6 +53,17 @@ public class CModelFactory implements ModelFactory {
 	public CModelFactory(Alphabet a, Topology topo) {
 		this.a = a;
 		this.topo = topo;
+	}
+	
+	/**
+	 * Allocate a new continuous model factory with the given Alphabet and topology
+	 * @param a
+	 * @param topo
+	 */
+	public CModelFactory(Alphabet a, Topology topo, Mixture template) {
+		this.a = a;
+		this.topo = topo;
+		this.template = template;
 	}
 	
 	/**
@@ -64,10 +77,15 @@ public class CModelFactory implements ModelFactory {
 	
 	public Hmm allocateModel(Token t) {
 		Hmm ret = null;
-		if (mixtures.containsKey(t.token))
-			ret = new Hmm(modelcount++, a.lookup.get(t.token), new CState(mixtures.get(t.token)));
-		else
-			throw new RuntimeException("No emission density for token " + t.toString());
+		
+		if (template != null)
+			ret = new Hmm(modelcount++, a.lookup.get(t.token), new CState(template));
+		else {
+			if (mixtures.containsKey(t.token))
+				ret = new Hmm(modelcount++, a.lookup.get(t.token), new CState(mixtures.get(t.token)));
+			else
+				throw new RuntimeException("No emission density for token " + t.toString());
+		}
 		
 		ret.setTransitions(topo);
 		return ret;
