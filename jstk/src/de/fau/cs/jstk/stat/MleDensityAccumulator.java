@@ -216,7 +216,7 @@ public final class MleDensityAccumulator {
 	 * @author sikoried
 	 */
 	public static final class MleOptions {
-		public static final MleOptions pDefaultOptions = new MleOptions(1e-10, 0.001, 10.0);
+		public static final MleOptions pDefaultOptions = new MleOptions(1e-10, 0.001, 0.0);
 		
 		/** component weight (1.0 for standalone) */
 		public final double minWeight;

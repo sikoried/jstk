@@ -55,6 +55,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import de.fau.cs.jstk.arch.mf.SCModelFactory;
+import de.fau.cs.jstk.arch.mf.CModelFactory;
 import de.fau.cs.jstk.exceptions.CodebookException;
 import de.fau.cs.jstk.stat.Mixture;
 import de.fau.cs.jstk.stat.hmm.Hmm.Topology;
@@ -594,7 +595,11 @@ public final class Configuration {
 				conf.cb = new Codebook();
 				conf.cb.initializeModels(conf.th, new SCModelFactory(conf.a, Topology.LINEAR, mixture));
 			} else if (args[i].equals("--cont")) {
-				// TODO continuous initialization
+				logger.info("loading Mixture from " + args[i+1]);
+				Mixture mixture = new Mixture(new FileInputStream(args[++i]));
+				
+				conf.cb = new Codebook();
+				conf.cb.initializeModels(conf.th, new CModelFactory(conf.a, Topology.LINEAR, mixture));
 			} else if (args[i].equals("--dump")) {
 				if (conf.hasAlphabet())
 					conf.a.dump(System.out);
