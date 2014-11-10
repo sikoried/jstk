@@ -104,7 +104,7 @@ public class IIRFilter implements AudioSource {
 		xv = new double [b.length + 1];
 		yv = new double [a.length + 1];
 		
-		if (a[0] == 1.) {
+		if (a[0] != 1.) {
 			for (int i = 1; i < a.length; ++i)
 				a[i] /= a[0];
 			for (int i = 0; i < b.length; ++i)
