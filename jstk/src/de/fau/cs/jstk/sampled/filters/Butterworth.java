@@ -283,7 +283,7 @@ public class Butterworth extends IIRFilter {
 	    for (int k = 0; k < n/2; ++k )
 	        sf *= 1.0 + fomega * Math.sin((double)(2*k+1)*parg0);
 
-	    fomega = Math.sin(omega / 2.0);
+	    fomega = lowp ? Math.sin(omega / 2.0) : Math.cos(omega / 2.0);
 
 	    if (n % 2 == 1) 
 	    	sf *= fomega + (lowp ? Math.cos(omega / 2.0) : Math.sin(omega / 2.));
