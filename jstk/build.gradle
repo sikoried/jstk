@@ -1,0 +1,47 @@
+apply plugin: 'java'
+
+sourceCompatibility = 1.7
+version = 'latest'
+
+repositories {
+  mavenCentral()
+  flatDir {
+    dirs '../libs'
+  }
+}
+
+sourceSets {
+  main {
+    java {
+      srcDir 'src'
+    }
+    resources {
+      srcDir 'res'
+    }
+  }
+}
+
+task copyToLib(type: Copy) {
+  into "$buildDir/libs/lib"
+  from configurations.compile
+}
+
+jar {
+  dependsOn copyToLib
+  manifest {
+    attributes 'Implementation-Title': 'JSTK', 'Implementation-Version': version
+  }
+}
+
+dependencies {
+  compile 'net.sourceforge.jtransforms:jtransforms:2.4.0'
+  compile 'gov.nist.math:jama:1.0.3'
+  compile 'log4j:log4j:1.2.17'
+  compile 'junit:junit:4.12-beta-3'
+  compile fileTree(dir: '../lib', include: '*.jar')
+}
+
+task showMeCache << {
+  configurations.compile.each { println it }
+}
+
