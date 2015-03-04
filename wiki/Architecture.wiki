@@ -1,0 +1,4 @@
+#summary Graphical overview of the architecture
+
+
+https://jstk.googlecode.com/files/architecture.png
