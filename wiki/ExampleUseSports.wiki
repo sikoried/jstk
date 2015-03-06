@@ -1,6 +1,7 @@
 #summary This shows an example use of JSTK for sequence classification in digital sports.
 
 [http://www5.cs.fau.de/en/our-team/jensen-ulf/projects/drop-jump-phase-length-calculation-with-hidden-markov-models/ Ulf Jensen: Jump Phase Length Calculation]
+[https://drive.google.com/folderview?id=0B7jkABFvRH72flBpZEV0SWRxaWtLUmZjdExEdzVmOU1PeTBnZ0RyZk1aRjVZZVprMHRfcVU&usp=sharing G Drive folder with data files]
 
 = Environment Setup =
 {{{
