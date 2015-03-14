@@ -2,6 +2,28 @@
 The Jave speech toolkit (JSTK) provides a native implementation of both library/API and applications for speech recognition, speaker verification, speech visualization (including transcription tools), and evaluation of related human rater tasks.
 JSTK is *not* a full-blown LVCSR toolkit with pre-trained models, sorry.
 
+# Building JSTK
+You can import JSTK as a project to Eclipse, or use the provided gradle file to build the complete jar file (and dependencies) in `build/libs/{jstk-latest,libs/*}.jar`
+
+# Using JSTK
+The easiest way to use the command line tools is to make a script like the following:
+```
+$ cat jstk
+#!/bin/bash
+
+CLASSPATH=/home/sikoried/Work/workspace/jstk/bin:/home/sikoried/Work/lib/jtransforms-2.3.jar:/home/sikoried/Work/lib/Jama-1.0.2.jar:/home/sikoried/Work/lib/FJama.jar:/home/sikoried/Work/lib/log4j-1.2.16.jar
+
+java -Xmx7G de.fau.cs.jstk.$@
+```
+
+Can be used then as
+
+```
+$ ./jstk app.Decoder
+```
+
+# Maintenance and Support
+
 The Java Speech Tooklit (JSTK) is developed and maintained by the Speech Group
 at the University of Erlangen-Nuremberg. It is designed to provide both API and
 applications for the most popular speech tasks such as speech recognition,
