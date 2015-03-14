@@ -2,6 +2,24 @@
 The Jave speech toolkit (JSTK) provides a native implementation of both library/API and applications for speech recognition, speaker verification, speech visualization (including transcription tools), and evaluation of related human rater tasks.
 JSTK is *not* a full-blown LVCSR toolkit with pre-trained models, sorry.
 
+# Where is JSTK used?
+
+- Digital sports: http://www5.cs.fau.de/our-team/jensen-ulf/projects/drop-jump-phase-length-calculation-with-hidden-markov-models/
+- Automatic Intelligibility Assessment of Speakers After Laryngeal Cancer by Means of Acoustic Modeling
+T Bocklet, K Riedhammer, E Nöth, U Eysholdt, T Haderlein. Journal of Voice 26 (3), 390-397, 2012
+- Erlangen-CLP: A Large Annotated Corpus of Speech from Children with Cleft Lip and Palate
+T Bocklet, A Maier, K Riedhammer, U Eysholdt, E Nöth. Language Resources and Evaluation (LREC) 2014
+- LMELECTURES: A Multimedia Corpus of Academic Spoken English. K Riedhammer, M Gropp, T Bocklet, F Hönig, E Nöth, S Steidl, SLAM@ INTERSPEECH, 2013.
+- Interactive Approaches to Video Lecture Assessment. K Riedhammer. Logos Verlag Berlin GmbH, 2012.
+- A Software Kit for Automatic Voice Descrambling.  K Riedhammer, M Ring, E Nöth, D Kolb.  IEEE Workshop on Security and Forensics in Communication Systems, 2012.
+- Compensation of extrinsic variability in speaker verification systems on simulated Skype and HF channel data
+K Riedhammer, T Bocklet, E Nöth.  Acoustics, Speech and Signal Processing (ICASSP), 2011.
+- Drink and Speak: On the Automatic Classification of Alcohol Intoxication by Acoustic, Prosodic and Text-Based Features. T Bocklet, K Riedhammer, E Nöth. INTERSPEECH, 2011.
+- Java Visual Speech Components for Rapid Application Development of GUI Based Speech Processing Applications.
+S Steidl, K Riedhammer, T Bocklet, F Hönig, E Nöth.  INTERSPEECH, 2011.
+- Demo system for age recognition: http://www.nacht-der-wissenschaften.de/2009/ansicht_sammel.php?id=234#234
+
+
 # Building JSTK
 You can import JSTK as a project to Eclipse, or use the provided gradle file to build the complete jar file (and dependencies) in `build/libs/{jstk-latest,libs/*}.jar`
 
@@ -39,7 +57,8 @@ toolkit is intended to allow full-scale speech applications, special APIs such
 as the Google Android Speech API or Java Speech API are not implemented (but may
 however be implemented in the future).
 
-The toolkit makes use of the following third party libraries:
+
+# Dependencies (managed through gradle)
 
 JTransforms - http://sites.google.com/site/piotrwendykier/software/jtransforms
 > JTransforms provides (discrete) signal processing routines such as FFT, DHT,
