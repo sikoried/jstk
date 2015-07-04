@@ -44,13 +44,13 @@ public class FrameInputStream implements FrameSource {
 	private int fs = 0;
 	
 	/** input stream to read from */
-	private InputStream is = System.in;
+	protected InputStream is = System.in;
 	
 	/** file, if any */
 	private File file = null;
 	
 	/** read floats? */
-	private boolean floats = true;
+	protected boolean floats = true;
 	
 	/**
 	 * Initialize a FrameInputStream from STDIN

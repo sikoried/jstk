@@ -25,8 +25,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 
 import de.fau.cs.jstk.stat.Sample;
 
@@ -38,17 +40,30 @@ import de.fau.cs.jstk.stat.Sample;
  *
  */
 public class ChunkedDataSet {
-	private LinkedList<File> validFiles = new LinkedList<File> ();
-	private int cind = 0;
+	/** 10 ms shift */
+	public static double FRAME_SHIFT = 0.01;
+	
+	private LinkedList<Chunk> chunks = new LinkedList<Chunk> ();
+	private ListIterator<Chunk> iter = null;
 
 	private int fs = 0;  // frame size for all chunks
+	
 	
 	/**
 	 * A chunk consists of its name and a (ready-to-read) FrameInputStream
 	 */
 	public class Chunk {
+		/** chunk name */
+		private String name;
+		
 		/** file to work on */
 		private File file;
+		
+		/** start frame */
+		private int start = 0;
+		
+		/** endframe (exclusive) */
+		private int end = Integer.MAX_VALUE;
 		
 		/**
 		 * Create a new Chunk and prepare the FrameInputStream to read from the given
@@ -59,6 +74,23 @@ public class ChunkedDataSet {
 		 */
 		public Chunk(File file) {
 			this.file = file;
+			this.name = file.getName();
+			this.start = 0;
+			this.end = Integer.MAX_VALUE;
+		}
+		
+		/**
+		 * Create a new Chunk and prepare the FrameInputStream to read from the given
+		 * file.
+		 * 
+		 * @param fileName
+		 * @throws IOException
+		 */
+		public Chunk(String name, File file, int start, int end) {
+			this.name = name;
+			this.file = file;
+			this.start = start;
+			this.end = end;
 		}
 		
 		/** FrameInputStream allocated on demand */
@@ -68,10 +100,22 @@ public class ChunkedDataSet {
 		 * Get the initialized FrameInputStream
 		 */
 		public FrameInputStream getFrameReader() throws IOException {
-			if (reader == null)
-				reader = new FrameInputStream(file, true, fs);
+			if (reader == null) {
+				if (start > 0 || end > 0)
+					reader = new SegmentFrameInputStream(file, true, fs, start, end);
+				else
+					reader = new FrameInputStream(file, true, fs);
+			}
 			
 			return reader;
+		}
+		
+		public void reset() {
+			reader =  null;
+		}
+		
+		public String getName() {
+			return name;
 		}
 	}
 	
@@ -81,10 +125,17 @@ public class ChunkedDataSet {
 	 * @throws IOException
 	 */
 	public synchronized Chunk nextChunk() throws IOException {
-		if (validFiles.size() == 0)
+		if (chunks.size() == 0)
 			return null;
-		if (cind < validFiles.size())
-			return new Chunk(validFiles.get(cind++));
+		
+		if (iter == null)
+			iter = chunks.listIterator();
+		
+		if (iter.hasNext())
+			return iter.next();
+		else
+			iter = null;
+		
 		return null;
 	}
 	
@@ -92,7 +143,8 @@ public class ChunkedDataSet {
 	 * Rewind the chunk list and start again from the first.
 	 */
 	public synchronized void rewind() {
-		cind = 0;
+		for (Chunk c : chunks)
+			c.reset();
 	}
 	
 	/** 
@@ -139,7 +191,7 @@ public class ChunkedDataSet {
 		// validate and add files
 		for (File file : files) {
 			if (file.canRead())
-				validFiles.add(file);
+				chunks.add(new Chunk(file));
 			else
 				throw new IOException("Could not read file " + file);
 		}
@@ -150,7 +202,7 @@ public class ChunkedDataSet {
 	 * @return
 	 */
 	public int numberOfChunks() {
-		return validFiles.size();
+		return chunks.size();
 	}
 	
 	/**
@@ -160,18 +212,45 @@ public class ChunkedDataSet {
 	 * @throws IOException
 	 */
 	public void setChunkList(File listFile, String dir) throws IOException {
-		validFiles.clear();
+		chunks.clear();
 		BufferedReader br = new BufferedReader(new FileReader(listFile));
-		String name;
-		while ((name = br.readLine()) != null) {
-			if(dir != null)
-				name = dir + System.getProperty("file.separator") + name;
-			File test = new File(name);
-			if (test.canRead())
-				validFiles.add(test);
-			else
-				throw new IOException("Could not read file " + name);
+		int n = 0;
+		String line;
+		while ((line = br.readLine()) != null) {
+			String [] s = line.split("\\s");
+			if (s.length == 1) {
+				// single file entry
+				String name = line;
+				if(dir != null)
+					name = dir + System.getProperty("file.separator") + name;
+				
+				File f = new File(name);
+				if (f.canRead())
+					chunks.add(new Chunk(f));
+			} else {
+				String cname = s[0];
+				String fname = s[1];
+				double dstart = Double.parseDouble(s[2]);
+				double dend = Double.parseDouble(s[3]);
+				
+				int start = (int) (dstart / FRAME_SHIFT);
+				int end = (dend > 0.0 ? (int) (dend / FRAME_SHIFT) : Integer.MAX_VALUE);
+				System.err.println(start);
+				System.err.println(end);
+				if(dir != null)
+					fname = dir + System.getProperty("file.separator") + fname;
+				
+				File f = new File(fname);
+				if (f.canRead() && start >= 0 && end > start)
+					chunks.add(new Chunk(cname, f, start, end));
+				else
+					throw new IOException("Chunk invalid in line " + n); 
+			}
+			
+			n++;
 		}
+		
+		br.close();
 	}
 	
 	/**
@@ -181,19 +260,12 @@ public class ChunkedDataSet {
 	 */
 	public synchronized List<Sample> cachedData() throws IOException {
 		// remember old index
-		int oldInd = cind;
-		cind = 0;
-		
 		LinkedList<Sample> data = new LinkedList<Sample>();
-		Chunk chunk;
-		while ((chunk = nextChunk()) != null) {
+		for (Chunk chunk : chunks) {
 			double [] buf = new double [chunk.getFrameReader().getFrameSize()];
 			while (chunk.reader.read(buf))
 				data.add(new Sample((short) 0, buf));
 		}
-		
-		// restore old index
-		cind = oldInd;
 		
 		return data;
 	}

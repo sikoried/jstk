@@ -25,6 +25,8 @@ package de.fau.cs.jstk.app;
 import java.io.File;
 import java.io.IOException;
 
+import de.fau.cs.jstk.io.ChunkedDataSet;
+import de.fau.cs.jstk.io.ChunkedDataSet.Chunk;
 import de.fau.cs.jstk.io.FrameInputStream;
 import de.fau.cs.jstk.io.FrameOutputStream;
 
@@ -32,40 +34,34 @@ import de.fau.cs.jstk.io.FrameOutputStream;
 public class Chunker {
 
 	public static final String SYNOPSIS =
-		"sikoried, 11/9/2010\n" +
-		"Split a feature file in parts as defined by the given list. You may specify\n" +
-		"an output directory. The list contains lines of \"out-file num-frames\".\n\n" +
-		"usage: app.Chunker infile startframe endframe > frames.ft";
+		"usage: app.Chunker segments [dirname]";
 	
 	public static void main(String[] args) throws IOException {
-		if (args.length != 3) {
+		if (!(args.length == 1 || args.length == 2)) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
 		
 		String file = args[0];
-		int start = Integer.parseInt(args[1]);
-		int end = Integer.parseInt(args[2]);
-		if (end <= 0) {
-			end = Integer.MAX_VALUE;
-		}
+		String dir = (args.length > 1 ? args[1] : null);
 		
-		FrameInputStream fr = new FrameInputStream(new File(file));
-		float [] buf = new float [fr.getFrameSize()];
+		ChunkedDataSet cds = new ChunkedDataSet(new File(file), dir, 0);
 		
-		int i = 0;
-		FrameOutputStream fw = new FrameOutputStream(fr.getFrameSize(), null);
+		Chunk c = null;
+		while ((c = cds.nextChunk()) != null) {
+			FrameInputStream fr = c.getFrameReader();
+			float [] buf = new float [fr.getFrameSize()];
 		
-		while (i < end && fr.read(buf)) {
-			if (i < start) {
-				i++;
-			} else if (i >= start && i < end) {
+			File outf = new File((dir != null 
+					? dir + System.getProperty("file.separator") + c.getName()
+					: c.getName()));
+			FrameOutputStream fw = new FrameOutputStream(fr.getFrameSize(), outf);
+		
+			while (fr.read(buf)) {
 				fw.write(buf);
-				i++;
 			} 
+			
+			fw.close();
 		}
-		
-		fw.close();
 	}
-
 }
