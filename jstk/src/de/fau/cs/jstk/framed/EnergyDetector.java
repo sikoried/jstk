@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -258,6 +259,8 @@ public class EnergyDetector implements FrameSource {
 	public static void main(String [] args) throws Exception {
 		BasicConfigurator.configure();
 		
+		final float FRAME_RATE = 0.01f;
+		
 		if (args.length < 3 || args.length > 4) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
@@ -320,7 +323,51 @@ public class EnergyDetector implements FrameSource {
 			}
 
 			double thres = estimateThreshold(list, strat);
-			System.out.println(thres);
+			
+			Iterator<Sample> iter = list.iterator();
+			boolean va = list.get(0).x[0] > thres;
+			int start = 0;
+			int t = 0;
+			int n = 1;
+			int n_va = 0;
+			while (iter.hasNext()) {
+				Sample s = iter.next();
+				boolean decision = s.x[0] > thres;
+				
+				if (va && !decision) {
+					// change va -> sil
+					System.out.println(
+							String.format("%s-%06d", file.a, n) + " " +
+							file.a + " " + 
+							String.format("%.2f", start * FRAME_RATE) + " " +
+							String.format("%.2f", t * FRAME_RATE));
+					va = false;
+					start = t;
+					n++;
+				} else if (!va && decision) {
+					va = true;
+					start = t;
+				} 
+				
+				if (decision) {
+					n_va++;
+				}
+				
+				t++;
+			}
+			
+			// still va?
+			if (va) {
+				System.out.println(
+						String.format("%s-%06d", file.a, n) + " " +
+						file.a + " " + 
+						String.format("%.2f", start * FRAME_RATE) + " " +
+						String.format("%.2f", t * FRAME_RATE));
+			}
+			
+			// threshold to stderr, segments to stdout
+			System.err.println(list.size() + String.format(" %.2f %.2f", 
+					thres, (double) n_va / list.size()));
 			
 			// we need to output a binary decision for VAD
 			if (file.b != null) {
