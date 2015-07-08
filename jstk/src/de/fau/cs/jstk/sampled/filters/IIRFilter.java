@@ -159,12 +159,12 @@ public class IIRFilter implements AudioSource {
 		return source.getSampleRate();
 	}
 
-	public boolean getPreEmphasis() {
+	public double getPreEmphasis() {
 		return source.getPreEmphasis();
 	}
 
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		source.setPreEmphasis(applyPreEmphasis, a);
+	public void setPreEmphasis(double a) {
+		source.setPreEmphasis(a);
 	}
 
 	public void tearDown() throws IOException {

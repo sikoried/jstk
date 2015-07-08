@@ -894,7 +894,7 @@ public class JSTKTranscriber extends JFrame implements KeyListener,
 					preferences.getString("wavdir")
 							+ System.getProperty("file.separator")
 							+ list.getTurnName(), false);
-			reader.setPreEmphasis(false, 0);
+			reader.setPreEmphasis(0);
 			//BandPassFilter filteredSource = new BandPassFilter(reader, 0, 8000, 64);
 			source = new BufferedAudioSource(reader);
 			audioSignalVisualizer.setBufferedAudioSource(source);

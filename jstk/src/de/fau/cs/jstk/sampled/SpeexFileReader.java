@@ -94,8 +94,8 @@ public class SpeexFileReader implements AudioSource{
 		return af.getFormat();
 	}
 	
-	public boolean getPreEmphasis() {	
-		return false;
+	public double getPreEmphasis() {	
+		return 0.0;
 	}
 
 	@Override
@@ -139,8 +139,8 @@ public class SpeexFileReader implements AudioSource{
 		return readSamples;
 	}
 	
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		if (applyPreEmphasis)
+	public void setPreEmphasis(double a) {
+		if (a > 0.0)
 			throw new Error("preemphasis not supported");		
 	}
 

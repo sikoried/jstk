@@ -157,7 +157,7 @@ public class AudioPanel extends JPanel {
 			
 			// set up audio
 			as = new AudioFileReader(file.getAbsolutePath(), true);
-			as.setPreEmphasis(false, 0);
+			as.setPreEmphasis(0);
 			bas = new BufferedAudioSource(as);
 			
 			// active wait till buffer is full

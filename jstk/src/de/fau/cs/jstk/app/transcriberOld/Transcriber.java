@@ -804,7 +804,7 @@ public class Transcriber extends JFrame implements KeyListener, ActionListener,
 					preferences.getString("wavdir")
 							+ System.getProperty("file.separator")
 							+ list.getTurnName(), false);
-			reader.setPreEmphasis(false, 0);
+			reader.setPreEmphasis(0);
 			BandPassFilter filteredSource = new BandPassFilter(reader, 0, 8000, 64);
 			source = new BufferedAudioSource(filteredSource);
 			audioSignalVisualizer.setBufferedAudioSource(source);

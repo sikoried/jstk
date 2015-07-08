@@ -64,9 +64,6 @@ public class AudioCapture implements AudioSource {
 	private static final int DEFAULT_SAMPLE_RATE = 16000;
 	private static final int DEFAULT_BIT_RATE = 16;
 	
-	/** apply pre-emphasis? */
-	private boolean preemphasize = true;
-	
 	/** value required for first frame of pre-emphasis */
 	private double s0 = 0.;
 	
@@ -372,7 +369,7 @@ public class AudioCapture implements AudioSource {
 			}			
 		}
 		
-		if (preemphasize) {
+		if (a > 0.0) {
 			// set out-dated buffer elements to zero
 			if (readFrames < ns) {
 				for (int i = readFrames; i < ns; ++i)
@@ -403,15 +400,15 @@ public class AudioCapture implements AudioSource {
 		return "AudioCapture: " + (mixerName != null ? "(mixer: " + mixerName + ") " : "") + af.toString();
 	}
 	
-	public boolean getPreEmphasis() {
-		return preemphasize;
+	@Override
+	public double getPreEmphasis() {
+		return a;
 	}
 	
 	/**
 	 * Enable pre-emphasis with given factor
 	 */
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		preemphasize = applyPreEmphasis;
+	public void setPreEmphasis(double a) {
 		this.a = a;
 	}
 	
@@ -552,8 +549,6 @@ public class AudioCapture implements AudioSource {
 		}		
 		*/
 		AudioSource as = new AudioCapture(mixer, br, sr, 0);
-		
-		as.setPreEmphasis(false, 1.0);
 		
 		System.err.println(as.toString());
 		

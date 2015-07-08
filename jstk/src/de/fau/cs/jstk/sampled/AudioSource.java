@@ -61,14 +61,13 @@ public interface AudioSource {
 	/**
 	 * Does the AudioSource perform pre-emphasis?
 	 */
-	public boolean getPreEmphasis();
+	public double getPreEmphasis();
 	
 	/**
 	 * Toggle the pre-emphasis of the audio signal
-	 * @param applyPreEmphasis apply pre-emphasis?
-	 * @param a the pre-emphasis factor: x'(n) = x(n) - a*x(n-1)
+	 * @param a the pre-emphasis factor: x'(n) = x(n) - a*x(n-1) or 0.0 to disable
 	 */
-	public void setPreEmphasis(boolean applyPreEmphasis, double a);
+	public void setPreEmphasis(double a);
 	
 	/**
 	 * Tear down the AudioSource (i.e. release file handlers, etc)

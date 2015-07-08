@@ -41,8 +41,8 @@ public class AudioBuffer implements AudioSource {
 		this.sampleRate = sampleRate;
 	}
 	
-	public boolean getPreEmphasis() {
-		return false;
+	public double getPreEmphasis() {
+		return 0.0;
 	}
 
 	public int getSampleRate() {
@@ -74,8 +74,8 @@ public class AudioBuffer implements AudioSource {
 	/**
 	 * FIXME: refusing to re-implement pre-emphasis here 
 	 */
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		if (applyPreEmphasis)
+	public void setPreEmphasis(double a) {
+		if (a > 0.0)
 			throw new Error("pre-emphasis not implemented");
 	}
 

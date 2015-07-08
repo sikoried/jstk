@@ -45,9 +45,6 @@ public class AudioFileListReader implements AudioSource {
 	/** use buffered reader? */
 	private boolean cache = true;
 	
-	/** apply pre-emphasis? */
-	private boolean preemphasize = false;
-	
 	/** pre-emphasis factor */
 	private double a = AudioFileReader.DEFAULT_PREEMPHASIS_FACTOR;
 	
@@ -102,21 +99,20 @@ public class AudioFileListReader implements AudioSource {
 		
 		// load the first file
 		current = new AudioFileReader(list.poll(), format, cache);
-		current.setPreEmphasis(preemphasize, a);
+		current.setPreEmphasis(a);
 	}
 	
-	public boolean getPreEmphasis() {
+	public double getPreEmphasis() {
 		if (current != null)
 			return getPreEmphasis();
 		else
-			return preemphasize;
+			return a;
 	}
 	
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		preemphasize = applyPreEmphasis;
+	public void setPreEmphasis(double a) {
 		this.a = a;
 		if (current != null)
-			current.setPreEmphasis(applyPreEmphasis, a);
+			current.setPreEmphasis(a);
 	}
 	
 	public String toString() {
@@ -149,7 +145,7 @@ public class AudioFileListReader implements AudioSource {
 			} catch (UnsupportedAudioFileException e) {
 				throw new IOException(e.toString());
 			}
-			current.setPreEmphasis(preemphasize, a);
+			current.setPreEmphasis(a);
 			
 			// read frame
 			return current.read(buf);
@@ -164,7 +160,7 @@ public class AudioFileListReader implements AudioSource {
 				} catch (UnsupportedAudioFileException e) {
 					throw new IOException(e.toString());
 				}
-				current.setPreEmphasis(preemphasize, a);
+				current.setPreEmphasis(a);
 			}
 			
 			return length;

@@ -196,7 +196,7 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	}
 
 	@Override
-	public boolean getPreEmphasis() {
+	public double getPreEmphasis() {
 		return audioSource.getPreEmphasis();
 	}
 
@@ -306,8 +306,8 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	}
 
 	@Override
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		audioSource.setPreEmphasis(applyPreEmphasis, a);
+	public void setPreEmphasis(double a) {
+		audioSource.setPreEmphasis(a);
 	}
 
 	@Override

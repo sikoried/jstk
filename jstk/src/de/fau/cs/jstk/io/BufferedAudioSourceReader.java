@@ -110,7 +110,7 @@ public class BufferedAudioSourceReader implements AudioSource {
 	}
 
 	@Override
-	public boolean getPreEmphasis() {
+	public double getPreEmphasis() {
 		return source.getPreEmphasis();
 	}
 
@@ -147,8 +147,8 @@ public class BufferedAudioSourceReader implements AudioSource {
 	
 
 	@Override
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		source.setPreEmphasis(applyPreEmphasis, a);
+	public void setPreEmphasis(double a) {
+		source.setPreEmphasis(a);
 	}
 
 	@Override

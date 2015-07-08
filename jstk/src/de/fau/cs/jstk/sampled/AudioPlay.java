@@ -361,7 +361,7 @@ public class AudioPlay implements LineListener {
 			else
 				reader = new AudioFileReader(file, RawAudioFormat.create(format), true);
 			
-			reader.setPreEmphasis(false, 1);
+			reader.setPreEmphasis(0);
 			
 			AudioPlay play = new AudioPlay(mixer, reader);
 			

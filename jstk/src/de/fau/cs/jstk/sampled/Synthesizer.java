@@ -95,11 +95,11 @@ public abstract class Synthesizer implements AudioSource {
 		blockingSource = blocking;
 	}
 	
-	public boolean getPreEmphasis() {
-		return false;
+	public double getPreEmphasis() {
+		return 0.0;
 	}
 	
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
+	public void setPreEmphasis(double a) {
 		throw new RuntimeException("method unimplemented");
 	}
 

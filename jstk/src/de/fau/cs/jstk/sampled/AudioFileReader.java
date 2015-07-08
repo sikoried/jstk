@@ -46,6 +46,12 @@ import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
  *
  */
 public final class AudioFileReader implements AudioSource {
+	/** normalize output signal to -1..1 */
+	public static boolean DEFAULT_NORMALIZE = false;
+	
+	/** default y pre-emphasis factor */ 
+	public static double DEFAULT_PREEMPHASIS_FACTOR = 0.97;
+	
 	/** The RawAudioFormat (direct access within the package) */
 	RawAudioFormat format = null;
 	
@@ -54,14 +60,12 @@ public final class AudioFileReader implements AudioSource {
 	
 	/** Remember the filename */
 	private String fileName = null;
-	
-	/** apply pre-emphasis? */
-	private boolean preemphasize = false;
+
+	/** apply -1..1 normalization? */
+	private boolean normalize = DEFAULT_NORMALIZE;
 	
 	/** value required for first frame of pre-emphasis */
 	private double s0 = 0.;
-	
-	public static double DEFAULT_PREEMPHASIS_FACTOR = 0.95;
 	
 	/** pre-emphasis factor */
 	private double a = DEFAULT_PREEMPHASIS_FACTOR;
@@ -327,41 +331,43 @@ public final class AudioFileReader implements AudioSource {
 		}
 		
 		// normalize to -1...1, ensure proper values
-		if (format.signed) {
-			for (int i = 0; i < ns; ++i) {
-				if (Double.isNaN(buf[i])) {
-					System.err.println("AudioFileReader.read(): Fixed NaN!");
-					buf[i] = 0.;
+		if (normalize) {
+			if (format.signed) {
+				for (int i = 0; i < ns; ++i) {
+					if (Double.isNaN(buf[i])) {
+						System.err.println("AudioFileReader.read(): Fixed NaN!");
+						buf[i] = 0.;
+					}
+					 
+					buf[i] *= scale;
+					
+					if (!(buf[i] < 1.0))
+						buf[i] = 1.0;
+					// can happen if signed integer signal is e.g. -32768 for 16 bit 
+					else if (!(buf[i] > -1.0))
+						buf[i] = -1.0;
 				}
-				 
-				buf[i] *= scale;
-				
-				if (!(buf[i] < 1.0))
-					buf[i] = 1.0;
-				// can happen if signed integer signal is e.g. -32768 for 16 bit 
-				else if (!(buf[i] > -1.0))
-					buf[i] = -1.0;
-			}
-		} else {
-			for (int i = 0; i < ns; ++i) {
-				// do not allow 0.0 or NaN for numerical stability
-				if (Double.isNaN(buf[i])) {
-					System.err.println("AudioFileReader.read(): Fixed NaN!");
-					buf[i] = 0;
-				}				
-				
-				// unsigned requires the shift first
-				buf[i] = scale * (buf[i] - scale_help);				
-				
-				if (!(buf[i] < 1.0))
-					buf[i] = 1.0;
-				// can happen if unsigned integer signal is e.g. 0 for 16 bit
-				else if (!(buf[i] > -1.0))
-					buf[i] = -1.0;
+			} else {
+				for (int i = 0; i < ns; ++i) {
+					// do not allow 0.0 or NaN for numerical stability
+					if (Double.isNaN(buf[i])) {
+						System.err.println("AudioFileReader.read(): Fixed NaN!");
+						buf[i] = 0;
+					}				
+					
+					// unsigned requires the shift first
+					buf[i] = scale * (buf[i] - scale_help);				
+					
+					if (!(buf[i] < 1.0))
+						buf[i] = 1.0;
+					// can happen if unsigned integer signal is e.g. 0 for 16 bit
+					else if (!(buf[i] > -1.0))
+						buf[i] = -1.0;
+				}
 			}
 		}
 		
-		if (preemphasize) {
+		if (a > 0.0) {
 			// set out-dated buffer elements to zero
 			if (framesRead < ns) {
 				for (int i = framesRead; i < ns; ++i)
@@ -407,12 +413,11 @@ public final class AudioFileReader implements AudioSource {
 		return format.sr;
 	}
 	
-	public boolean getPreEmphasis() {
-		return preemphasize;
+	public double getPreEmphasis() {
+		return a;
 	}
 	
-	public void setPreEmphasis(boolean applyPreEmphasis, double a) {
-		preemphasize = applyPreEmphasis;
+	public void setPreEmphasis(double a) {
 		this.a = a;
 	}
 	
