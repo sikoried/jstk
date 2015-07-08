@@ -68,7 +68,9 @@ public class AudioCapture implements AudioSource {
 	private double s0 = 0.;
 	
 	/** pre-emphasis factor */
-	private double a = AudioFileReader.DEFAULT_PREEMPHASIS_FACTOR;
+	private double a = AudioSource.DEFAULT_PREEMPHASIS_FACTOR;
+	
+	private boolean normalize = AudioSource.DEFAULT_NORMALIZE;
 	
 	/** factor to scale signed values to -1...1 */
 	private double scale = 1.;
@@ -203,6 +205,8 @@ public class AudioCapture implements AudioSource {
 		
 		br = af.getSampleSizeInBits();
 		fs = br/8;
+		
+		scale = 1. / (2 << (br - 1));
 		
 		// query a capture device according to the audio format
 		DataLine.Info info = new DataLine.Info(TargetDataLine.class, af);
@@ -348,11 +352,15 @@ public class AudioCapture implements AudioSource {
 		if (br == 8) {
 			// 8bit: just copy; it's signed and little endian
 			for (int i = 0; i < readBytes; ++i) {
-				out[i] = scale * (new Byte(this.byteBuf[i]).doubleValue());
-				if (out[i] > 1.)
-					out[i] = 1.;
-				if (buf[i] < -1.)
-					out[i] = -1.;
+				out[i] = (new Byte(this.byteBuf[i]).doubleValue());
+								
+				if (normalize) {
+					out[i] *= scale;
+					if (out[i] > 1.)
+						out[i] = 1.;
+					if (buf[i] < -1.)
+						out[i] = -1.;
+				}
 			}			
 		} else {
 			// > 8bit
@@ -361,11 +369,14 @@ public class AudioCapture implements AudioSource {
 			int i;
 			for (i = 0; i < readFrames; ++i) {
 				if (br == 16) {
-					out[i] = scale * (double) bb.getShort();
+					out[i] = (double) bb.getShort();
 				} else if (br == 32) {
-					out[i] = scale * (double) bb.getInt();
+					out[i] = (double) bb.getInt();
 				} else
 					throw new IOException("unsupported bit rate");
+				
+				if (normalize)
+					out[i] *= scale;
 			}			
 		}
 		
@@ -410,6 +421,14 @@ public class AudioCapture implements AudioSource {
 	 */
 	public void setPreEmphasis(double a) {
 		this.a = a;
+	}
+	
+	public boolean getNormalize() {
+		return normalize;
+	}
+	
+	public void setNormalize(boolean n) {
+		this.normalize = n;
 	}
 	
 	/**
@@ -474,7 +493,7 @@ public class AudioCapture implements AudioSource {
 	 * Enable scaling of the signal to [-1;1] depending on its bit rate
 	 */
 	public void enableScaling() {
-		scale = 1. / (2 << (br - 1));
+		
 	}
 	
 	public static final String synopsis = 

@@ -166,6 +166,14 @@ public class IIRFilter implements AudioSource {
 	public void setPreEmphasis(double a) {
 		source.setPreEmphasis(a);
 	}
+	
+	public boolean getNormalize() {
+		return source.getNormalize();
+	}
+	
+	public void setNormalize(boolean n) {
+		source.setNormalize(n);
+	}
 
 	public void tearDown() throws IOException {
 		source.tearDown();

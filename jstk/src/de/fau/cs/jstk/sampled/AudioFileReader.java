@@ -46,12 +46,6 @@ import de.fau.cs.jstk.exceptions.MalformedParameterStringException;
  *
  */
 public final class AudioFileReader implements AudioSource {
-	/** normalize output signal to -1..1 */
-	public static boolean DEFAULT_NORMALIZE = false;
-	
-	/** default y pre-emphasis factor */ 
-	public static double DEFAULT_PREEMPHASIS_FACTOR = 0.97;
-	
 	/** The RawAudioFormat (direct access within the package) */
 	RawAudioFormat format = null;
 	
@@ -62,13 +56,13 @@ public final class AudioFileReader implements AudioSource {
 	private String fileName = null;
 
 	/** apply -1..1 normalization? */
-	private boolean normalize = DEFAULT_NORMALIZE;
+	private boolean normalize = AudioSource.DEFAULT_NORMALIZE;
 	
 	/** value required for first frame of pre-emphasis */
 	private double s0 = 0.;
 	
 	/** pre-emphasis factor */
-	private double a = DEFAULT_PREEMPHASIS_FACTOR;
+	private double a = AudioSource.DEFAULT_PREEMPHASIS_FACTOR;
 	
 	/** use BufferedInputStream? */
 	private boolean cacheFile = true;
@@ -227,8 +221,7 @@ public final class AudioFileReader implements AudioSource {
 	
 	/**
 	 * Read a number of samples from the audio file and save it to the given
-	 * buffer. Takes care of signedness and endianess. Samples are 
-	 * normalized by the bit rate (and thus [-1;1])
+	 * buffer. Takes care of signedness and endianess.
 	 * 
 	 * @param buf double buffer; will try to read as many samples as fit in the buffer
 	 * @return number of samples actually read
@@ -390,6 +383,14 @@ public final class AudioFileReader implements AudioSource {
 		
 		// return number of read samples
 		return framesRead;
+	}
+	
+	public boolean getNormalize() {
+		return normalize;
+	}
+	
+	public void setNormalize(boolean n) {
+		normalize = n;
 	}
 	
 	public void tearDown() {

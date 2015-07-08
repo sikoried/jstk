@@ -46,7 +46,9 @@ public class AudioFileListReader implements AudioSource {
 	private boolean cache = true;
 	
 	/** pre-emphasis factor */
-	private double a = AudioFileReader.DEFAULT_PREEMPHASIS_FACTOR;
+	private double a = AudioSource.DEFAULT_PREEMPHASIS_FACTOR;
+	
+	private boolean normalize = AudioSource.DEFAULT_NORMALIZE;
 	
 	/** 
 	 * Generate a new AudioFileListReader using given file list, RawAudioFormat
@@ -113,6 +115,17 @@ public class AudioFileListReader implements AudioSource {
 		this.a = a;
 		if (current != null)
 			current.setPreEmphasis(a);
+	}
+	
+	public boolean getNormalize() {
+		return normalize;
+	}
+	
+	public void setNormalize(boolean n) {
+		this.normalize = n;
+		
+		if (current != null)
+			current.setNormalize(n);
 	}
 	
 	public String toString() {

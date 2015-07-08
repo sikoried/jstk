@@ -97,6 +97,14 @@ public class RingModulation implements AudioSource {
 		source.setPreEmphasis(a);
 	}
 	
+	public boolean getNormalize() {
+		return source.getNormalize();
+	}
+	
+	public void setNormalize(boolean n) {
+		source.setNormalize(n);
+	}
+	
 	public void tearDown() throws IOException {
 		source.tearDown();
 	}

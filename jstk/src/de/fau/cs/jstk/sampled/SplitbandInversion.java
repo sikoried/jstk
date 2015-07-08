@@ -34,6 +34,8 @@ public class SplitbandInversion implements AudioSource {
 	
 	public static int FFT_SIZE = 2048;
 	
+	private boolean normalize = AudioSource.DEFAULT_NORMALIZE;
+	
 	private AudioSource s1, s2;
 
 	private RingModulation rm1, rm2;
@@ -44,6 +46,9 @@ public class SplitbandInversion implements AudioSource {
 	public SplitbandInversion(AudioSource s1, AudioSource s2)  {
 		this.s1 = s1;
 		this.s2 = s2;
+		
+		s1.setNormalize(normalize);
+		s2.setNormalize(normalize);
 	}
 	
 	public void configure(double splitf, double invf1, double invf2) {
@@ -136,6 +141,16 @@ public class SplitbandInversion implements AudioSource {
 
 	public double getPreEmphasis() {
 		return s1.getPreEmphasis();
+	}
+	
+	public boolean getNormalize() {
+		return normalize;
+	}
+	
+	public void setNormalize(boolean n) {
+		s1.setNormalize(n);
+		s2.setNormalize(n);
+		this.normalize = n;
 	}
 
 	public void setPreEmphasis(double a) {

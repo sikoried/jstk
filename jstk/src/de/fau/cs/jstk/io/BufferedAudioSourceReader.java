@@ -118,6 +118,14 @@ public class BufferedAudioSourceReader implements AudioSource {
 	public int getSampleRate() {
 		return source.getSampleRate();
 	}
+	
+	public boolean getNormalize() {
+		return source.getNormalize();
+	}
+	
+	public void setNormalize(boolean n) {
+		source.setNormalize(n);
+	}
 
 	@Override
 	public int read(double[] buf) {

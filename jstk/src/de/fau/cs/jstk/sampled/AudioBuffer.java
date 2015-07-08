@@ -78,6 +78,14 @@ public class AudioBuffer implements AudioSource {
 		if (a > 0.0)
 			throw new Error("pre-emphasis not implemented");
 	}
+	
+	public boolean getNormalize() {
+		return false;
+	}
+	
+	public void setNormalize(boolean n) {
+		throw new Error("this is a buffer, it doesn't normalize");
+	}
 
 	public void tearDown() throws IOException {
 		audioData = null;

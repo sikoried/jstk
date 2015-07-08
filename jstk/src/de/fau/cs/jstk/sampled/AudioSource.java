@@ -37,7 +37,12 @@ import java.io.IOException;
  *
  */
 public interface AudioSource {
-
+	/** normalize output signal to -1..1 */
+	public static boolean DEFAULT_NORMALIZE = false;
+	
+	/** default y pre-emphasis factor */ 
+	public static double DEFAULT_PREEMPHASIS_FACTOR = 0.97;
+	
 	public int read(double [] buf) throws IOException;
 	
 	/**
@@ -68,6 +73,18 @@ public interface AudioSource {
 	 * @param a the pre-emphasis factor: x'(n) = x(n) - a*x(n-1) or 0.0 to disable
 	 */
 	public void setPreEmphasis(double a);
+	
+	/**
+	 * Check if AudioSource does normalize to -1..1
+	 * @return
+	 */
+	public boolean getNormalize();
+	
+	/**
+	 * Set if AudioSource should normalize
+	 * @param n
+	 */
+	public void setNormalize(boolean n);
 	
 	/**
 	 * Tear down the AudioSource (i.e. release file handlers, etc)

@@ -199,6 +199,14 @@ public class BufferedAudioSource implements AudioSource, Runnable {
 	public double getPreEmphasis() {
 		return audioSource.getPreEmphasis();
 	}
+	
+	public boolean getNormalize() {
+		return audioSource.getNormalize();
+	}
+	
+	public void setNormalize(boolean n) {
+		audioSource.setNormalize(n);
+	}
 
 	@Override
 	public int getSampleRate() {

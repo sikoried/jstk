@@ -53,6 +53,11 @@ public abstract class Synthesizer implements AudioSource {
 	/** sleep time: number of ms to wait before the read() call is returned */
 	private int sleep = 0;
 	
+	/**
+	 * Normalize to -1..1
+	 */
+	protected boolean normalize = AudioSource.DEFAULT_NORMALIZE;
+	
 	/** blocking source: if true, the read() method will take about 1/sampleRate seconds */
 	private boolean blockingSource = false;
 	
@@ -103,6 +108,14 @@ public abstract class Synthesizer implements AudioSource {
 		throw new RuntimeException("method unimplemented");
 	}
 
+	public boolean getNormalize() {
+		return normalize;
+	}
+	
+	public void setNormalize(boolean n) {
+		this.normalize = n;
+	}
+	
 	public int getSampleRate() {
 		return sr;
 	}

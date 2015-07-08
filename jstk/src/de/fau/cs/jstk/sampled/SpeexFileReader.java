@@ -43,6 +43,8 @@ public class SpeexFileReader implements AudioSource{
 
 	private AudioFormat audioFormat;
 	
+	private boolean normalize = AudioSource.DEFAULT_NORMALIZE;
+	
 	Speex2PcmAudioInputStream pcmStream;
 
 	private boolean streamClosed;		
@@ -97,6 +99,19 @@ public class SpeexFileReader implements AudioSource{
 	public double getPreEmphasis() {	
 		return 0.0;
 	}
+	
+	public void setPreEmphasis(double a) {
+		if (a > 0.0)
+			throw new Error("preemphasis not supported");		
+	}
+	
+	public boolean getNormalize() {
+		return normalize;
+	}
+	
+	public void setNormalize(boolean n) {
+		this.normalize = n;
+	}
 
 	@Override
 	public int getSampleRate() {
@@ -129,19 +144,17 @@ public class SpeexFileReader implements AudioSource{
 		int i;
 		for (i = 0; i < readSamples; i++){
 			//relies on signed samples, size 16 
-			short value = byteBuffer.getShort();
-			if (value == -32768)
-				buf[i] = -1.0;
-			else
-				buf[i] = (double) value / 32767.0;
+			buf[i] = (double) byteBuffer.getShort();
+			
+			if (normalize) {
+				buf[i] /= 32767.0;
+				
+				if (buf[i] < -1.0)
+					buf[i] = -1.0;
+			}
 		}
 		
 		return readSamples;
-	}
-	
-	public void setPreEmphasis(double a) {
-		if (a > 0.0)
-			throw new Error("preemphasis not supported");		
 	}
 
 	@Override

@@ -180,9 +180,11 @@ public final class SineGenerator extends Synthesizer {
 			}
 		}
 		
-		// normalize
-		for (int i = 0; i < n; ++i)
-			buf[i] *= .3;
+		// normalize-- inverted logic as the signal will be -1..1 up to here
+		if (!normalize) {
+			for (int i = 0; i < n; ++i)
+				buf[i] *= (0.5 * Short.MAX_VALUE);  // do half amplitudes
+		}
 	}
 	
 	/**
