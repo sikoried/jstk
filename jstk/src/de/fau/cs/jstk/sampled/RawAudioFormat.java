@@ -234,6 +234,7 @@ public class RawAudioFormat {
 		predefinedFormats.put("alaw/16", new RawAudioFormat(16000, true, 0));
 		predefinedFormats.put("alaw/8", new RawAudioFormat(8000, true, 0));
 		predefinedFormats.put("sphere/8", new RawAudioFormat(8000, false, 1024));
+    predefinedFormats.put("sphere/16", new RawAudioFormat(16, 16000, true, true, 1024));
 		predefinedFormats.put("wav/44", new RawAudioFormat(16, 44100, true, true, 44));
 		predefinedFormats.put("wav/32", new RawAudioFormat(16, 32000, true, true, 44));
 		predefinedFormats.put("wav/16", new RawAudioFormat(16, 16000, true, true, 44));

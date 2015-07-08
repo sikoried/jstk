@@ -190,7 +190,7 @@ public class EnergyDetector implements FrameSource {
 		double delta = (md.components[1].mue[0] - md.components[0].mue[0]) / n;
 		while (n-- > 0) {
 			md.evaluate(x);
-			md.posteriors(p);
+			// md.posteriors(p);
 			
 			// well now we have VA!
 			if (p[1] > p[0])
