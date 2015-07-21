@@ -491,7 +491,11 @@ public class ParallelUbmGmm {
 		BufferedWriter fw = new BufferedWriter(new FileWriter(parsedArgs[2]));
 		Iterator<Job> it = d.jobs.iterator();
 		while (it.hasNext()) {
-			fw.write(details ? it.next().toLongString() : it.next().toString() + "\n");
+      if (details)
+			  fw.write(it.next().toLongString() + "\n");
+      else
+			  fw.write(it.next().toString() + "\n");
+
     }
 		fw.close();
 		
