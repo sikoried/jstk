@@ -135,19 +135,11 @@ public class ParallelUbmGmm {
 		public void run() {
 			Job current = null;
 			try {
-				Mixture speaker = new Mixture(ubm);
 				while ((current = jobDistributor.next()) != null) {
 					
-					// Mixture speaker = new Mixture(new FileInputStream(current.getModelFile()));
-					FrameSource spmean = new FrameInputStream(current.getModelFile());
-					double [] sv = new double [spmean.getFrameSize()];
-					spmean.read(sv);
+					Mixture speaker = new Mixture(new FileInputStream(current.getModelFile()));
 					
-					for (int i = 0; i < speaker.nd; ++i)
-						System.arraycopy(sv, i*speaker.fd, speaker.components[i].mue, 0, speaker.fd);
-					
-					FrameSource source = new FrameInputStream(current.getFeatureFile());
-					
+          FrameSource source = new FrameInputStream(current.getFeatureFile());
 					double [] buf = new double [source.getFrameSize()];
 					
 					// score accumulators
@@ -247,6 +239,8 @@ public class ParallelUbmGmm {
 					}
 					
 					// finish score computation
+          current.score_ubm = score_ubm / frames;
+          current.score_spk = score_spk / frames;
 					current.score = (score_spk - score_ubm) / frames;
 
 					// private statistics
@@ -281,6 +275,8 @@ public class ParallelUbmGmm {
 		String modelDir = null;
 		
 		double score;
+    double score_ubm;
+    double score_spk;
 		
 		int id = idcnt++;
 		
@@ -306,6 +302,10 @@ public class ParallelUbmGmm {
 		public String toString() {
 			return modelFile + " " + featureFile + " " + score;
 		}
+
+    public String toLongString() {
+      return modelFile + " " + featureFile + " " + score + " " + score_ubm + " " + score_spk;
+    }
 	}
 	
 	/**
@@ -400,11 +400,13 @@ public class ParallelUbmGmm {
 		"  MNAP transformed as well!\n" +
 		"--model-dir <dir>\n" +
 		"  Append <dir> before speaker model names in trial file\n" +
+    "--detailed-scores\n" + 
+    "  Append ubm and spk score (frame-normalized)\n" +
 		"--silent\n" +
 		"  Turn off DebugOutput for silent execution.\n";
 	
 	public static void main(String[] args) throws Exception {
-		if (args.length < 4) {
+		if (args.length < 3) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
 		}
@@ -415,6 +417,7 @@ public class ParallelUbmGmm {
 		int fastScoring = 0;
 		int threads = Runtime.getRuntime().availableProcessors();
 		int rank = 0;
+    boolean details = false;
 
 		String napBase = null;
 		
@@ -431,7 +434,9 @@ public class ParallelUbmGmm {
 //					threads = Runtime.getRuntime().availableProcessors();
 //					logger.info("ParallelUbmGmm.main(): more CPUs requested than available, scaling back to " + threads);
 //				}
-			} else if (args[i].equals("--silent"))
+			} else if (args[i].equals("--detailed-scores")) {
+        details = true;
+      } else if (args[i].equals("--silent"))
 				Logger.getLogger("de.fau.cs.jstk").setLevel(Level.FATAL);
 			else if (args[i].equals("--model-dir")) {
 			    modelDir = args[++i];
@@ -485,8 +490,9 @@ public class ParallelUbmGmm {
 		logger.info("ParallelUbmGmm.main(): writing scored trial file");
 		BufferedWriter fw = new BufferedWriter(new FileWriter(parsedArgs[2]));
 		Iterator<Job> it = d.jobs.iterator();
-		while (it.hasNext()) 
-			fw.write(it.next().toString() + "\n");
+		while (it.hasNext()) {
+			fw.write(details ? it.next().toLongString() : it.next().toString() + "\n");
+    }
 		fw.close();
 		
 		long tend = System.currentTimeMillis();

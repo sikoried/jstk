@@ -45,7 +45,7 @@ public class Chunker {
 		String file = args[0];
 		String dir = (args.length > 1 ? args[1] : null);
 		
-		ChunkedDataSet cds = new ChunkedDataSet(new File(file), dir, 0);
+		ChunkedDataSet cds = new ChunkedDataSet(new File(file));
 		
 		Chunk c = null;
 		while ((c = cds.nextChunk()) != null) {
