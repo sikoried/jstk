@@ -146,7 +146,7 @@ public class Bigram implements LanguageModel {
 			N1gram ng = new N1gram(
 					tok.getWordTokenization(sp[1]), 
 					(float) Math.pow(10, Float.parseFloat(sp[0])), 
-					sp.length > 2 ? (float) Math.pow(10, Float.parseFloat(sp[2])) : 0.f);
+					sp.length > 2 ? (float) Math.pow(10, Float.parseFloat(sp[2])) : 1.f);
 			
 			p1.put(ng, ng.p);
 		}
@@ -209,7 +209,7 @@ public class Bigram implements LanguageModel {
 			unigram.addToTree(t, th.tokenizeWord(t.sequence), p);
 		}
 		
-		System.err.println(TokenTree.traverseNetwork(unigram.root, "  "));
+		logger.info(TokenTree.traverseNetwork(unigram.root, "  "));
 		unigram.factor();
 		
 		// -%<------------------------------------------------------------------
