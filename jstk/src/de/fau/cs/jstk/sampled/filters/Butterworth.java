@@ -209,6 +209,11 @@ public class Butterworth extends IIRFilter {
 		double [] dcof = new double [n + 1];
 		dcof[0] = 1.0;
 		dcof[1] = temp[0];
+
+    // save your breath...
+    if (n == 1)
+      return dcof;
+
 		dcof[2] = temp[2];
 		for (int k = 3; k < n + 1; ++k)
 			dcof[k] = temp[2*k - 2];
