@@ -602,7 +602,23 @@ public final class Arithmetics {
 			m = Math.max(m, a[i]);
 		return m;
 	}
-	
+
+	public static int maxi(double [] a) {
+		int p = 0;
+		for (int i = 1; i < a.length; ++i)
+			if (a[i] > a[p])
+				p = i;
+		return p;
+	}
+
+	public static int mini(double [] a) {
+		int p = 0;
+		for (int i = 1; i < a.length; ++i)
+			if (a[i] < a[p])
+				p = i;
+		return p;
+	}
+
 	/** Get the minimum of the trace of a upper triangular matrix */
 	public static double minsp(double [] a, int d) {
 		double m = a[0];

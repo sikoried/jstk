@@ -332,9 +332,6 @@ public final class Mixture {
 	/**
 	 * Generate a super vector for GMM-SVM use. The generated vector contains 
 	 * (in that order) all priors, mean values and variances (if requested).
-	 * @param priors include prior probabilities
-	 * @param means include mean vectors
-	 * @param variances include variances (diagonal covariance)
 	 * @return super vector [apr1 apr2 ... mue1 mue2 ... cov1 cov2 ...]
 	 */
 	public double [] superVector(Density.Flags flags) {
@@ -370,7 +367,6 @@ public final class Mixture {
 	
 	/**
 	 * Construct a MixtureDensity from an ASCII InputStream
-	 * @param is
 	 */
 	public Mixture(Scanner scanner) throws IOException {
 		while (!scanner.hasNextInt())
@@ -560,6 +556,8 @@ public final class Mixture {
 		"    individual component scores without the priors.\n" +
 		"  l <codebook> [in-out-list]\n" +
 		"    like e, but just write the total log-likelihood for the whole mixture.\n" +
+		"  p <list> <codebook1> <codebook2> [<codebook3> ...]\n" +
+		"    similar to l, but compute posterior for each codebook and and file.\n" +
 		"  lm first last <codebook> [in-out-list]\n" +
 		"    write the total log-likelihood for the whole mixture for: all dimensions,\n" +
 		"    dimensions first through last, and all dimensions except first through last.\n" +
@@ -580,7 +578,7 @@ public final class Mixture {
 		"    Marginalize codebook over all dimensions except <first> to <last>.";
 	
 	
-	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, EVALUATE_MARGINALS, SV, MNAP, AKL, AKL2, MARGINALIZE};
+	public static enum Mode { DISPLAY, CONSTRUCT, FROMASCII, EVALUATE, POSTERIORS, EVALUATE_MARGINALS, SV, MNAP, AKL, AKL2, MARGINALIZE};
 	
 	public static void main(String [] args) throws Exception {
 		if (args.length < 1) {
@@ -606,6 +604,9 @@ public final class Mixture {
 		else if (smode.equals("l")){
 			mode = Mode.EVALUATE;
 			justLogAcc = true;
+		}
+		else if (smode.equals("p")){
+			mode = Mode.POSTERIORS;
 		}
 		else if (smode.equals("lm")){
 			mode = Mode.EVALUATE_MARGINALS;
@@ -733,6 +734,57 @@ public final class Mixture {
 			
 			break;
 		}
+			case POSTERIORS: {
+				// read codebooks
+				int n = args.length-2;  // first file is list
+				if (n < 2) {
+					System.err.println("Must have at least 2 mixtures");
+					System.exit(1);
+				}
+
+				Mixture[] cbs = new Mixture[n];
+				for (int i = 0; i < n; i++) {
+					System.err.println("Loading " + args[2+i]);
+					cbs[i] = Mixture.readFromFile(new File(args[2+i]));
+				}
+
+				LinkedList<String> inlist = new LinkedList<>();
+				BufferedReader lr = new BufferedReader(new FileReader(args[1]));
+				String line;
+				while ((line = lr.readLine()) != null) {
+					inlist.add(line);
+				}
+				lr.close();
+
+
+				// buffers
+				double [] x = new double [cbs[0].fd];
+				// process files
+				while (inlist.size() > 0) {
+					String ftf = inlist.remove();
+					FrameInputStream reader = new FrameInputStream(new File(ftf));
+					double [] logp = new double [n];
+
+					// read, evaluate
+					while (reader.read(x)) {
+						for (int i = 0; i < n; i++) {
+							logp[i] += Math.log(cbs[i].evaluate(x));
+						}
+					}
+
+					reader.close();
+
+					// Arithmetics.makesumto1(logp);
+					int max = Arithmetics.maxi(logp);
+					StringBuffer sb = new StringBuffer();
+					sb.append(ftf + " " + max);
+					for (double l : logp)
+						sb.append(" " + l);
+					System.out.println(sb.toString());
+				}
+
+				break;
+			}
 		case EVALUATE_MARGINALS: {
 			// read codebook
 			if (args.length != 4 && args.length != 5){
