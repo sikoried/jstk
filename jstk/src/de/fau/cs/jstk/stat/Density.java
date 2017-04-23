@@ -217,9 +217,6 @@ public abstract class Density {
 	
 	/**
 	 * Construct a vector containing the specified components
-	 * @param prior include the prior
-	 * @param mue include the mean vector
-	 * @param cov include the covariance
 	 * @return
 	 */
 	public double [] superVector(Flags flags) {

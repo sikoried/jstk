@@ -42,7 +42,9 @@ dependencies {
   compile fileTree(dir: '../lib', include: '*.jar')
 }
 
-task showMeCache << {
-  configurations.compile.each { println it }
+task showMeCache {
+  doLast {
+    configurations.compile.each { println it }
+  }
 }
 

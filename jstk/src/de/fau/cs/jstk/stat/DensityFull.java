@@ -31,6 +31,8 @@ import org.apache.log4j.Logger;
 import Jama.CholeskyDecomposition;
 import Jama.Matrix;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * The DensityFull is a Gaussian density with full covariance matrix. The
  * computation is sped up using Cholesky decomposition. This is also numerically 
@@ -325,7 +327,7 @@ public final class DensityFull extends Density {
 				}
 			}
 
-		Assert.assertEquals(d.cov.length, k);
+		assertEquals(d.cov.length, k);
 		
 		d.fill(apr,  
 				mueNew,				
