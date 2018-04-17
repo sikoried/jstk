@@ -74,6 +74,8 @@ public class DTMF implements FrameSource {
 
 			// re-map to dialpad
 			decoded = DIAL_PAD.charAt(lf * 4 + (uf % 4));
+		} else {
+			decoded = '-';
 		}
 
 		System.arraycopy(this.buf, 0, buf, 1, this.buf.length);
