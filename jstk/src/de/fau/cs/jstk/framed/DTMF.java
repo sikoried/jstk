@@ -16,6 +16,11 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * DTMF tone feature extraction, see
+ * https://en.wikipedia.org/wiki/Dual-tone_multi-frequency_signaling
+ * https://www.audiocheck.net/audiocheck_dtmf.php (generator)
+ */
 public class DTMF implements FrameSource {
 	private static Logger logger = Logger.getLogger(DTMF.class);
 
@@ -96,6 +101,7 @@ public class DTMF implements FrameSource {
 			"sikoried, 4/20/2010\n" +
 					"Compute the FFT given a format, file and window description; select DTMF bins Output is ASCII\n" +
 					"if no output-file is given.\n\n" +
+					"DTMF symbol to frequency pair map: " + synthesize(DIAL_PAD) + "\n\n" +
 					"usage: framed.DTMF <in-file> [out-file]";
 
 	public static void main(String [] args) throws Exception {
