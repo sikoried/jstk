@@ -5,7 +5,9 @@ import de.fau.cs.jstk.io.FrameSource;
 import de.fau.cs.jstk.sampled.AudioSource;
 import de.fau.cs.jstk.sampled.RawAudioFormat;
 import de.fau.cs.jstk.util.Arithmetics;
+import de.fau.cs.jstk.util.Various;
 import org.apache.commons.lang3.tuple.Triple;
+import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 
 import java.io.File;
@@ -31,6 +33,8 @@ public class DTMF implements FrameSource {
 		for (int i = 0; i < FREQS.length; i++)
 			indices[i] = (int) Math.round((double) FREQS[i] / fft.getResolution());
 
+		logger.info("FFT resolution (Hz/bin) = " + fft.getResolution());
+		logger.info(Arrays.toString(FREQS));
 		logger.info(Arrays.toString(indices));
 
 		this.sel = new Selection(fft, indices);
@@ -47,6 +51,8 @@ public class DTMF implements FrameSource {
 		return li;
 	}
 
+	public char decoded;
+
 	@Override
 	public boolean read(double[] buf) throws IOException {
 		// read FFT, select bins.
@@ -54,8 +60,21 @@ public class DTMF implements FrameSource {
 
 		// make sum to one
 		buf[0] = fft.getRawSpectralEnergy();
-		if (buf[0] > 1e-6)
+		if (buf[0] > 1e-6) {
 			Arithmetics.makesumto1(this.buf);
+
+			// find max, decode
+			int[] mp = new int[2];
+			double[] mv = new double [2];
+			Various.max(this.buf, mp, mv);
+
+			// lower and upper bin (freq)
+			int lf = Math.min(mp[0], mp[1]);
+			int uf = Math.max(mp[0], mp[1]);
+
+			// re-map to dialpad
+			decoded = DIAL_PAD.charAt(lf * 4 + (uf % 4));
+		}
 
 		System.arraycopy(this.buf, 0, buf, 1, this.buf.length);
 		return res;
@@ -78,6 +97,8 @@ public class DTMF implements FrameSource {
 					"usage: framed.DTMF <in-file> [out-file]";
 
 	public static void main(String [] args) throws Exception {
+		BasicConfigurator.configure();
+
 		if (args.length < 1 || args.length > 2) {
 			System.err.println(SYNOPSIS);
 			System.exit(1);
@@ -91,7 +112,7 @@ public class DTMF implements FrameSource {
 		Window w = Window.create(as, sWindow);
 		FFT fft = new FFT(w);
 
-		FrameSource fs = new DTMF(fft);
+		DTMF fs = new DTMF(fft);
 
 		FrameOutputStream fw = (outFile == null ? null : new FrameOutputStream(fs.getFrameSize(), new File(outFile)));
 
@@ -104,7 +125,7 @@ public class DTMF implements FrameSource {
 				int i = 0;
 				for (; i < buf.length-1; ++i)
 					System.out.printf("%.2f ", buf[i]);
-				System.out.printf("%.2f\n", buf[i]);
+				System.out.printf("%.2f %c\n", buf[i], fs.decoded);
 			}
 		}
 
