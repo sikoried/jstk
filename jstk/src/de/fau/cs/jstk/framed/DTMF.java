@@ -39,8 +39,8 @@ public class DTMF implements FrameSource {
 			indices[i] = (int) Math.round((double) FREQS[i] / fft.getResolution());
 
 		logger.info("FFT resolution (Hz/bin) = " + fft.getResolution());
-		logger.info(Arrays.toString(FREQS));
-		logger.info(Arrays.toString(indices));
+		logger.info("frequencies = " + Arrays.toString(FREQS));
+		logger.info("corresponding FFT bins = " + Arrays.toString(indices));
 
 		this.sel = new Selection(fft, indices);
 		this.buf = new double [this.sel.getFrameSize()];
