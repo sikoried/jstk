@@ -38,10 +38,13 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import com.github.sikoried.fjama.EigenvalueDecomposition;
+import com.github.sikoried.fjama.Matrix;
 import com.github.sikoried.jstk.io.FrameInputStream;
 import com.github.sikoried.jstk.io.FrameOutputStream;
 import com.github.sikoried.jstk.io.IOUtil;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -210,13 +213,13 @@ public class NAP {
 		// sort by eigenvalue
 		LinkedList<Pair<float [], Float>> sortedEV = new LinkedList<Pair<float [], Float>>();
 		for (int i = 0; i < m; ++i)
-			sortedEV.add(new Pair<float [], Float>(vh[i], ev[i]));
+			sortedEV.add(Pair.of(vh[i], ev[i]));
 		
 		// sort strongest EV first
 		Collections.sort(sortedEV, new Comparator<Pair<float [], Float>>() {
 			public int compare(Pair<float[], Float> o1,
 					Pair<float[], Float> o2) {
-				return (int) Math.signum(o2.b - o1.b);
+				return (int) Math.signum(o2.getRight() - o1.getRight());
 			}
 		});
 		
@@ -225,9 +228,9 @@ public class NAP {
 		int num = 0;
 		for (int i = 0; i < rank; ++i) {
 			Pair<float [], Float> p = it.next();
-			if (p.b < 1e-6)
+			if (p.getRight() < 1e-6)
 				num++;
-			v[i] = p.a;
+			v[i] = p.getLeft();
 		}
 		
 		if (num > 0)
@@ -322,13 +325,13 @@ public class NAP {
 		// sort by eigenvalue
 		LinkedList<Pair<float [], Float>> sortedEV = new LinkedList<Pair<float [], Float>>();
 		for (int i = 0; i < n; ++i)
-			sortedEV.add(new Pair<float [], Float>(vh[i], ev[i]));
+			sortedEV.add(Pair.of(vh[i], ev[i]));
 		
 		// sort strongest EV first
 		Collections.sort(sortedEV, new Comparator<Pair<float [], Float>>() {
 			public int compare(Pair<float[], Float> o1,
 					Pair<float[], Float> o2) {
-				return (int) Math.signum(o2.b - o1.b);
+				return (int) Math.signum(o2.getRight() - o1.getRight());
 			}
 		});
 		
@@ -337,9 +340,9 @@ public class NAP {
 		int num = 0;
 		for (int i = 0; i < rank; ++i) {
 			Pair<float [], Float> p = it.next();
-			if (p.b < 1e-6)
+			if (p.getRight() < 1e-6)
 				num++;
-			Y[i] = p.a;
+			Y[i] = p.getLeft();
 		}
 		
 		if (num > 0)

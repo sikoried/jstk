@@ -8,6 +8,10 @@ sourceCompatibility = 1.8
 
 repositories {
   jcenter()
+
+  maven {
+    url  "https://dl.bintray.com/sikoried/github"
+  }
 }
 
 /*
@@ -26,11 +30,11 @@ jar {
 
 dependencies {
   compile("com.github.wendykierp:JTransforms:${jtransforms_version}")
+  compile("com.github.sikoried:fjama:${jama_version}")
   compile("gov.nist.math:jama:${jama_version}")
   compile("org.apache.commons:commons-lang3:${commons_lang3_version}")
   compile("org.apache.logging.log4j:log4j-core:${log4j_version}")
   compile("org.apache.logging.log4j:log4j-jul:${log4j_version}")
-  runtime("org.apache.logging.log4j:log4j-jul:${log4jVersion}")
 
   testCompile("org.junit.jupiter:junit-jupiter-api:${junit_jupiter_version}")
   testRuntime("org.junit.jupiter:junit-jupiter-params:${junit_jupiter_version}")
@@ -39,9 +43,4 @@ dependencies {
 
   
   /* compile fileTree(dir: '../lib', include: '*.jar') */
-}
-
-junitPlatform {
-  logManager 'org.apache.logging.log4j.jul.LogManager'
-  reportsDir file('build/test-results/junit-platform')
 }

@@ -21,6 +21,9 @@
  */
 package com.github.sikoried.jstk.util;
 
+import com.github.sikoried.fjama.Matrix;
+import com.github.sikoried.fjama.SingularValueDecomposition;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -80,7 +83,7 @@ public final class Arithmetics {
 		
 		int cols = m[0].length;
 		
-		FJama.SingularValueDecomposition svd = new FJama.SingularValueDecomposition(new FJama.Matrix(m));
+		SingularValueDecomposition svd = new SingularValueDecomposition(new Matrix(m));
 		float [] sv = svd.getSingularValues();
 		
 		// "invert" the singular values, discard values with "bad" numerics

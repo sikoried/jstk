@@ -30,6 +30,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.github.sikoried.fjama.Matrix;
+import com.github.sikoried.fjama.SingularValueDecomposition;
 import com.github.sikoried.jstk.io.FrameInputStream;
 import com.github.sikoried.jstk.io.FrameSource;
 
