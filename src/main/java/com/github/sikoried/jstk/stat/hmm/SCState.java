@@ -248,7 +248,7 @@ public final class SCState extends State {
 	 * Discard the current accumulator.
 	 */
 	public void discard() {
-		c = null;
+		a = null;
 	}
 	
 	/**
