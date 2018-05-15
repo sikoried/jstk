@@ -27,10 +27,7 @@ package com.github.sikoried.jstk.lm;
 import com.github.sikoried.jstk.arch.*;
 import com.github.sikoried.jstk.exceptions.OutOfVocabularyException;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -91,7 +88,10 @@ public class Unigram implements LanguageModel {
 	 * @throws IOException
 	 */
 	public void loadSrilm(File file) throws IOException, OutOfVocabularyException {
-		BufferedReader br = new BufferedReader(new FileReader(file));
+		loadSrilm(new BufferedReader(new FileReader(file)));
+	}
+
+	public void loadSrilm(BufferedReader br) throws IOException, OutOfVocabularyException {
 		String lin;
 		
 		// skip everything till \1-gram
@@ -115,6 +115,10 @@ public class Unigram implements LanguageModel {
 			// set the prob, mind the exponentiation!
 			probs.put(tok.getWordTokenization(sp[1]), (float) Math.pow(10, Float.parseFloat(sp[0])));
 		}
+	}
+
+	public String toString() {
+		return "Unigram 1-grams=" + probs.keySet().size();
 	}
 	
 	public TreeNode generateNetwork() {

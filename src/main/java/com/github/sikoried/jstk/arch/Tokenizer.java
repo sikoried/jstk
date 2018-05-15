@@ -66,7 +66,11 @@ public final class Tokenizer {
 		this(alphabet);
 		addTokenizationsFromFile(tokenizationFile);
 	}
-	
+
+	public String describe() {
+		return "num_tokenizations=" + tokenizations.size();
+	}
+
 	/**
 	 * Use the Tokenizer to obtain a token sequence for a given word. Runs a 
 	 * binary search on the lexicon list.

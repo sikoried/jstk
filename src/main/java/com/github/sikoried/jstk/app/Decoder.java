@@ -35,11 +35,13 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.github.sikoried.jstk.arch.Configuration;
+import com.github.sikoried.jstk.arch.TokenTree;
 import com.github.sikoried.jstk.arch.Tokenization;
 import com.github.sikoried.jstk.arch.TreeNode;
 import com.github.sikoried.jstk.decoder.ViterbiBeamSearch;
 import com.github.sikoried.jstk.io.FrameInputStream;
 import com.github.sikoried.jstk.lm.Bigram;
+import com.github.sikoried.jstk.lm.LanguageModel;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -122,12 +124,14 @@ public class Decoder {
 		
 		// load language model
 		HashMap<Tokenization, Float> sil = new HashMap<Tokenization, Float>();
+		// sil.put(conf.tok.getWordTokenization("sil"), silprob);
+
 		// sil.put(conf.tok.getWordTokenization("pau"), silprob);
 		// sil.put(conf.tok.getWordTokenization("h#"), silprob);
-		
-		Bigram lm = new Bigram(conf.tok, conf.th, sil);
-		//Unigram lm = new Unigram(conf.tok, conf.th, sil);
-		lm.loadSrilm(new File(args[z++]));
+
+		// load model (1- and 2-gram supported for now)
+		LanguageModel lm = LanguageModel.loadNgramModel(new File(args[z++]), conf.tok, conf.th, sil);
+
 		
 		for (; z < args.length; ++z) {
 			if (args[z].equals("-f"))
@@ -179,7 +183,7 @@ public class Decoder {
 		
 		
 		TreeNode root = lm.generateNetwork();
-		// logger.info(TokenTree.traverseNetwork(root, " "));
+		logger.info(TokenTree.traverseNetwork(root, " "));
 		
 		if (files.size() < 1) {
 			System.err.println("Nothing to do. Bye.");

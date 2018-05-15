@@ -76,7 +76,6 @@ public class FixedSequences implements LanguageModel {
 		for (String s : silences){
 			if (s.isEmpty())
 				continue;
-			System.err.println("adding silence \"" + s + "\"");
 			this.silences.add(tok.getWordTokenization(s));
 		}
 		this.force_keep_silences = force_keep_silences;

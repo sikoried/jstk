@@ -420,6 +420,7 @@ public final class Configuration {
 	public void loadAlphabet(File file) throws IOException {
 		logger.info("loading Alphabet from " + file.getAbsolutePath());
 		a = new Alphabet(file);
+		logger.info(a.describe());
 	}
 	
 	/**
@@ -434,6 +435,8 @@ public final class Configuration {
 		
 		logger.info("loading Tokenizer from " + file.getAbsolutePath());
 		tok = new Tokenizer(a, file);
+		logger.info(tok.describe());
+
 	}
 	
 	/**
@@ -597,6 +600,13 @@ public final class Configuration {
 				
 				conf.cb = new Codebook();
 				conf.cb.initializeModels(conf.th, new CModelFactory(conf.a, Hmm.Topology.LINEAR, mixture));
+			} else if (args[i].equals("--cont0")) {
+				logger.info("initializing empty density fd=" + args[i+1] + " nd=" + args[i+2]);
+				Mixture mixture = new Mixture(Integer.parseInt(args[i+1]), Integer.parseInt(args[i+2]), true);
+
+				conf.cb = new Codebook();
+				conf.cb.initializeModels(conf.th, new CModelFactory(conf.a, Hmm.Topology.LINEAR, mixture));
+				i += 2;
 			} else if (args[i].equals("--dump")) {
 				if (conf.hasAlphabet())
 					conf.a.dump(System.out);

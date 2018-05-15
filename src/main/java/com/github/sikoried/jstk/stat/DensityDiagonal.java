@@ -154,8 +154,8 @@ public final class DensityDiagonal extends Density {
 		
 		if (nans > 0)
 			logger.fatal("Density#" + id + ".update(): fixed " + nans + " NaNs");
-		if (minc > 0)
-			logger.info("Density#" + id + ".update(): enforced " + minc + " min covariances");
+//		if (minc > 0)
+//			logger.info("Density#" + id + ".update(): enforced " + minc + " min covariances");
 	}
 
 	/**

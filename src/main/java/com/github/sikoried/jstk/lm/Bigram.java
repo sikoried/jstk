@@ -114,7 +114,14 @@ public class Bigram implements LanguageModel {
 	 * @throws IOException
 	 */
 	public void loadSrilm(File file) throws IOException, OutOfVocabularyException {
-		BufferedReader br = new BufferedReader(new FileReader(file));
+		loadSrilm(new BufferedReader(new FileReader(file)));
+	}
+
+	public String toString() {
+		return "Bigram 1-grams=" + p1.keySet().size() + " 2-grams=" + p2.keySet().size();
+	}
+
+	public void loadSrilm(BufferedReader br) throws IOException, OutOfVocabularyException {
 		String lin;
 		
 		// skip everything till \1-gram
@@ -206,7 +213,7 @@ public class Bigram implements LanguageModel {
 			unigram.addToTree(t, th.tokenizeWord(t.sequence), p);
 		}
 		
-		logger.info(TokenTree.traverseNetwork(unigram.root, "  "));
+		// elogger.info(TokenTree.traverseNetwork(unigram.root, "  "));
 		unigram.factor();
 		
 		// -%<------------------------------------------------------------------

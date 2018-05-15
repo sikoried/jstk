@@ -113,6 +113,7 @@ public class Codebook {
 	 */
 	public void initializeModels(TokenHierarchy th, ModelFactory mf) {
 		for (Token t : th.tokens.values()) {
+			logger.info("allocating model for " + t);
 			Hmm model = mf.allocateModel(t);
 			
 			t.setHMM(model);

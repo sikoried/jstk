@@ -21,7 +21,19 @@
 */
 package com.github.sikoried.jstk.lm;
 
+import com.github.sikoried.jstk.arch.TokenHierarchy;
+import com.github.sikoried.jstk.arch.Tokenization;
+import com.github.sikoried.jstk.arch.Tokenizer;
 import com.github.sikoried.jstk.arch.TreeNode;
+import com.github.sikoried.jstk.exceptions.OutOfVocabularyException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
 
 /**
  * Up to now, the LanguageModel interface enforces only the generateNetwork 
@@ -32,10 +44,46 @@ import com.github.sikoried.jstk.arch.TreeNode;
  * @author sikoried
  */
 public interface LanguageModel {
+	Logger logger = LogManager.getLogger(LanguageModel.class);
+
 	/**
 	 * Generate the LST network from the given TokenTrees and build silence
 	 * models as requested
 	 * @return Root node of the LST network
 	 */
 	public TreeNode generateNetwork();
+
+	static LanguageModel loadNgramModel(File file, Tokenizer tok, TokenHierarchy th, HashMap<Tokenization, Float> sil) throws IOException, OutOfVocabularyException {
+		BufferedReader br = new BufferedReader(new FileReader(file));
+		String lin;
+
+		logger.info("scanning for \\data\\ section...");
+
+		// skip everything till \data\
+		while ((lin = br.readLine()) != null) {
+			if (lin.equals("\\data\\"))
+				break;
+		}
+
+		int n = 0;
+		while ((lin = br.readLine()).length() > 0)
+			n++;
+
+		logger.info("loading " + n + "-gram model");
+
+		if (n == 1) {
+			Unigram lm = new Unigram(tok, th, sil);
+			lm.loadSrilm(br);
+			logger.info(lm);
+			return lm;
+		} else if (n == 2) {
+			Bigram lm = new Bigram(tok, th, sil);
+			lm.loadSrilm(br);
+			logger.info(lm);
+			return lm;
+		} else {
+			logger.info("can't handle n>2");
+			throw new IOException("unsupported format");
+		}
+	}
 }

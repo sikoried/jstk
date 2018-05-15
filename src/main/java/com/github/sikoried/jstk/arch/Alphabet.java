@@ -26,8 +26,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * The alphabet contains the valid tokens with the respective number of HMM states.
@@ -85,6 +87,10 @@ public final class Alphabet {
 	public void dump(PrintStream ps) {
 		for (Entry<String, Short> e : lookup.entrySet())
 			ps.println(e.getKey() + "\t" + e.getValue());
+	}
+
+	public String describe() {
+		return new ArrayList<>(lookup.keySet()).toString();
 	}
 	
 	public static final String SYNOPSIS = 
