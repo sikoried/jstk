@@ -1,9 +1,12 @@
 # What is the JSTK (and what not)
-The Jave speech toolkit (JSTK) provides a native implementation of both library/API and applications for speech recognition, speaker verification, speech visualization (including transcription tools), and evaluation of related human rater tasks.
+
+The Java speech toolkit (JSTK) provides a native implementation of both library/API and applications for speech recognition, speaker verification, speech visualization (including transcription tools), and evaluation of related human rater tasks.
 JSTK is *not* a full-blown LVCSR toolkit with pre-trained models, sorry.
+
 
 # Where is JSTK used?
 
+- [Hidden Markov Model-Based Smart Annotation for Benchmark Cyclic Activity Recognition Database Using Wearables](https://www.mdpi.com/1424-8220/19/8/1820). C.F. Martindale, S. Sprager and B.M. Eskofier, Sensors 2019, 19(8), 1820.
 - Digital sports: http://www5.cs.fau.de/our-team/jensen-ulf/projects/drop-jump-phase-length-calculation-with-hidden-markov-models/
 - Automatic Intelligibility Assessment of Speakers After Laryngeal Cancer by Means of Acoustic Modeling
 T Bocklet, K Riedhammer, E Nöth, U Eysholdt, T Haderlein. Journal of Voice 26 (3), 390-397, 2012
@@ -42,20 +45,15 @@ $ ./jstk app.Decoder
 
 # Maintenance and Support
 
-The Java Speech Tooklit (JSTK) is developed and maintained by the Speech Group
-at the University of Erlangen-Nuremberg. It is designed to provide both API and
-applications for the most popular speech tasks such as speech recognition,
-speaker verification, speech transcription and annotation and evaluation of
-human rater tasks. The current maintainers of the toolkit can be reached at
-
-jstk@speech.informatik.uni-erlangen.de
+The Java Speech Tooklit (JSTK) was originally developed and maintained by the Speech Group at the University of Erlangen-Nuremberg.
+It is designed to provide both API and applications for the most popular speech tasks such as speech recognition, speaker verification, speech transcription and annotation and evaluation of human rater tasks.
 
 The JSTK is licensed under GPLv3 and welcomes any contributions in terms of
-extensions, bugfixes, feature requests or comments. Note that code maintenance
-is (for now) only done at the speech group of Univ. Erlangen. Though this
-toolkit is intended to allow full-scale speech applications, special APIs such
-as the Google Android Speech API or Java Speech API are not implemented (but may
-however be implemented in the future).
+extensions, bugfixes, feature requests or comments. 
+Though this toolkit is intended to allow full-scale speech applications, special APIs such as the Google Android Speech API or Java Speech API are not implemented (but may however be implemented in the future).
+
+Contributions are welcome -- please create issues or PRs.
+
 
 
 # Dependencies (managed through gradle)
