@@ -27,9 +27,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Stack;
+import java.util.*;
 
 import com.github.sikoried.jstk.exceptions.OutOfVocabularyException;
 import com.github.sikoried.jstk.stat.hmm.Hmm;
@@ -61,7 +59,6 @@ public final class TokenHierarchy {
 	
 	/**
 	 * Add all tokens occurring in the given Tokenizer
-	 * @param lex
 	 */
 	public void addTokensFromTokenizer(Tokenizer toks, int contextSize) {
 		for (Tokenization tok : toks.tokenizations) {
@@ -178,7 +175,13 @@ public final class TokenHierarchy {
 				}
 			}
 		}
-		
+
+		List<String> toks = new LinkedList<>();
+		for (Map.Entry<String, Token> e : tokens.entrySet())
+			if (e.getValue().occurrences > minOcc)
+				toks.add(e.getKey());
+		logger.info("Retaining " + toks.size() + " tokens");
+
 		br.close();
 		
 		// now do the actual pruning

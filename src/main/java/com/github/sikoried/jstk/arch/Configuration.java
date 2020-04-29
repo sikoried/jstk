@@ -580,6 +580,9 @@ public final class Configuration {
 				String pf = args[++i];
 				
 				conf.th.pruneHierarchyByOccurrence(mc, conf.tok, new File(pf));
+
+				// rebuild hmm map
+				conf.cb.modelsFromHierarchy(conf.th);
 			} else if (args[i].equals("--discrete")) {
 				// TODO discrete initialization
 			} else if (args[i].equals("--semi")) {

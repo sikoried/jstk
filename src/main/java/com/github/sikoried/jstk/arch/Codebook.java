@@ -28,9 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.ByteOrder;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import com.github.sikoried.jstk.arch.mf.ModelFactory;
@@ -89,7 +87,13 @@ public class Codebook {
 			t.setHMM(models.get(t.hmmId));
 		}
 	}
-	
+
+	public void modelsFromHierarchy(TokenHierarchy th) throws CodebookException {
+		models.clear();
+		for (Token t : th.tokens.values())
+			models.put(t.hmmId, t.hmm);
+	}
+
 	/**
 	 * Obtain a collection of the shared Mixtures
 	 * @return
